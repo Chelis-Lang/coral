@@ -1,6 +1,6 @@
 # Coral
 
-Numerical methods, statistics, and optimization shell for the
+Typed dataframes shell for the
 [Chelis](https://github.com/Chelis-Lang/chelis) programming language.
 Ships as a reef package under the `Coral` module prefix.
 

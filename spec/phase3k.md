@@ -39,6 +39,30 @@ eagerly. The type system tracks which columns are which. No query optimizer — 
 optimization comes from the tensor compiler's existing fusion passes, not a
 dataframe-specific planner.
 
+**Persistent column dictionary (HAMT).** The internal `Dict[String, Column]` backing a
+Frame uses a persistent data structure (hash array mapped trie) so that `with_column`,
+`drop_column`, and `rename` produce new frames that share column references with the
+original via structural sharing. This is a performance requirement for AD through frame
+pipelines: `grad(fn_with_10_frame_ops)` produces intermediate frames on the backward
+pass, and without structural sharing each intermediate copies the entire column
+dictionary — making AD memory cost O(num_columns * num_operations) instead of
+O(num_operations). The HAMT stores column references (`Arc` handles to immutable
+tensors), not column data, so the tree is small at real portfolio sizes (50-100
+columns). Pure-Chelis HAMT is strongly preferred over Rust-side HAMT so the persistent
+dict composes transparently with `grad`; decide at implementation start which path
+actually composes (see open question #7 in the Coral design spec in the main repo).
+
+### API Stability Convention
+
+Every function in Coral's API surface table (below and in the forthcoming SKILL.md)
+carries a `Stability` label: `stable` (signature will not change between releases —
+safe for AI training-corpus inclusion) or `alpha` (signature may change — excluded or
+down-weighted for training). This convention is inherited from the cross-cutting design
+decision in `chelis/spec/design/chelis_canonical_reference.md`. Coral v0.1.0 ships with
+all public API marked `alpha` by default; the `stable` promotion happens once the AD
+story and persistent-dict implementation are validated against the Phase 3k acceptance
+oracle.
+
 ### Modules
 
 | Module | Contents | Key Primitives Used |

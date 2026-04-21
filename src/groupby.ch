@@ -69,8 +69,10 @@ def agg_max[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
 }
 
 def agg[n, m](gf: GroupedFrame[n], specs: List[(string, AggFn)]) -> Frame[m] = {
-  base = agg_count(gf)
-  apply_specs(base, gf, specs)
+  match gf with {
+    | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } =>
+        apply_specs(from_pairs([(key_name, key_values_to_column_like(keys, key_template))]), gf, specs)
+  }
 }
 
 def apply_specs[n, m](base: Frame[m], gf: GroupedFrame[n], specs: List[(string, AggFn)]) -> Frame[m] = {

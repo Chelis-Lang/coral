@@ -10,3 +10,10 @@ Tracked upstream/toolchain issues that affect Coral development.
   Coral probe that exercises HAMT-backed frame operations. `chelis check` passes
   for the same probe, so Coral keeps a compile-level Phase 1 gate and treats
   runtime proof for that path as blocked on the compiler/backend.
+- `chelis v0.1.13` currently emits invalid C for a stripped multi-module bare-build
+  Coral program that combines `Coral.Frame` with `Coral.GroupBy` / `Coral.Join`
+  helpers. The generated signatures collapse polymorphic values to `int` in several
+  paths (`hamt_put`, frame slice helpers, groupby merge paths), so the C compile/link
+  step fails before execution. Window-only bare builds remain viable, which is why
+  `Coral.Window` has an executed runtime parity lane while GroupBy/Join are still
+  fixture-locked plus compile-checked.

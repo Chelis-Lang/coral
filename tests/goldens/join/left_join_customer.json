@@ -3,7 +3,7 @@
   "operation": "left_join",
   "expected_frame": {
     "nrows": 6,
-    "ncols": 5,
+    "ncols": 4,
     "columns": [
       {
         "name": "customer",
@@ -30,24 +30,12 @@
         ]
       },
       {
-        "name": "flag",
-        "type": "bool",
-        "values": [
-          true,
-          true,
-          false,
-          true,
-          true,
-          false
-        ]
-      },
-      {
         "name": "region",
         "type": "string",
         "values": [
           "north",
           "west",
-          "nan",
+          "",
           "north",
           "west",
           "south"

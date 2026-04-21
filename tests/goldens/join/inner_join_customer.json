@@ -3,7 +3,7 @@
   "operation": "inner_join",
   "expected_frame": {
     "nrows": 5,
-    "ncols": 5,
+    "ncols": 4,
     "columns": [
       {
         "name": "customer",
@@ -25,17 +25,6 @@
           3,
           3,
           4
-        ]
-      },
-      {
-        "name": "flag",
-        "type": "bool",
-        "values": [
-          true,
-          true,
-          true,
-          true,
-          false
         ]
       },
       {

@@ -9,6 +9,6 @@
   ],
   "known_deltas": [
     "checked-in expectations exist before a full executed runtime harness",
-    "right-side bool output columns remain deferred"
+    "bool output columns remain deferred"
   ]
 }

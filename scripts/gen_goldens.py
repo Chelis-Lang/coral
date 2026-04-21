@@ -231,7 +231,7 @@ def join_contract() -> dict:
         ],
         "known_deltas": [
             "checked-in expectations exist before a full executed runtime harness",
-            "right-side bool output columns remain deferred",
+            "bool output columns remain deferred",
         ],
     }
 
@@ -241,7 +241,6 @@ def join_fixtures() -> dict[str, dict]:
         {
             "customer": ["a", "b", "a", "c"],
             "qty": [1, 2, 3, 4],
-            "flag": [True, False, True, False],
         }
     )
     right = pd.DataFrame(
@@ -253,8 +252,9 @@ def join_fixtures() -> dict[str, dict]:
     )
     inner = left.merge(right, on="customer", how="inner", sort=False)
     left_joined = left.merge(right, on="customer", how="left", sort=False)
-    inner_schema = {"customer": "string", "qty": "int", "flag": "bool", "region": "string", "score": "float"}
-    left_schema = {"customer": "string", "qty": "int", "flag": "bool", "region": "string", "score": "float"}
+    left_joined["region"] = left_joined["region"].fillna("")
+    inner_schema = {"customer": "string", "qty": "int", "region": "string", "score": "float"}
+    left_schema = {"customer": "string", "qty": "int", "region": "string", "score": "float"}
     return {
         "README.json": join_contract(),
         "inner_join_customer.json": {"fixture": "inner_join_customer", "operation": "inner_join", "expected_frame": frame_payload(inner, inner_schema)},

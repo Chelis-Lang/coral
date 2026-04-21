@@ -1,0 +1,43 @@
+{
+  "fixture": "read_json_mixed",
+  "operation": "read_json_frame",
+  "input_text": "[{\"id\":1,\"price\":10.0,\"flag\":true,\"city\":\"london\"},{\"id\":2,\"price\":20.5,\"flag\":false,\"city\":\"paris\"}]",
+  "expected_frame": {
+    "nrows": 2,
+    "ncols": 4,
+    "columns": [
+      {
+        "name": "id",
+        "type": "int",
+        "values": [
+          1,
+          2
+        ]
+      },
+      {
+        "name": "price",
+        "type": "float",
+        "values": [
+          10.0,
+          20.5
+        ]
+      },
+      {
+        "name": "flag",
+        "type": "bool",
+        "values": [
+          true,
+          false
+        ]
+      },
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris"
+        ]
+      }
+    ]
+  }
+}

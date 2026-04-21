@@ -19,6 +19,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover
 REPO = Path(__file__).resolve().parent.parent
 FRAME_GOLDENS = REPO / "tests" / "goldens" / "frame"
 GROUPBY_GOLDENS = REPO / "tests" / "goldens" / "groupby"
+IO_GOLDENS = REPO / "tests" / "goldens" / "io"
 JOIN_GOLDENS = REPO / "tests" / "goldens" / "join"
 WINDOW_GOLDENS = REPO / "tests" / "goldens" / "window"
 
@@ -262,6 +263,68 @@ def join_fixtures() -> dict[str, dict]:
     }
 
 
+def io_contract() -> dict:
+    return {
+        "schema_version": 1,
+        "note": "Coral IO goldens lock expected CSV/JSON read semantics and supported write formatting for the current compile-checked slice.",
+        "phase_slice": [
+            "read_csv_frame typed inference",
+            "read_json_frame typed inference",
+            "write_csv_frame on int/float/string/bool columns",
+            "write_json_frame on int/float/string/bool columns",
+        ],
+        "known_deltas": [
+            "IO is fixture-backed plus compile-checked; no executed runtime parity lane yet",
+            "serialization expectations reflect Coral's current formatting, not pandas text formatting",
+        ],
+    }
+
+
+def io_frame_df() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "id": [1, 2],
+            "price": [10.0, 20.5],
+            "flag": [True, False],
+            "city": ["london", "paris"],
+        }
+    )
+
+
+def io_fixtures() -> dict[str, dict]:
+    frame = io_frame_df()
+    schema = {"id": "int", "price": "float", "flag": "bool", "city": "string"}
+    csv_text = "id,price,flag,city\n1,10.0,true,london\n2,20.5,false,paris\n"
+    json_text = '[{"id":1,"price":10.0,"flag":true,"city":"london"},{"id":2,"price":20.5,"flag":false,"city":"paris"}]'
+    return {
+        "README.json": io_contract(),
+        "read_csv_mixed.json": {
+            "fixture": "read_csv_mixed",
+            "operation": "read_csv_frame",
+            "input_text": csv_text,
+            "expected_frame": frame_payload(frame, schema),
+        },
+        "read_json_mixed.json": {
+            "fixture": "read_json_mixed",
+            "operation": "read_json_frame",
+            "input_text": json_text,
+            "expected_frame": frame_payload(frame, schema),
+        },
+        "write_csv_mixed.json": {
+            "fixture": "write_csv_mixed",
+            "operation": "write_csv_frame",
+            "source_frame": frame_payload(frame, schema),
+            "expected_text": csv_text,
+        },
+        "write_json_mixed.json": {
+            "fixture": "write_json_mixed",
+            "operation": "write_json_frame",
+            "source_frame": frame_payload(frame, schema),
+            "expected_text": json_text,
+        },
+    }
+
+
 def window_fixture(name: str, operation: str, series: pd.Series, *, window: int | None = None, alpha: float | None = None) -> dict:
     values = [float(v) for v in series.tolist()]
     payload = {
@@ -326,6 +389,7 @@ def main() -> int:
     issues = []
     issues.extend(write_or_check(FRAME_GOLDENS, frame_fixtures(), check=args.check))
     issues.extend(write_or_check(GROUPBY_GOLDENS, groupby_fixtures(), check=args.check))
+    issues.extend(write_or_check(IO_GOLDENS, io_fixtures(), check=args.check))
     issues.extend(write_or_check(JOIN_GOLDENS, join_fixtures(), check=args.check))
     issues.extend(write_or_check(WINDOW_GOLDENS, window_fixtures(), check=args.check))
 
@@ -334,7 +398,7 @@ def main() -> int:
             for issue in issues:
                 print(issue)
             return 1
-        print("frame, groupby, join, and window goldens match pandas")
+        print("frame, groupby, io, join, and window goldens match pandas")
     return 0
 
 

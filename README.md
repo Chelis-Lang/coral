@@ -19,6 +19,7 @@ Today that reference is backed in two different ways:
 
 - checked-in pandas goldens for the first validated `Frame` slice
 - checked-in pandas goldens for the current `GroupBy` aggregation slice
+- checked-in pandas / Coral-format goldens for the current `IO` slice
 - checked-in pandas goldens for the current `Join` slice
 - checked-in pandas goldens plus a runtime build/link/execute harness for the
   current `Window` slice
@@ -71,6 +72,8 @@ python scripts/validate_book_examples.py
   plain `Dict`
 - the `Window` module has the first runtime-executed pandas parity lane in
   this repo
+- `IO` now supports bool inference/read and bool CSV/JSON write formatting in the
+  compile-checked slice
 - string `sort_by` is deferred
 - Parquet I/O is deferred
 - `outer_join` is deferred

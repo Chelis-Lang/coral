@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "note": "Coral IO goldens lock expected CSV/JSON read semantics and supported write formatting for the current compile-checked slice.",
+  "phase_slice": [
+    "read_csv_frame typed inference",
+    "read_json_frame typed inference",
+    "write_csv_frame on int/float/string/bool columns",
+    "write_json_frame on int/float/string/bool columns"
+  ],
+  "known_deltas": [
+    "IO is fixture-backed plus compile-checked; no executed runtime parity lane yet",
+    "serialization expectations reflect Coral's current formatting, not pandas text formatting"
+  ]
+}

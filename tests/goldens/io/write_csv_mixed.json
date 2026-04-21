@@ -1,0 +1,43 @@
+{
+  "fixture": "write_csv_mixed",
+  "operation": "write_csv_frame",
+  "source_frame": {
+    "nrows": 2,
+    "ncols": 4,
+    "columns": [
+      {
+        "name": "id",
+        "type": "int",
+        "values": [
+          1,
+          2
+        ]
+      },
+      {
+        "name": "price",
+        "type": "float",
+        "values": [
+          10.0,
+          20.5
+        ]
+      },
+      {
+        "name": "flag",
+        "type": "bool",
+        "values": [
+          true,
+          false
+        ]
+      },
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris"
+        ]
+      }
+    ]
+  },
+  "expected_text": "id,price,flag,city\n1,10.0,true,london\n2,20.5,false,paris\n"
+}

@@ -16,4 +16,5 @@ Tracked upstream/toolchain issues that affect Coral development.
   paths (`hamt_put`, frame slice helpers, groupby merge paths), so the C compile/link
   step fails before execution. Window-only bare builds remain viable, which is why
   `Coral.Window` has an executed runtime parity lane while GroupBy/Join are still
-  fixture-locked plus compile-checked.
+  fixture-locked plus compile-checked. Reproducer:
+  [`scripts/repro_multimodule_bare_build.py`](/home/jeff/Documents/scratch/coral/scripts/repro_multimodule_bare_build.py)

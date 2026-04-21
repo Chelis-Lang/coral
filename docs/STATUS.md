@@ -6,6 +6,7 @@ Current work focuses on the first pass of:
 - typed frame representation
 - frame parity infrastructure and pandas-backed goldens
 - groupby parity expectations and pandas-backed goldens
+- io parity expectations and pandas-backed goldens
 - join parity expectations and pandas-backed goldens
 - window parity infrastructure and runtime-backed goldens
 - filtering and schema mutation
@@ -35,6 +36,8 @@ What is currently proven:
   deterministic Phase-2 frame slice
 - checked-in `tests/goldens/groupby/*.json` fixtures are generated from pandas for the
   current single-key aggregation slice
+- checked-in `tests/goldens/io/*.json` fixtures are generated from pandas / Coral text
+  expectations for the current CSV/JSON compile-checked slice
 - checked-in `tests/goldens/join/*.json` fixtures are generated from pandas for the
   current string-key inner/left join slice
 - checked-in `tests/goldens/window/*.json` fixtures are generated from pandas for the
@@ -44,6 +47,7 @@ What is currently proven:
 - `tests/run_coral_tests.py` executes a bare-build runtime parity lane for
   `rolling_sum`, `rolling_mean`, `rolling_std`, `rolling_min`, `rolling_max`, and
   `ewm(alpha, adjust=False)`
+- `src/io.ch` now supports bool inference on read and bool rendering on CSV/JSON write
 
 What is not yet proven:
 

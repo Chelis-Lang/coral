@@ -39,7 +39,7 @@ def column_values(rows: List[Dict[string, string]], name: string) -> List[string
 def infer_csv_column[n](values: List[string]) -> Column[n] = {
   if all_ints(values) then IntCol(to_tensor(map(fn (value: string) -> unwrap_int(value), values)))
   else if all_floats(values) then FloatCol(to_tensor(map(fn (value: string) -> unwrap_float(value), values)))
-  else if all_bools(values) then StringCol(values)
+  else if all_bools(values) then BoolCol(bools_to_tensor(map(fn (value: string) -> eq(value, "true"), values)))
   else StringCol(values)
 }
 
@@ -88,7 +88,7 @@ def json_cell[n](col: Column[n], idx: int64) -> string = {
     | IntCol(xs) => to_string(index(to_list(xs), idx))
     | FloatCol(xs) => to_string(index(to_list(xs), idx))
     | StringCol(xs) => string_concat("\"", string_concat(index(xs, idx), "\""))
-    | BoolCol(xs) => fail("write_json_frame: bool columns are not supported yet")
+    | BoolCol(xs) => to_string(index(to_list(xs), idx))
   }
 }
 
@@ -97,7 +97,7 @@ def column_value_string[n](col: Column[n], idx: int64) -> string = {
     | IntCol(xs) => to_string(index(to_list(xs), idx))
     | FloatCol(xs) => to_string(index(to_list(xs), idx))
     | StringCol(xs) => index(xs, idx)
-    | BoolCol(xs) => fail("write_csv_frame: bool columns are not supported yet")
+    | BoolCol(xs) => to_string(index(to_list(xs), idx))
   }
 }
 
@@ -149,4 +149,10 @@ def render_json_value(value: Json) -> string = {
     | JsonNull => ""
     | _ => ""
   }
+}
+
+def bools_to_tensor[n](values: List[bool]) -> tensor[n, bool] = {
+  ints = to_tensor(map(fn (flag: bool) -> if flag then one_i64() else zero_i64(), values))
+  zeros = to_tensor(map(fn (flag: bool) -> zero_i64(), values))
+  neq(copy(ints), zeros)
 }

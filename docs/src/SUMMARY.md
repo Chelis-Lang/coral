@@ -13,6 +13,12 @@
 - [Filtering](frame/filtering.md)
 - [Mutation](frame/mutation.md)
 - [NaN Handling](frame/nan-handling.md)
+- [Concatenation](frame/concatenation.md)
+- [Describe](frame/describe.md)
+
+# Reference
+
+- [Pandas Comparison](appendix/pandas-comparison.md)
 
 # Appendix
 

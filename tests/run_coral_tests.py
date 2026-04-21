@@ -28,6 +28,7 @@ from scripts.chelis_toolchain import resolve_chelis_bin
 CHELIS = resolve_chelis_bin()
 FRAME_GOLDENS = REPO / "tests" / "goldens" / "frame"
 GROUPBY_GOLDENS = REPO / "tests" / "goldens" / "groupby"
+JOIN_GOLDENS = REPO / "tests" / "goldens" / "join"
 WINDOW_GOLDENS = REPO / "tests" / "goldens" / "window"
 REQUIRED_FRAME_GOLDENS = [
     "README.json",
@@ -52,6 +53,11 @@ REQUIRED_GROUPBY_GOLDENS = [
     "agg_min_qty_by_city.json",
     "agg_max_price_by_city.json",
     "agg_multi_city.json",
+]
+REQUIRED_JOIN_GOLDENS = [
+    "README.json",
+    "inner_join_customer.json",
+    "left_join_customer.json",
 ]
 REQUIRED_WINDOW_GOLDENS = [
     "README.json",
@@ -123,6 +129,7 @@ def run_phase1_compile_probe() -> int:
 import Coral.Internal.HAMT (hamt_from_pairs, hamt_put, hamt_get, hamt_remove, hamt_contains, hamt_size)
 import Coral.Frame (from_pairs, columns, with_column, rename, drop_column, concat, describe, get_float_col, nrows, ncols)
 import Coral.GroupBy (group_by, agg_count)
+import Coral.Join (inner_join, left_join)
 
 def string_list_eq(lhs: List[string], rhs: List[string]) -> bool = {
   if neq(len(lhs), len(rhs)) then false else string_list_eq_rec(lhs, rhs)
@@ -159,6 +166,17 @@ def main() -> f32 = {
     ("city", StringCol(["london", "paris", "london"])),
     ("qty", IntCol(to_tensor([cast(1, int64), cast(2, int64), cast(3, int64)])))
   ]), "city"))
+  joined = inner_join(
+    from_pairs([
+      ("customer", StringCol(["a", "b", "a"])),
+      ("qty", IntCol(to_tensor([cast(1, int64), cast(2, int64), cast(3, int64)])))
+    ]),
+    from_pairs([
+      ("customer", StringCol(["a", "a", "c"])),
+      ("score", FloatCol(to_tensor([cast(10.0, f32), cast(15.0, f32), cast(40.0, f32)])))
+    ]),
+    "customer"
+  )
   ok_hamt =
     and(eq(hamt_size(final), cast(2, int64)),
       and(hamt_contains(final, "price"),
@@ -171,7 +189,9 @@ def main() -> f32 = {
     and(eq(nrows(stacked), cast(4, int64)),
       and(eq(ncols(desc), cast(3, int64)),
         and(neq(index(to_list(get_float_col(desc, "b")), cast(0, int64)), cast(0.0, f32)),
-          and(eq(nrows(grouped), cast(2, int64)), eq(ncols(grouped), cast(2, int64))))))
+          and(eq(nrows(grouped), cast(2, int64)),
+            and(eq(ncols(grouped), cast(2, int64)),
+              and(eq(nrows(joined), cast(4, int64)), eq(ncols(joined), cast(3, int64))))))))
   if and(ok_hamt, and(ok_order, ok_more)) then cast(1.0, f32) else cast(0.0, f32)
 }
 """
@@ -323,6 +343,7 @@ def main() -> int:
         (CHELIS, "check", "src/internal/hamt.ch"),
         (CHELIS, "check", "src/frame.ch"),
         (CHELIS, "check", "src/groupby.ch"),
+        (CHELIS, "check", "src/join.ch"),
         (CHELIS, "check", "src/window.ch"),
     ]
     for step in steps:
@@ -331,6 +352,8 @@ def main() -> int:
     if validate_checked_in_goldens(FRAME_GOLDENS, REQUIRED_FRAME_GOLDENS, "frame") != 0:
         return 1
     if validate_checked_in_goldens(GROUPBY_GOLDENS, REQUIRED_GROUPBY_GOLDENS, "groupby") != 0:
+        return 1
+    if validate_checked_in_goldens(JOIN_GOLDENS, REQUIRED_JOIN_GOLDENS, "join") != 0:
         return 1
     if validate_checked_in_goldens(WINDOW_GOLDENS, REQUIRED_WINDOW_GOLDENS, "window") != 0:
         return 1

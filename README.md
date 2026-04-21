@@ -19,6 +19,7 @@ Today that reference is backed in two different ways:
 
 - checked-in pandas goldens for the first validated `Frame` slice
 - checked-in pandas goldens for the current `GroupBy` aggregation slice
+- checked-in pandas goldens for the current `Join` slice
 - checked-in pandas goldens plus a runtime build/link/execute harness for the
   current `Window` slice
 

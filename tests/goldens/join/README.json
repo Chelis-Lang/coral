@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "note": "Coral join goldens are produced from pandas merge outputs and preserve row order from the current host-path join implementation.",
+  "phase_slice": [
+    "inner_join on string key",
+    "left_join on string key",
+    "duplicate-match expansion",
+    "left-join missing right rows as NaN / empty string"
+  ],
+  "known_deltas": [
+    "checked-in expectations exist before a full executed runtime harness",
+    "right-side bool output columns remain deferred"
+  ]
+}

@@ -19,6 +19,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover
 REPO = Path(__file__).resolve().parent.parent
 FRAME_GOLDENS = REPO / "tests" / "goldens" / "frame"
 GROUPBY_GOLDENS = REPO / "tests" / "goldens" / "groupby"
+JOIN_GOLDENS = REPO / "tests" / "goldens" / "join"
 WINDOW_GOLDENS = REPO / "tests" / "goldens" / "window"
 
 BASE_SCHEMA = {
@@ -218,6 +219,49 @@ def groupby_fixtures() -> dict[str, dict]:
     }
 
 
+def join_contract() -> dict:
+    return {
+        "schema_version": 1,
+        "note": "Coral join goldens are produced from pandas merge outputs and preserve row order from the current host-path join implementation.",
+        "phase_slice": [
+            "inner_join on string key",
+            "left_join on string key",
+            "duplicate-match expansion",
+            "left-join missing right rows as NaN / empty string",
+        ],
+        "known_deltas": [
+            "checked-in expectations exist before a full executed runtime harness",
+            "right-side bool output columns remain deferred",
+        ],
+    }
+
+
+def join_fixtures() -> dict[str, dict]:
+    left = pd.DataFrame(
+        {
+            "customer": ["a", "b", "a", "c"],
+            "qty": [1, 2, 3, 4],
+            "flag": [True, False, True, False],
+        }
+    )
+    right = pd.DataFrame(
+        {
+            "customer": ["a", "a", "c", "d"],
+            "region": ["north", "west", "south", "east"],
+            "score": [10.0, 15.0, 40.0, 99.0],
+        }
+    )
+    inner = left.merge(right, on="customer", how="inner", sort=False)
+    left_joined = left.merge(right, on="customer", how="left", sort=False)
+    inner_schema = {"customer": "string", "qty": "int", "flag": "bool", "region": "string", "score": "float"}
+    left_schema = {"customer": "string", "qty": "int", "flag": "bool", "region": "string", "score": "float"}
+    return {
+        "README.json": join_contract(),
+        "inner_join_customer.json": {"fixture": "inner_join_customer", "operation": "inner_join", "expected_frame": frame_payload(inner, inner_schema)},
+        "left_join_customer.json": {"fixture": "left_join_customer", "operation": "left_join", "expected_frame": frame_payload(left_joined, left_schema)},
+    }
+
+
 def window_fixture(name: str, operation: str, series: pd.Series, *, window: int | None = None, alpha: float | None = None) -> dict:
     values = [float(v) for v in series.tolist()]
     payload = {
@@ -282,6 +326,7 @@ def main() -> int:
     issues = []
     issues.extend(write_or_check(FRAME_GOLDENS, frame_fixtures(), check=args.check))
     issues.extend(write_or_check(GROUPBY_GOLDENS, groupby_fixtures(), check=args.check))
+    issues.extend(write_or_check(JOIN_GOLDENS, join_fixtures(), check=args.check))
     issues.extend(write_or_check(WINDOW_GOLDENS, window_fixtures(), check=args.check))
 
     if args.check:
@@ -289,7 +334,7 @@ def main() -> int:
             for issue in issues:
                 print(issue)
             return 1
-        print("frame, groupby, and window goldens match pandas")
+        print("frame, groupby, join, and window goldens match pandas")
     return 0
 
 

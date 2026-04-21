@@ -1,0 +1,65 @@
+{
+  "fixture": "inner_join_customer",
+  "operation": "inner_join",
+  "expected_frame": {
+    "nrows": 5,
+    "ncols": 5,
+    "columns": [
+      {
+        "name": "customer",
+        "type": "string",
+        "values": [
+          "a",
+          "a",
+          "a",
+          "a",
+          "c"
+        ]
+      },
+      {
+        "name": "qty",
+        "type": "int",
+        "values": [
+          1,
+          1,
+          3,
+          3,
+          4
+        ]
+      },
+      {
+        "name": "flag",
+        "type": "bool",
+        "values": [
+          true,
+          true,
+          true,
+          true,
+          false
+        ]
+      },
+      {
+        "name": "region",
+        "type": "string",
+        "values": [
+          "north",
+          "west",
+          "north",
+          "west",
+          "south"
+        ]
+      },
+      {
+        "name": "score",
+        "type": "float",
+        "values": [
+          10.0,
+          15.0,
+          10.0,
+          15.0,
+          40.0
+        ]
+      }
+    ]
+  }
+}

@@ -6,6 +6,7 @@ Current work focuses on the first pass of:
 - typed frame representation
 - frame parity infrastructure and pandas-backed goldens
 - groupby parity expectations and pandas-backed goldens
+- join parity expectations and pandas-backed goldens
 - window parity infrastructure and runtime-backed goldens
 - filtering and schema mutation
 - host-path string grouping and joining
@@ -34,6 +35,8 @@ What is currently proven:
   deterministic Phase-2 frame slice
 - checked-in `tests/goldens/groupby/*.json` fixtures are generated from pandas for the
   current single-key aggregation slice
+- checked-in `tests/goldens/join/*.json` fixtures are generated from pandas for the
+  current string-key inner/left join slice
 - checked-in `tests/goldens/window/*.json` fixtures are generated from pandas for the
   current rolling/ewm slice
 - `tests/run_coral_tests.py` validates the golden inventory and runs a compile-level

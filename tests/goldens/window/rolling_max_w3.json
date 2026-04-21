@@ -1,0 +1,21 @@
+{
+  "fixture": "rolling_max_w3",
+  "operation": "rolling_max",
+  "input": [
+    1.0,
+    2.0,
+    3.0,
+    4.0,
+    5.0
+  ],
+  "expected": [
+    "NaN",
+    "NaN",
+    3.0,
+    4.0,
+    5.0
+  ],
+  "abs_tol": 1e-05,
+  "rel_tol": 1e-05,
+  "window": 3
+}

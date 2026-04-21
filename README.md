@@ -15,6 +15,12 @@ distinctive properties:
 Coral uses pandas as its behavioral reference, with explicit documented
 deltas where the Chelis runtime or first-release scope is narrower.
 
+Today that reference is backed in two different ways:
+
+- checked-in pandas goldens for the first validated `Frame` slice
+- checked-in pandas goldens plus a runtime build/link/execute harness for the
+  current `Window` slice
+
 For the alpha implementation, frame metadata is required to use a
 persistent HAMT-backed column store from day one. That is not treated as
 an optional later optimization: structural sharing across chained frame
@@ -61,6 +67,8 @@ python scripts/validate_book_examples.py
 
 - `Frame` column storage is planned around a persistent HAMT, not a
   plain `Dict`
+- the `Window` module has the first runtime-executed pandas parity lane in
+  this repo
 - string `sort_by` is deferred
 - Parquet I/O is deferred
 - `outer_join` is deferred

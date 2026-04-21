@@ -1,0 +1,21 @@
+{
+  "fixture": "ewm_alpha_0_5",
+  "operation": "ewm",
+  "input": [
+    1.0,
+    2.0,
+    3.0,
+    4.0,
+    5.0
+  ],
+  "expected": [
+    1.0,
+    1.5,
+    2.25,
+    3.125,
+    4.0625
+  ],
+  "abs_tol": 1e-05,
+  "rel_tol": 1e-05,
+  "alpha": 0.5
+}

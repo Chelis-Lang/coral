@@ -21,7 +21,7 @@ def rolling_sum_list(values: List[f32], window: int64, idx: int64, acc: List[f32
 
 def rolling_std_list(values: List[f32], window: int64, idx: int64, acc: List[f32]) -> List[f32] = {
   if gte(idx, len(values)) then acc else {
-    next = if lt(add(idx, one_i64()), window) then nan_f32() else std_f32(window_slice(values, sub(add(idx, one_i64()), window), add(idx, one_i64())))
+    next = if lt(add(idx, one_i64()), window) then nan_f32() else std_sample_f32(window_slice(values, sub(add(idx, one_i64()), window), add(idx, one_i64())))
     rolling_std_list(values, window, add(idx, one_i64()), append(acc, next))
   }
 }
@@ -52,10 +52,15 @@ def ewm_list(values: List[f32], alpha: f32, first: bool, prev: f32, acc: List[f3
 
 def sum_f32(values: List[f32]) -> f32 = fold(fn (acc: f32, value: f32) -> add(acc, value), cast(0.0, f32), values)
 def mean_f32(values: List[f32]) -> f32 = div(sum_f32(values), cast(len(values), f32))
-def std_f32(values: List[f32]) -> f32 = {
+def std_sample_f32(values: List[f32]) -> f32 = {
+  if lte(len(values), one_i64()) then nan_f32() else {
   mu = mean_f32(values)
-  variance = div(fold(fn (acc: f32, value: f32) -> add(acc, mul(sub(value, mu), sub(value, mu))), cast(0.0, f32), values), cast(len(values), f32))
+  variance = div(
+    fold(fn (acc: f32, value: f32) -> add(acc, mul(sub(value, mu), sub(value, mu))), cast(0.0, f32), values),
+    cast(sub(len(values), one_i64()), f32)
+  )
   sqrt(variance)
+  }
 }
 def min_f32(values: List[f32]) -> f32 = fold(fn (acc: f32, value: f32) -> if lt(value, acc) then value else acc, index(values, zero_i64()), drop(values, one_i64()))
 def max_f32(values: List[f32]) -> f32 = fold(fn (acc: f32, value: f32) -> if gt(value, acc) then value else acc, index(values, zero_i64()), drop(values, one_i64()))

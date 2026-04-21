@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "note": "Coral window goldens are produced from pandas and are exercised by a runtime build/link/execute harness.",
+  "value_encoding": "float outputs use 'NaN' for missing window entries",
+  "phase_slice": [
+    "rolling_sum",
+    "rolling_mean",
+    "rolling_std (sample ddof=1)",
+    "rolling_min",
+    "rolling_max",
+    "ewm(alpha, adjust=False)"
+  ]
+}

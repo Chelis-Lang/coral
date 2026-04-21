@@ -96,6 +96,20 @@ def main() -> f32 = {
 }
 ```
 
+```chelis
+module Coral.Pat05
+import Coral.Window (rolling_mean, rolling_std, ewm)
+export (main)
+
+def main() -> f32 = {
+  values = to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32), cast(4.0, f32), cast(5.0, f32)])
+  means = rolling_mean(values, cast(3, int64))
+  stds = rolling_std(values, cast(3, int64))
+  smooth = ewm(values, cast(0.5, f32))
+  add(index(to_list(means), cast(4, int64)), add(index(to_list(stds), cast(4, int64)), index(to_list(smooth), cast(4, int64))))
+}
+```
+
 ## 4. Gotchas
 
 - Prefer mask-first filtering over scalar predicate helpers.
@@ -104,6 +118,7 @@ def main() -> f32 = {
 - String `sort_by` is intentionally deferred.
 - Reshape and Parquet are not first-pass features.
 - `describe` follows pandas-style NaN skipping for float columns and uses sample standard deviation (`ddof=1`).
+- `Coral.Window` currently has the strongest executed parity story: pandas-backed goldens plus a runtime build/link/execute test lane.
 - End-to-end runtime proof for reef-importing HAMT-backed Coral builds is still blocked on `chelis v0.1.13`; compile-level probes are the honest gate today.
 
 ## 5. API Surface

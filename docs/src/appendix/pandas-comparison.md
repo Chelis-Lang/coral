@@ -11,6 +11,8 @@ Current parity-backed scope:
 - float-NaN helpers
 - vertical `concat`
 - numeric `describe`
+- `rolling_sum`, `rolling_mean`, `rolling_std`, `rolling_min`, `rolling_max`
+- `ewm(alpha, adjust=False)`
 
 Documented deltas:
 

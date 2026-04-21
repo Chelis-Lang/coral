@@ -63,6 +63,21 @@ all public API marked `alpha` by default; the `stable` promotion happens once th
 story and persistent-dict implementation are validated against the Phase 3k acceptance
 oracle.
 
+**Implementation constraint for Coral alpha:** `Frame` does **not** use a plain
+copy-on-write `Dict` for its column store. The backing store is a persistent HAMT from
+day one so multi-step frame pipelines can preserve structural sharing instead of copying
+the full column map at every `with_column` / `drop_column` / `rename`-style operation.
+This is a structural requirement for AD-oriented workloads at scale, not a future
+performance optimization.
+
+The implementation plan is:
+
+- add a standalone `Coral.Internal.HAMT` module before the rest of `Coral.Frame`
+- test HAMT in isolation: insert, lookup, remove, iteration order, and structural
+  sharing behavior
+- wire `Frame.columns` to the HAMT root and build the public frame API on top of it
+- no plain `Dict` fallback in alpha
+
 ### Modules
 
 | Module | Contents | Key Primitives Used |
@@ -146,6 +161,8 @@ DataFrame from both CSV and Parquet, filters rows (including NaN handling), appl
 rolling window, groups by a column, aggregates, and verifies results match expected
 values. Plus a separate AD test computing `grad` through a filter-aggregate pipeline.
 
-**Effort:** medium. The core Frame/GroupBy/IO modules are the priority; Join, Reshape,
-and Window can ship with minimal implementations and grow. Parquet via `parquet2` is a
-runtime FFI addition following the existing `memmap2` pattern.
+**Effort:** medium-high. The core Frame/GroupBy/IO modules are the priority, and Frame
+now includes a persistent HAMT-backed column store as part of the initial alpha rather
+than a later retrofit. Join, Reshape, and Window can ship with minimal implementations
+and grow. Parquet via `parquet2` is a runtime FFI addition following the existing
+`memmap2` pattern.

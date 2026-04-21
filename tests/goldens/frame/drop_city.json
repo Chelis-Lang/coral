@@ -1,0 +1,50 @@
+{
+  "fixture": "drop_city",
+  "operation": "drop_column",
+  "expected_frame": {
+    "nrows": 4,
+    "ncols": 4,
+    "columns": [
+      {
+        "name": "id",
+        "type": "int",
+        "values": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      {
+        "name": "qty",
+        "type": "int",
+        "values": [
+          5,
+          6,
+          7,
+          8
+        ]
+      },
+      {
+        "name": "price",
+        "type": "float",
+        "values": [
+          10.0,
+          "NaN",
+          30.5,
+          40.0
+        ]
+      },
+      {
+        "name": "flag",
+        "type": "bool",
+        "values": [
+          true,
+          false,
+          true,
+          false
+        ]
+      }
+    ]
+  }
+}

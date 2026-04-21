@@ -184,7 +184,7 @@ def drop_column[n](df: Frame[n], name: string) -> Frame[n] = {
   else match df with {
     | Frame { cols: cols, col_order: order } => Frame {
       cols: hamt_remove(cols, name),
-      col_order: list_filter(fn (entry: string) -> neq(entry, name), order)
+      col_order: list_filter_string(fn (entry: string) -> neq(entry, name), order)
     }
   }
 }
@@ -213,10 +213,10 @@ def concat[n, k](frames: List[Frame[n]]) -> Frame[k] = {
 
 def describe[n, m](df: Frame[n]) -> Frame[m] = {
   stats = ["count", "mean", "std", "min", "25%", "50%", "75%", "max"]
-  numeric = list_filter(fn (name: string) -> is_numeric_type(column_type(df, name)), columns(df))
+  numeric = list_filter_string(fn (name: string) -> is_numeric_type(column_type(df, name)), columns(df))
   stat_col = ("stat", StringCol(stats))
   value_cols = map(fn (name: string) -> (name, describe_column(get_column(df, name))), numeric)
-  from_pairs(prepend_list(stat_col, value_cols))
+  from_pairs(prepend_pair_column(stat_col, value_cols))
 }
 
 def key_id(value: KeyValue) -> string = {
@@ -298,12 +298,12 @@ def reindex_column[n, k](col: Column[n], idx_tensor: tensor[k, int64], idx_list:
   match col with {
     | IntCol(xs) => IntCol(gather(copy(xs), idx_tensor, zero_i32()))
     | FloatCol(xs) => FloatCol(gather(copy(xs), idx_tensor, zero_i32()))
-    | StringCol(xs) => StringCol(list_gather(xs, idx_list))
+    | StringCol(xs) => StringCol(list_gather_string(xs, idx_list))
     | BoolCol(xs) => BoolCol(gather(copy(xs), idx_tensor, zero_i32()))
   }
 }
 
-def list_gather[a](xs: List[a], idxs: List[int64]) -> List[a] = {
+def list_gather_string(xs: List[string], idxs: List[int64]) -> List[string] = {
   map(fn (i: int64) -> index(xs, i), idxs)
 }
 
@@ -318,10 +318,6 @@ def orient_perm[n](perm: tensor[n, int64], ascending: bool) -> tensor[n, int64] 
 
 def reverse_ints(values: List[int64], acc: List[int64]) -> List[int64] = {
   if eq(len(values), zero_i64()) then acc else append(reverse_ints(drop(values, one_i64()), acc), index(values, zero_i64()))
-}
-
-def dict_put[a](dict0: Dict[string, a], key: string, value: a) -> Dict[string, a] = {
-  dict_of(append(list_filter(fn (pair: (string, a)) -> neq(pair.0, key), dict_entries(dict0)), (key, value)))
 }
 
 def all_same_schema[n](frames: List[Frame[n]], base: Frame[n]) -> bool = {
@@ -348,7 +344,12 @@ def concat_column[n, k](name: string, frames: List[Frame[n]]) -> Column[k] = {
     | IntCol(col) => IntCol(to_tensor(concat_int_lists(map(fn (frame: Frame[n]) -> to_list(get_int_col(frame, name)), frames), [])))
     | FloatCol(col) => FloatCol(to_tensor(concat_float_lists(map(fn (frame: Frame[n]) -> to_list(get_float_col(frame, name)), frames), [])))
     | StringCol(col) => StringCol(concat_strings(map(fn (frame: Frame[n]) -> get_string_col(frame, name), frames), []))
-    | BoolCol(col) => fail("bool concat is not supported yet")
+    | BoolCol(col) => {
+        int_list = concat_int_lists(map(fn (frame: Frame[n]) -> bools_to_ints(to_list(get_bool_col(frame, name))), frames), [])
+        ints = to_tensor(int_list)
+        zeros = to_tensor(map(fn (value: int64) -> zero_i64(), int_list))
+        BoolCol(neq(copy(ints), zeros))
+      }
   }
 }
 
@@ -366,7 +367,7 @@ def is_numeric_type(ty: ColumnType) -> bool = {
 
 def describe_column[m, n](col: Column[n]) -> Column[m] = {
   match col with {
-    | FloatCol(xs) => FloatCol(to_tensor(float_stats(xs)))
+    | FloatCol(xs) => FloatCol(to_tensor(float_stats_skip_nan(xs)))
     | IntCol(xs) => FloatCol(to_tensor(float_stats(ints_to_floats(xs))))
     | _ => fail("describe: only numeric columns are supported")
   }
@@ -378,7 +379,7 @@ def float_stats[n](values: tensor[n, f32]) -> List[f32] = {
   [
     count,
     mean_vec(copy(values)),
-    std_vec(copy(values), zero_i64()),
+    std_vec(copy(values), one_i64()),
     min_vec(copy(values)),
     quantile_vec(copy(values), cast(0.25, f32)),
     quantile_vec(copy(values), cast(0.50, f32)),
@@ -387,7 +388,41 @@ def float_stats[n](values: tensor[n, f32]) -> List[f32] = {
   ]
 }
 
+def float_stats_skip_nan[n](values: tensor[n, f32]) -> List[f32] = {
+  valid = non_nan_values(to_list(values), [])
+  count_i = len(valid)
+  if eq(count_i, zero_i64()) then {
+    missing = nan_f32()
+    [cast(0.0, f32), missing, missing, missing, missing, missing, missing, missing]
+  } else {
+    valid_tensor = to_tensor(valid)
+    count = cast(count_i, f32)
+    [
+      count,
+      mean_vec(copy(valid_tensor)),
+      std_vec(copy(valid_tensor), one_i64()),
+      min_vec(copy(valid_tensor)),
+      quantile_vec(copy(valid_tensor), cast(0.25, f32)),
+      quantile_vec(copy(valid_tensor), cast(0.50, f32)),
+      quantile_vec(copy(valid_tensor), cast(0.75, f32)),
+      max_vec(valid_tensor)
+    ]
+  }
+}
+
+def non_nan_values(values: List[f32], acc: List[f32]) -> List[f32] = {
+  if eq(len(values), zero_i64()) then acc else {
+    current = index(values, zero_i64())
+    next = if neq(current, current) then acc else append(acc, current)
+    non_nan_values(drop(values, one_i64()), next)
+  }
+}
+
 def ints_to_floats[n](values: tensor[n, int64]) -> tensor[n, f32] = to_tensor(map(fn (x: int64) -> cast(x, f32), to_list(values)))
+
+def bools_to_ints(values: List[bool]) -> List[int64] = {
+  map(fn (flag: bool) -> if flag then one_i64() else zero_i64(), values)
+}
 
 def column_key_values[n](col: Column[n]) -> List[KeyValue] = {
   match col with {
@@ -400,17 +435,18 @@ def column_key_values[n](col: Column[n]) -> List[KeyValue] = {
 
 def int_min(lhs: int64, rhs: int64) -> int64 = if lt(lhs, rhs) then lhs else rhs
 def int_max(lhs: int64, rhs: int64) -> int64 = if gt(lhs, rhs) then lhs else rhs
-def prepend_list[a](value: a, items: List[a]) -> List[a] = prepend_list_acc(items, [value])
 
-def list_filter[a](pred: a -> bool, items: List[a]) -> List[a] = {
-  list_filter_acc(pred, items, [])
+def prepend_pair_column[n](value: (string, Column[n]), items: List[(string, Column[n])]) -> List[(string, Column[n])] = prepend_pair_column_acc(items, [value])
+
+def list_filter_string(pred: string -> bool, items: List[string]) -> List[string] = {
+  list_filter_string_acc(pred, items, [])
 }
 
-def list_filter_acc[a](pred: a -> bool, items: List[a], acc: List[a]) -> List[a] = {
+def list_filter_string_acc(pred: string -> bool, items: List[string], acc: List[string]) -> List[string] = {
   if eq(len(items), zero_i64()) then acc else {
     current = index(items, zero_i64())
     next = if pred(current) then append(acc, current) else acc
-    list_filter_acc(pred, drop(items, one_i64()), next)
+    list_filter_string_acc(pred, drop(items, one_i64()), next)
   }
 }
 
@@ -443,8 +479,8 @@ def append_all_strings(lhs: List[string], rhs: List[string]) -> List[string] = {
   if eq(len(rhs), zero_i64()) then lhs else append_all_strings(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
 }
 
-def prepend_list_acc[a](items: List[a], acc: List[a]) -> List[a] = {
-  if eq(len(items), zero_i64()) then acc else prepend_list_acc(drop(items, one_i64()), append(acc, index(items, zero_i64())))
+def prepend_pair_column_acc[n](items: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = {
+  if eq(len(items), zero_i64()) then acc else prepend_pair_column_acc(drop(items, one_i64()), append(acc, index(items, zero_i64())))
 }
 
 def concat_int_lists(parts: List[List[int64]], acc: List[int64]) -> List[int64] = {
@@ -454,6 +490,7 @@ def concat_int_lists(parts: List[List[int64]], acc: List[int64]) -> List[int64] 
 def append_all_ints(lhs: List[int64], rhs: List[int64]) -> List[int64] = {
   if eq(len(rhs), zero_i64()) then lhs else append_all_ints(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
 }
+
 
 def concat_float_lists(parts: List[List[f32]], acc: List[f32]) -> List[f32] = {
   if eq(len(parts), zero_i64()) then acc else concat_float_lists(drop(parts, one_i64()), append_all_floats(acc, index(parts, zero_i64())))

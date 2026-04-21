@@ -1,4 +1,30 @@
 {
-  "status": "placeholder",
-  "note": "Populate pandas reference fixtures as the Coral runtime surface stabilizes."
+  "schema_version": 1,
+  "note": "Coral frame goldens are produced from pandas for fixed deterministic inputs.",
+  "frame_schema": {
+    "nrows": "int",
+    "ncols": "int",
+    "columns": [
+      {
+        "name": "string",
+        "type": "one of: int | float | string | bool",
+        "values": "ordered row values; float NaN is encoded as the string 'NaN'"
+      }
+    ]
+  },
+  "phase_slice": [
+    "construction via from_pairs",
+    "typed access/reference frame shape",
+    "filter",
+    "head/tail/slice",
+    "rename/with_column/drop_column",
+    "NaN helpers via frame outputs",
+    "concat",
+    "describe"
+  ],
+  "known_deltas": [
+    "string sort_by is deferred",
+    "runtime reef-import build is blocked upstream on v0.1.13",
+    "checked-in goldens prove pandas reference behavior even when runtime parity harness is still partial"
+  ]
 }

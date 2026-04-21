@@ -81,14 +81,14 @@ def put_h[a](node: Hamt[a], key: string, value: a, hash: int64, depth: int64) ->
         idx = index_of(bitmap, bit)
         if not(has_bit(bitmap, bit)) then BitmapNode {
           bitmap: bitor(bitmap, bit),
-          children: list_insert(children, idx, Leaf { hash: hash, key: key, value: value }),
+          children: list_insert_node(children, idx, Leaf { hash: hash, key: key, value: value }),
           count: add(count, one_i64())
         } else {
           child = index(children, idx)
           next_child = put_h(child, key, value, hash, add(depth, one_i64()))
           BitmapNode {
             bitmap: bitmap,
-            children: list_replace(children, idx, next_child),
+            children: list_replace_node(children, idx, next_child),
             count: add(count, sub(hamt_size(next_child), hamt_size(child)))
           }
         }
@@ -121,13 +121,13 @@ def remove_h[a](node: Hamt[a], key: string, hash: int64, depth: int64) -> Hamt[a
           match next_child with {
             | Empty => {
                 next_bitmap = bitand(bitmap, bitxor(bit, mask_i64_all()))
-                next_children = list_remove(children, idx)
+                next_children = list_remove_node(children, idx)
                 if eq(len(next_children), zero_i64()) then Empty
                 else BitmapNode { bitmap: next_bitmap, children: next_children, count: add(count, delta) }
               }
             | _ => BitmapNode {
                 bitmap: bitmap,
-                children: list_replace(children, idx, next_child),
+                children: list_replace_node(children, idx, next_child),
                 count: add(count, delta)
               }
           }
@@ -217,8 +217,8 @@ def collision_put[a](entries: List[(string, a)], key: string, value: a) -> List[
   if eq(len(entries), zero_i64()) then [(key, value)] else {
     head = index(entries, zero_i64())
     rest = drop(entries, one_i64())
-    if eq(head.0, key) then prepend((key, value), rest)
-    else prepend(head, collision_put(rest, key, value))
+    if eq(head.0, key) then prepend_entry((key, value), rest)
+    else prepend_entry(head, collision_put(rest, key, value))
   }
 }
 
@@ -226,7 +226,7 @@ def collision_remove[a](entries: List[(string, a)], key: string) -> List[(string
   if eq(len(entries), zero_i64()) then [] else {
     head = index(entries, zero_i64())
     rest = drop(entries, one_i64())
-    if eq(head.0, key) then rest else prepend(head, collision_remove(rest, key))
+    if eq(head.0, key) then rest else prepend_entry(head, collision_remove(rest, key))
   }
 }
 
@@ -234,7 +234,7 @@ def entries_h[a](node: Hamt[a], acc: List[(string, a)]) -> List[(string, a)] = {
   match node with {
     | Empty => acc
     | Leaf { hash: hash, key: key, value: value } => append(acc, (key, value))
-    | Collision { hash: hash, entries: entries } => append_all(acc, entries)
+    | Collision { hash: hash, entries: entries } => append_all_entries(acc, entries)
     | BitmapNode { bitmap: bitmap, children: children, count: count } => entries_children(children, acc)
   }
 }
@@ -257,30 +257,36 @@ def has_value[a](value: Option[a]) -> bool = {
   }
 }
 
-def prepend[a](value: a, items: List[a]) -> List[a] = prepend_acc(items, [value])
+def prepend_node[a](value: Hamt[a], items: List[Hamt[a]]) -> List[Hamt[a]] = prepend_node_acc(items, [value])
 
-def prepend_acc[a](items: List[a], acc: List[a]) -> List[a] = {
-  if eq(len(items), zero_i64()) then acc else prepend_acc(drop(items, one_i64()), append(acc, index(items, zero_i64())))
+def prepend_node_acc[a](items: List[Hamt[a]], acc: List[Hamt[a]]) -> List[Hamt[a]] = {
+  if eq(len(items), zero_i64()) then acc else prepend_node_acc(drop(items, one_i64()), append(acc, index(items, zero_i64())))
 }
 
-def append_all[a](lhs: List[a], rhs: List[a]) -> List[a] = {
-  if eq(len(rhs), zero_i64()) then lhs else append_all(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
+def prepend_entry[a](value: (string, a), items: List[(string, a)]) -> List[(string, a)] = prepend_entry_acc(items, [value])
+
+def prepend_entry_acc[a](items: List[(string, a)], acc: List[(string, a)]) -> List[(string, a)] = {
+  if eq(len(items), zero_i64()) then acc else prepend_entry_acc(drop(items, one_i64()), append(acc, index(items, zero_i64())))
 }
 
-def list_insert[a](items: List[a], idx: int64, value: a) -> List[a] = {
-  if lte(idx, zero_i64()) then prepend(value, items)
+def append_all_entries[a](lhs: List[(string, a)], rhs: List[(string, a)]) -> List[(string, a)] = {
+  if eq(len(rhs), zero_i64()) then lhs else append_all_entries(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
+}
+
+def list_insert_node[a](items: List[Hamt[a]], idx: int64, value: Hamt[a]) -> List[Hamt[a]] = {
+  if lte(idx, zero_i64()) then prepend_node(value, items)
   else if eq(len(items), zero_i64()) then [value]
-  else prepend(index(items, zero_i64()), list_insert(drop(items, one_i64()), sub(idx, one_i64()), value))
+  else prepend_node(index(items, zero_i64()), list_insert_node(drop(items, one_i64()), sub(idx, one_i64()), value))
 }
 
-def list_replace[a](items: List[a], idx: int64, value: a) -> List[a] = {
+def list_replace_node[a](items: List[Hamt[a]], idx: int64, value: Hamt[a]) -> List[Hamt[a]] = {
   if eq(len(items), zero_i64()) then []
-  else if eq(idx, zero_i64()) then prepend(value, drop(items, one_i64()))
-  else prepend(index(items, zero_i64()), list_replace(drop(items, one_i64()), sub(idx, one_i64()), value))
+  else if eq(idx, zero_i64()) then prepend_node(value, drop(items, one_i64()))
+  else prepend_node(index(items, zero_i64()), list_replace_node(drop(items, one_i64()), sub(idx, one_i64()), value))
 }
 
-def list_remove[a](items: List[a], idx: int64) -> List[a] = {
+def list_remove_node[a](items: List[Hamt[a]], idx: int64) -> List[Hamt[a]] = {
   if eq(len(items), zero_i64()) then []
   else if eq(idx, zero_i64()) then drop(items, one_i64())
-  else prepend(index(items, zero_i64()), list_remove(drop(items, one_i64()), sub(idx, one_i64())))
+  else prepend_node(index(items, zero_i64()), list_remove_node(drop(items, one_i64()), sub(idx, one_i64())))
 }

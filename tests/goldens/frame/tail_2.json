@@ -1,0 +1,50 @@
+{
+  "fixture": "tail_2",
+  "operation": "tail",
+  "expected_frame": {
+    "nrows": 2,
+    "ncols": 5,
+    "columns": [
+      {
+        "name": "id",
+        "type": "int",
+        "values": [
+          3,
+          4
+        ]
+      },
+      {
+        "name": "qty",
+        "type": "int",
+        "values": [
+          7,
+          8
+        ]
+      },
+      {
+        "name": "price",
+        "type": "float",
+        "values": [
+          30.5,
+          40.0
+        ]
+      },
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "paris",
+          "oslo"
+        ]
+      },
+      {
+        "name": "flag",
+        "type": "bool",
+        "values": [
+          true,
+          false
+        ]
+      }
+    ]
+  }
+}

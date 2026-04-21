@@ -1,0 +1,66 @@
+{
+  "fixture": "describe_numeric",
+  "operation": "describe",
+  "expected_frame": {
+    "nrows": 8,
+    "ncols": 4,
+    "columns": [
+      {
+        "name": "stat",
+        "type": "string",
+        "values": [
+          "count",
+          "mean",
+          "std",
+          "min",
+          "25%",
+          "50%",
+          "75%",
+          "max"
+        ]
+      },
+      {
+        "name": "id",
+        "type": "float",
+        "values": [
+          4.0,
+          2.5,
+          1.2909944487358056,
+          1.0,
+          1.75,
+          2.5,
+          3.25,
+          4.0
+        ]
+      },
+      {
+        "name": "qty",
+        "type": "float",
+        "values": [
+          4.0,
+          6.5,
+          1.2909944487358056,
+          5.0,
+          5.75,
+          6.5,
+          7.25,
+          8.0
+        ]
+      },
+      {
+        "name": "price",
+        "type": "float",
+        "values": [
+          3.0,
+          26.833333333333332,
+          15.3324275094759,
+          10.0,
+          20.25,
+          30.5,
+          35.25,
+          40.0
+        ]
+      }
+    ]
+  }
+}

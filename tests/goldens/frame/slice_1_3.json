@@ -1,0 +1,50 @@
+{
+  "fixture": "slice_1_3",
+  "operation": "slice",
+  "expected_frame": {
+    "nrows": 2,
+    "ncols": 5,
+    "columns": [
+      {
+        "name": "id",
+        "type": "int",
+        "values": [
+          2,
+          3
+        ]
+      },
+      {
+        "name": "qty",
+        "type": "int",
+        "values": [
+          6,
+          7
+        ]
+      },
+      {
+        "name": "price",
+        "type": "float",
+        "values": [
+          "NaN",
+          30.5
+        ]
+      },
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "paris",
+          "paris"
+        ]
+      },
+      {
+        "name": "flag",
+        "type": "bool",
+        "values": [
+          false,
+          true
+        ]
+      }
+    ]
+  }
+}

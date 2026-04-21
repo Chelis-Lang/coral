@@ -4,6 +4,7 @@ Current work focuses on the first pass of:
 
 - persistent HAMT-backed frame column storage
 - typed frame representation
+- frame parity infrastructure and pandas-backed goldens
 - filtering and schema mutation
 - host-path string grouping and joining
 - rolling window helpers
@@ -22,3 +23,19 @@ Known deferred items:
 - Parquet
 - outer join
 - richer reshape support
+
+What is currently proven:
+
+- `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints typecheck on
+  published `chelis v0.1.13`
+- checked-in `tests/goldens/frame/*.json` fixtures are generated from pandas for a
+  deterministic Phase-2 frame slice
+- `tests/run_coral_tests.py` validates the golden inventory and runs a compile-level
+  probe covering HAMT-backed frame mutation, bool-column concat, and `describe`
+
+What is not yet proven:
+
+- runtime parity for frame operations end-to-end
+- reef-import `chelis build` on HAMT-backed Coral programs under `v0.1.13`
+- pandas-equivalent sort semantics for NaN-bearing columns
+- negative-test coverage for the full frame error surface

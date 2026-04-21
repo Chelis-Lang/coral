@@ -1,0 +1,50 @@
+{
+  "fixture": "filter_flag_true",
+  "operation": "filter",
+  "expected_frame": {
+    "nrows": 2,
+    "ncols": 5,
+    "columns": [
+      {
+        "name": "id",
+        "type": "int",
+        "values": [
+          1,
+          3
+        ]
+      },
+      {
+        "name": "qty",
+        "type": "int",
+        "values": [
+          5,
+          7
+        ]
+      },
+      {
+        "name": "price",
+        "type": "float",
+        "values": [
+          10.0,
+          30.5
+        ]
+      },
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris"
+        ]
+      },
+      {
+        "name": "flag",
+        "type": "bool",
+        "values": [
+          true,
+          true
+        ]
+      }
+    ]
+  }
+}

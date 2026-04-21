@@ -48,6 +48,8 @@ What is currently proven:
   `rolling_sum`, `rolling_mean`, `rolling_std`, `rolling_min`, `rolling_max`, and
   `ewm(alpha, adjust=False)`
 - `src/io.ch` now supports bool inference on read and bool rendering on CSV/JSON write
+- SKILL examples and the mdBook now cover the current validated GroupBy, Join,
+  IO, and Window slices without overstating runtime status
 
 What is not yet proven:
 

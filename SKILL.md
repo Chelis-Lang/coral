@@ -110,6 +110,60 @@ def main() -> f32 = {
 }
 ```
 
+```chelis
+module Coral.Pat06
+import Coral.Frame (from_pairs, nrows)
+import Coral.GroupBy (group_by, agg_sum)
+export (main)
+
+def main() -> int64 = {
+  frame = from_pairs([
+    ("city", StringCol(["london", "paris", "london"])),
+    ("qty", IntCol(to_tensor([cast(5, int64), cast(6, int64), cast(7, int64)])))
+  ])
+  totals = agg_sum(group_by(frame, "city"), "qty")
+  nrows(totals)
+}
+```
+
+```chelis
+module Coral.Pat07
+import Coral.Frame (from_pairs, nrows)
+import Coral.Join (left_join)
+export (main)
+
+def main() -> int64 = {
+  left = from_pairs([
+    ("customer", StringCol(["a", "b", "a"])),
+    ("qty", IntCol(to_tensor([cast(1, int64), cast(2, int64), cast(3, int64)])))
+  ])
+  right = from_pairs([
+    ("customer", StringCol(["a", "c"])),
+    ("score", FloatCol(to_tensor([cast(10.0, f32), cast(40.0, f32)])))
+  ])
+  nrows(left_join(left, right, "customer"))
+}
+```
+
+```chelis
+module Coral.Pat08
+import Coral.Frame (from_pairs, ncols)
+import Coral.IO (write_csv_frame, write_json_frame)
+export (main)
+
+def main() -> int64 = {
+  frame = from_pairs([
+    ("id", IntCol(to_tensor([cast(1, int64), cast(2, int64)]))),
+    ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.5, f32)]))),
+    ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64)]), to_tensor([cast(0, int64), cast(0, int64)])))),
+    ("city", StringCol(["london", "paris"]))
+  ])
+  csv_unit = write_csv_frame(frame, "skill-io.csv")
+  json_unit = write_json_frame(frame, "skill-io.json")
+  ncols(frame)
+}
+```
+
 ## 4. Gotchas
 
 - Prefer mask-first filtering over scalar predicate helpers.
@@ -118,6 +172,7 @@ def main() -> f32 = {
 - String `sort_by` is intentionally deferred.
 - Reshape and Parquet are not first-pass features.
 - `describe` follows pandas-style NaN skipping for float columns and uses sample standard deviation (`ddof=1`).
+- `Coral.IO` is currently fixture-backed plus compile-checked; it does not yet have an executed runtime parity lane.
 - `Coral.Window` currently has the strongest executed parity story: pandas-backed goldens plus a runtime build/link/execute test lane.
 - End-to-end runtime proof for reef-importing HAMT-backed Coral builds is still blocked on `chelis v0.1.13`; compile-level probes are the honest gate today.
 

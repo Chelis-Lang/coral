@@ -16,6 +16,18 @@
 - [Concatenation](frame/concatenation.md)
 - [Describe](frame/describe.md)
 
+# GroupBy
+
+- [GroupBy](groupby.md)
+
+# Join
+
+- [Joins](joins.md)
+
+# IO
+
+- [CSV And JSON](io.md)
+
 # Window
 
 - [Rolling And EWM](window.md)

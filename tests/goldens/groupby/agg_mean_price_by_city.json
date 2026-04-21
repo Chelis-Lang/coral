@@ -1,0 +1,28 @@
+{
+  "fixture": "agg_mean_price_by_city",
+  "operation": "agg_mean",
+  "expected_frame": {
+    "nrows": 3,
+    "ncols": 2,
+    "columns": [
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris",
+          "oslo"
+        ]
+      },
+      {
+        "name": "price_mean",
+        "type": "float",
+        "values": [
+          30.0,
+          25.0,
+          40.0
+        ]
+      }
+    ]
+  }
+}

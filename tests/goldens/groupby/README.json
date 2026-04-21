@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "note": "Coral groupby goldens are produced from pandas with sort=False to match first-seen key ordering.",
+  "phase_slice": [
+    "group_by single string key",
+    "agg_sum",
+    "agg_mean",
+    "agg_count",
+    "agg_min",
+    "agg_max",
+    "agg with multiple specs"
+  ],
+  "known_deltas": [
+    "checked-in expectations exist before a full executed runtime harness",
+    "current parity target is first-seen key order, not sorted key order"
+  ]
+}

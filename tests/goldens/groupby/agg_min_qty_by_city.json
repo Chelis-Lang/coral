@@ -1,0 +1,28 @@
+{
+  "fixture": "agg_min_qty_by_city",
+  "operation": "agg_min",
+  "expected_frame": {
+    "nrows": 3,
+    "ncols": 2,
+    "columns": [
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris",
+          "oslo"
+        ]
+      },
+      {
+        "name": "qty_min",
+        "type": "int",
+        "values": [
+          5,
+          6,
+          8
+        ]
+      }
+    ]
+  }
+}

@@ -27,6 +27,7 @@ from scripts.chelis_toolchain import resolve_chelis_bin
 
 CHELIS = resolve_chelis_bin()
 FRAME_GOLDENS = REPO / "tests" / "goldens" / "frame"
+GROUPBY_GOLDENS = REPO / "tests" / "goldens" / "groupby"
 WINDOW_GOLDENS = REPO / "tests" / "goldens" / "window"
 REQUIRED_FRAME_GOLDENS = [
     "README.json",
@@ -42,6 +43,15 @@ REQUIRED_FRAME_GOLDENS = [
     "drop_nan_price.json",
     "concat_base_parts.json",
     "describe_numeric.json",
+]
+REQUIRED_GROUPBY_GOLDENS = [
+    "README.json",
+    "agg_sum_qty_by_city.json",
+    "agg_mean_price_by_city.json",
+    "agg_count_by_city.json",
+    "agg_min_qty_by_city.json",
+    "agg_max_price_by_city.json",
+    "agg_multi_city.json",
 ]
 REQUIRED_WINDOW_GOLDENS = [
     "README.json",
@@ -112,6 +122,7 @@ def run_phase1_compile_probe() -> int:
     code = """module Coral.Phase1Probe
 import Coral.Internal.HAMT (hamt_from_pairs, hamt_put, hamt_get, hamt_remove, hamt_contains, hamt_size)
 import Coral.Frame (from_pairs, columns, with_column, rename, drop_column, concat, describe, get_float_col, nrows, ncols)
+import Coral.GroupBy (group_by, agg_count)
 
 def string_list_eq(lhs: List[string], rhs: List[string]) -> bool = {
   if neq(len(lhs), len(rhs)) then false else string_list_eq_rec(lhs, rhs)
@@ -144,6 +155,10 @@ def main() -> f32 = {
   dropped = drop_column(extended, "b")
   stacked = concat([dropped, dropped])
   desc = describe(frame)
+  grouped = agg_count(group_by(from_pairs([
+    ("city", StringCol(["london", "paris", "london"])),
+    ("qty", IntCol(to_tensor([cast(1, int64), cast(2, int64), cast(3, int64)])))
+  ]), "city"))
   ok_hamt =
     and(eq(hamt_size(final), cast(2, int64)),
       and(hamt_contains(final, "price"),
@@ -154,7 +169,9 @@ def main() -> f32 = {
       and(string_list_eq(columns(extended), ["z", "b", "flag", "c"]), string_list_eq(columns(dropped), ["z", "flag", "c"])))
   ok_more =
     and(eq(nrows(stacked), cast(4, int64)),
-      and(eq(ncols(desc), cast(3, int64)), neq(index(to_list(get_float_col(desc, "b")), cast(0, int64)), cast(0.0, f32))))
+      and(eq(ncols(desc), cast(3, int64)),
+        and(neq(index(to_list(get_float_col(desc, "b")), cast(0, int64)), cast(0.0, f32)),
+          and(eq(nrows(grouped), cast(2, int64)), eq(ncols(grouped), cast(2, int64))))))
   if and(ok_hamt, and(ok_order, ok_more)) then cast(1.0, f32) else cast(0.0, f32)
 }
 """
@@ -305,12 +322,15 @@ def main() -> int:
         (CHELIS, "check", "src/apismoke.ch"),
         (CHELIS, "check", "src/internal/hamt.ch"),
         (CHELIS, "check", "src/frame.ch"),
+        (CHELIS, "check", "src/groupby.ch"),
         (CHELIS, "check", "src/window.ch"),
     ]
     for step in steps:
         if run(*step) != 0:
             return 1
     if validate_checked_in_goldens(FRAME_GOLDENS, REQUIRED_FRAME_GOLDENS, "frame") != 0:
+        return 1
+    if validate_checked_in_goldens(GROUPBY_GOLDENS, REQUIRED_GROUPBY_GOLDENS, "groupby") != 0:
         return 1
     if validate_checked_in_goldens(WINDOW_GOLDENS, REQUIRED_WINDOW_GOLDENS, "window") != 0:
         return 1

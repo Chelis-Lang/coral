@@ -1,0 +1,28 @@
+{
+  "fixture": "agg_max_price_by_city",
+  "operation": "agg_max",
+  "expected_frame": {
+    "nrows": 3,
+    "ncols": 2,
+    "columns": [
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris",
+          "oslo"
+        ]
+      },
+      {
+        "name": "price_max",
+        "type": "float",
+        "values": [
+          50.0,
+          30.0,
+          40.0
+        ]
+      }
+    ]
+  }
+}

@@ -18,6 +18,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover
 
 REPO = Path(__file__).resolve().parent.parent
 FRAME_GOLDENS = REPO / "tests" / "goldens" / "frame"
+GROUPBY_GOLDENS = REPO / "tests" / "goldens" / "groupby"
 WINDOW_GOLDENS = REPO / "tests" / "goldens" / "window"
 
 BASE_SCHEMA = {
@@ -157,6 +158,66 @@ def window_contract() -> dict:
     }
 
 
+def groupby_contract() -> dict:
+    return {
+        "schema_version": 1,
+        "note": "Coral groupby goldens are produced from pandas with sort=False to match first-seen key ordering.",
+        "phase_slice": [
+            "group_by single string key",
+            "agg_sum",
+            "agg_mean",
+            "agg_count",
+            "agg_min",
+            "agg_max",
+            "agg with multiple specs",
+        ],
+        "known_deltas": [
+            "checked-in expectations exist before a full executed runtime harness",
+            "current parity target is first-seen key order, not sorted key order",
+        ],
+    }
+
+
+def groupby_base() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "city": ["london", "paris", "paris", "oslo", "london"],
+            "qty": [5, 6, 7, 8, 9],
+            "price": [10.0, 20.0, 30.0, 40.0, 50.0],
+            "flag": [True, False, True, False, True],
+        }
+    )
+
+
+def groupby_fixtures() -> dict[str, dict]:
+    base = groupby_base()
+    sum_qty = base.groupby("city", sort=False)["qty"].sum().reset_index(name="qty_sum")
+    mean_price = base.groupby("city", sort=False)["price"].mean().reset_index(name="price_mean")
+    counts = base.groupby("city", sort=False).size().reset_index(name="count")
+    min_qty = base.groupby("city", sort=False)["qty"].min().reset_index(name="qty_min")
+    max_price = base.groupby("city", sort=False)["price"].max().reset_index(name="price_max")
+    multi = (
+        base.groupby("city", sort=False)
+        .agg(qty_sum=("qty", "sum"), price_mean=("price", "mean"), count=("city", "size"))
+        .reset_index()
+    )
+    city_int_schema = {"city": "string", "qty_sum": "int"}
+    city_float_schema = {"city": "string", "price_mean": "float"}
+    city_count_schema = {"city": "string", "count": "int"}
+    city_min_schema = {"city": "string", "qty_min": "int"}
+    city_max_schema = {"city": "string", "price_max": "float"}
+    multi_schema = {"city": "string", "qty_sum": "int", "price_mean": "float", "count": "int"}
+    return {
+        "README.json": groupby_contract(),
+        "agg_sum_qty_by_city.json": {"fixture": "agg_sum_qty_by_city", "operation": "agg_sum", "expected_frame": frame_payload(sum_qty, city_int_schema)},
+        "agg_mean_price_by_city.json": {"fixture": "agg_mean_price_by_city", "operation": "agg_mean", "expected_frame": frame_payload(mean_price, city_float_schema)},
+        "agg_count_by_city.json": {"fixture": "agg_count_by_city", "operation": "agg_count", "expected_frame": frame_payload(counts, city_count_schema)},
+        "agg_min_qty_by_city.json": {"fixture": "agg_min_qty_by_city", "operation": "agg_min", "expected_frame": frame_payload(min_qty, city_min_schema)},
+        "agg_max_price_by_city.json": {"fixture": "agg_max_price_by_city", "operation": "agg_max", "expected_frame": frame_payload(max_price, city_max_schema)},
+        "agg_multi_city.json": {"fixture": "agg_multi_city", "operation": "agg", "expected_frame": frame_payload(multi, multi_schema)},
+    }
+
+
 def window_fixture(name: str, operation: str, series: pd.Series, *, window: int | None = None, alpha: float | None = None) -> dict:
     values = [float(v) for v in series.tolist()]
     payload = {
@@ -220,6 +281,7 @@ def main() -> int:
 
     issues = []
     issues.extend(write_or_check(FRAME_GOLDENS, frame_fixtures(), check=args.check))
+    issues.extend(write_or_check(GROUPBY_GOLDENS, groupby_fixtures(), check=args.check))
     issues.extend(write_or_check(WINDOW_GOLDENS, window_fixtures(), check=args.check))
 
     if args.check:
@@ -227,7 +289,7 @@ def main() -> int:
             for issue in issues:
                 print(issue)
             return 1
-        print("frame and window goldens match pandas")
+        print("frame, groupby, and window goldens match pandas")
     return 0
 
 

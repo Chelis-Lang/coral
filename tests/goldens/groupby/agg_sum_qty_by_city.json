@@ -1,0 +1,28 @@
+{
+  "fixture": "agg_sum_qty_by_city",
+  "operation": "agg_sum",
+  "expected_frame": {
+    "nrows": 3,
+    "ncols": 2,
+    "columns": [
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris",
+          "oslo"
+        ]
+      },
+      {
+        "name": "qty_sum",
+        "type": "int",
+        "values": [
+          14,
+          13,
+          8
+        ]
+      }
+    ]
+  }
+}

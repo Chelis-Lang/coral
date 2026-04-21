@@ -1,0 +1,46 @@
+{
+  "fixture": "agg_multi_city",
+  "operation": "agg",
+  "expected_frame": {
+    "nrows": 3,
+    "ncols": 4,
+    "columns": [
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris",
+          "oslo"
+        ]
+      },
+      {
+        "name": "qty_sum",
+        "type": "int",
+        "values": [
+          14,
+          13,
+          8
+        ]
+      },
+      {
+        "name": "price_mean",
+        "type": "float",
+        "values": [
+          30.0,
+          25.0,
+          40.0
+        ]
+      },
+      {
+        "name": "count",
+        "type": "int",
+        "values": [
+          2,
+          2,
+          1
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "fixture": "agg_count_by_city",
+  "operation": "agg_count",
+  "expected_frame": {
+    "nrows": 3,
+    "ncols": 2,
+    "columns": [
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris",
+          "oslo"
+        ]
+      },
+      {
+        "name": "count",
+        "type": "int",
+        "values": [
+          2,
+          2,
+          1
+        ]
+      }
+    ]
+  }
+}

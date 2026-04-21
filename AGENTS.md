@@ -17,8 +17,8 @@ to this file so Claude-style and Codex-style entry points do not drift.
 
 ## Toolchain Pin
 
-- `chelis v0.1.13` is the single supported compiler binary. `reef.toml`
-  pins `compiler = "=0.1.13"`. Version bumps must land in every Chelis
+- `chelis v0.1.15` is the single supported compiler binary. `reef.toml`
+  pins `compiler = "=0.1.15"`. Version bumps must land in every Chelis
   shell repo in the same change set — do not bump unilaterally.
 - Do not vendor or build the Chelis compiler from source inside this
   repo. Consume the released tarball from the private

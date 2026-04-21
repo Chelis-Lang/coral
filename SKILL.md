@@ -174,7 +174,7 @@ def main() -> int64 = {
 - `describe` follows pandas-style NaN skipping for float columns and uses sample standard deviation (`ddof=1`).
 - `Coral.IO` is currently fixture-backed plus compile-checked; it does not yet have an executed runtime parity lane.
 - `Coral.Window` currently has the strongest executed parity story: pandas-backed goldens plus a runtime build/link/execute test lane.
-- End-to-end runtime proof for reef-importing HAMT-backed Coral builds is still blocked on `chelis v0.1.13`; compile-level probes are the honest gate today.
+- End-to-end runtime proof for stripped Frame/GroupBy/Join bare builds is still blocked on `chelis v0.1.15`; compile-level probes remain the honest gate for those paths today.
 
 ## 5. API Surface
 

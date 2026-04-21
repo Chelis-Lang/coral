@@ -374,7 +374,7 @@ def describe_column[m, n](col: Column[n]) -> Column[m] = {
 }
 
 def float_stats[n](values: tensor[n, f32]) -> List[f32] = {
-  count_i = len(to_list(values))
+  count_i = len(to_list(copy(values)))
   count = cast(count_i, f32)
   [
     count,
@@ -389,7 +389,7 @@ def float_stats[n](values: tensor[n, f32]) -> List[f32] = {
 }
 
 def float_stats_skip_nan[n](values: tensor[n, f32]) -> List[f32] = {
-  valid = non_nan_values(to_list(values), [])
+  valid = non_nan_values(to_list(copy(values)), [])
   count_i = len(valid)
   if eq(count_i, zero_i64()) then {
     missing = nan_f32()

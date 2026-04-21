@@ -31,7 +31,7 @@ Known deferred items:
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints typecheck on
-  published `chelis v0.1.13`
+  published `chelis v0.1.15`
 - checked-in `tests/goldens/frame/*.json` fixtures are generated from pandas for a
   deterministic Phase-2 frame slice
 - checked-in `tests/goldens/groupby/*.json` fixtures are generated from pandas for the
@@ -54,7 +54,7 @@ What is currently proven:
 What is not yet proven:
 
 - runtime parity for frame operations end-to-end
-- reef-import `chelis build` on HAMT-backed Coral programs under `v0.1.13`
+- stripped bare-build runtime parity for Frame, GroupBy, and Join under `v0.1.15`
 - pandas-equivalent sort semantics for NaN-bearing columns
 - negative-test coverage for the full frame error surface
 - runtime parity for GroupBy, Join, and IO module families

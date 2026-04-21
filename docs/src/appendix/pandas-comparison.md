@@ -20,8 +20,8 @@ Current parity-backed scope:
 Documented deltas:
 
 - string `sort_by` is deferred
-- runtime reef-import builds for HAMT-backed Coral programs are blocked on
-  `chelis v0.1.13`, so the current acceptance gate is compile-level plus
+- stripped bare-build runtime proof for Frame/GroupBy/Join is still blocked on
+  `chelis v0.1.15`, so the current acceptance gate is compile-level plus
   pandas-backed checked-in goldens
 - GroupBy, Join, and IO are currently fixture-backed plus compile-checked
 - Window is the only module family with an executed runtime parity lane today

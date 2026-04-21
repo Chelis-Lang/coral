@@ -44,10 +44,10 @@ scale.
 
 ## Toolchain
 
-Pinned to `chelis v0.1.13` in `reef.toml`:
+Pinned to `chelis v0.1.15` in `reef.toml`:
 
 ```toml
-compiler = "=0.1.13"
+compiler = "=0.1.15"
 ```
 
 ## Build
@@ -68,7 +68,7 @@ python scripts/validate_book_examples.py
 
 ## Current deltas
 
-- `Frame` column storage is planned around a persistent HAMT, not a
+- `Frame` column storage uses a persistent HAMT, not a
   plain `Dict`
 - the `Window` module has the first runtime-executed pandas parity lane in
   this repo

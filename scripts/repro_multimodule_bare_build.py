@@ -34,6 +34,11 @@ from scripts.chelis_toolchain import resolve_chelis_bin
 
 CHELIS = resolve_chelis_bin()
 MODULE_PRESETS = {
+    "frame": [
+        ("src/internal/hamt.ch", "hamt__"),
+        ("vendor/nautilus/src/stats.ch", "stats__"),
+        ("src/frame.ch", "frame__"),
+    ],
     "groupby": [
         ("src/internal/hamt.ch", "hamt__"),
         ("vendor/nautilus/src/stats.ch", "stats__"),

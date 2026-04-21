@@ -11,10 +11,13 @@ Tracked upstream/toolchain issues that affect Coral development.
   for the same probe, so Coral keeps a compile-level Phase 1 gate and treats
   runtime proof for that path as blocked on the compiler/backend.
 - `chelis v0.1.13` currently emits invalid C for a stripped multi-module bare-build
-  Coral program that combines `Coral.Frame` with `Coral.GroupBy` / `Coral.Join`
-  helpers. The generated signatures collapse polymorphic values to `int` in several
-  paths (`hamt_put`, frame slice helpers, groupby merge paths), so the C compile/link
-  step fails before execution. Window-only bare builds remain viable, which is why
-  `Coral.Window` has an executed runtime parity lane while GroupBy/Join are still
-  fixture-locked plus compile-checked. Reproducer:
+  Coral program that combines `Coral.Internal.HAMT` with `Coral.Frame`
+  (and optionally `Coral.GroupBy` / `Coral.Join`). The generated signatures
+  collapse polymorphic values to `int` in several Frame/HAMT paths
+  (`hamt_put`, `slice`, `empty_column`, `drop_nan`), so the C compile/link step
+  fails before execution. GroupBy widens the same failure with additional bad
+  lowering in `merge_agg`, but it is not required to trigger the bug. Window-only
+  bare builds remain viable, which is why `Coral.Window` has an executed runtime
+  parity lane while Frame/GroupBy/Join are still fixture-locked plus compile-checked.
+  Reproducer:
   [`scripts/repro_multimodule_bare_build.py`](/home/jeff/Documents/scratch/coral/scripts/repro_multimodule_bare_build.py)

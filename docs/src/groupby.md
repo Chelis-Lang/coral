@@ -34,5 +34,5 @@ def main() -> int64 = {
 
 The honest gate today is fixture-backed plus compile-checked. Runtime build/link
 coverage for reef-importing multi-module GroupBy programs is still blocked by
-the upstream `chelis v0.1.15` generated-C failure tracked in
+the upstream `chelis v0.1.17` generated-C failure tracked in
 `docs/UPSTREAM_BUGS.md`.

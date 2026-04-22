@@ -21,7 +21,7 @@ Documented deltas:
 
 - string `sort_by` is deferred
 - stripped bare-build runtime proof for Frame/GroupBy/Join is still blocked on
-  `chelis v0.1.15`, so the current acceptance gate is compile-level plus
+  `chelis v0.1.17`, so the current acceptance gate is compile-level plus
   pandas-backed checked-in goldens
 - GroupBy, Join, and IO are currently fixture-backed plus compile-checked
 - Window is the only module family with an executed runtime parity lane today

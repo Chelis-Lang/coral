@@ -7,7 +7,7 @@ It concatenates stripped Coral modules into one temporary file, prefixes
 function names to avoid obvious user-space symbol collisions, runs
 `chelis build`, then tries to link the generated C with a tiny driver.
 
-Expected current outcome on `chelis v0.1.15`:
+Expected current outcome on `chelis v0.1.17`:
 - `chelis build` succeeds
 - native C compile/link fails because generated signatures collapse some
   polymorphic ADT/value paths to `int`

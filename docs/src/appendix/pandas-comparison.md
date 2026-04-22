@@ -20,7 +20,7 @@ Current parity-backed scope:
 Documented deltas:
 
 - string `sort_by` is deferred
-- stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.1.19`:
+- stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.1.20`:
   build, link, and execution all pass; acceptance gate is fixture goldens plus
   the compile-level probe in `tests/run_coral_tests.py`
 - GroupBy, Join, and IO are currently fixture-backed plus compile-checked

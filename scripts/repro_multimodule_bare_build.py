@@ -29,7 +29,9 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
+import tomllib
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -39,21 +41,39 @@ from scripts.chelis_toolchain import resolve_chelis_bin
 
 
 CHELIS = resolve_chelis_bin()
+
+
+def _nautilus_stats_src() -> str:
+    """Extract stats.ch from the Nautilus package in the local reef registry."""
+    reef_toml = REPO / "reef.toml"
+    with open(reef_toml, "rb") as f:
+        deps = tomllib.load(f).get("dependencies", {})
+    nautilus_version = deps.get("nautilus", {}).get("version", "")
+    if not nautilus_version:
+        raise RuntimeError("nautilus dependency not found in reef.toml")
+    tarball = Path.home() / ".chelis" / "reef" / "packages" / "nautilus" / nautilus_version / f"nautilus-{nautilus_version}.tar.zst"
+    if not tarball.exists():
+        raise RuntimeError(f"nautilus {nautilus_version} not found in local reef registry: {tarball}")
+    with tarfile.open(tarball, "r:*") as tf:
+        member = tf.getmember("src/stats.ch")
+        return tf.extractfile(member).read().decode()
+
+
 MODULE_PRESETS = {
     "frame": [
         ("src/internal/hamt.ch", "hamt__"),
-        ("vendor/nautilus/src/stats.ch", "stats__"),
+        (None, "stats__"),  # resolved from reef registry at runtime
         ("src/frame.ch", "frame__"),
     ],
     "groupby": [
         ("src/internal/hamt.ch", "hamt__"),
-        ("vendor/nautilus/src/stats.ch", "stats__"),
+        (None, "stats__"),
         ("src/frame.ch", "frame__"),
         ("src/groupby.ch", "groupby__"),
     ],
     "join": [
         ("src/internal/hamt.ch", "hamt__"),
-        ("vendor/nautilus/src/stats.ch", "stats__"),
+        (None, "stats__"),
         ("src/frame.ch", "frame__"),
         ("src/join.ch", "join__"),
     ],
@@ -81,11 +101,12 @@ def prefix_defs(src: str, prefix: str) -> tuple[str, dict[str, str]]:
     return apply_name_map(src, mapping), mapping
 
 
-def build_prefixed_modules(specs: list[tuple[str, str]]) -> str:
+def build_prefixed_modules(specs: list[tuple[str | None, str]]) -> str:
     accumulated: dict[str, str] = {}
     parts: list[str] = []
     for rel_path, prefix in specs:
-        src = strip_module_surface((REPO / rel_path).read_text())
+        raw = _nautilus_stats_src() if rel_path is None else (REPO / rel_path).read_text()
+        src = strip_module_surface(raw)
         src, local_map = prefix_defs(src, prefix)
         src = apply_name_map(src, accumulated)
         parts.append(src)

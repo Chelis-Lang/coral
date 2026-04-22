@@ -5,5 +5,5 @@ compiler = "=0.1.19"
 module_prefix = "Coral"
 
 [dependencies]
-chelis-std = { path = "vendor/chelis-std" }
-nautilus = { path = "vendor/nautilus" }
+chelis-std = { version = "0.1.0" }
+nautilus = { version = "0.1.4" }

@@ -1,23 +1,26 @@
 #!/usr/bin/env python3
-"""Reproduce the stripped multi-module bare-build backend failure.
+"""Validate the stripped multi-module bare-build end-to-end on the current compiler.
 
 This is an upstream-triage helper, not a CI gate.
 
 It concatenates stripped Coral modules into one temporary file, prefixes
 function names to avoid obvious user-space symbol collisions, runs
-`chelis build`, then tries to link the generated C with a tiny driver.
+`chelis build`, links the generated C with a tiny driver, and executes
+the resulting binary.
 
-Expected current outcome on `chelis v0.1.18`:
-- `chelis build` exits rc=0 (appears to succeed)
-- but its output contains a Phase 0e RISC DAG panic for `if`
-- native C compile/link succeeds and the binary executes
+Expected current outcome on `chelis v0.1.19`:
+- `chelis build` exits rc=0 with no panic in output
+- native C compile/link succeeds
+- binary executes and returns the expected value
 
-The panic is non-fatal and the generated binary is correct; the upstream
-issue is that `chelis build` should return a non-zero exit code when it panics.
+History:
+- v0.1.15–v0.1.17: invalid-C type-collapse caused link failure
+- v0.1.18: invalid-C fixed; Phase 0e RISC DAG panic remained (non-fatal, rc=0)
+- v0.1.19: Phase 0e panic fixed; build, link, and run are now fully clean
 
 Exit codes:
-- 0: reproduced the known failure (panic present in output, rc=0)
-- 1: did not reproduce the expected failure
+- 0: build, link, and run all succeeded cleanly
+- 1: unexpected failure or regression detected
 """
 from __future__ import annotations
 
@@ -127,10 +130,10 @@ def main() -> int:
             print("unexpected: `chelis build` failed before native C compile")
             return 1
 
-        PHASE0E_PANIC = "`if` is not representable in the Phase 0e RISC DAG"
         build_output = (build.stdout or "") + (build.stderr or "")
-        if PHASE0E_PANIC not in build_output:
-            print("unexpected: Phase 0e panic not present in chelis build output")
+        PHASE0E_PANIC = "`if` is not representable in the Phase 0e RISC DAG"
+        if PHASE0E_PANIC in build_output:
+            print("regression: Phase 0e RISC DAG panic reappeared in chelis build output")
             return 1
 
         c_file = out_dir / "main.c"
@@ -151,11 +154,17 @@ def main() -> int:
             capture_output=True,
             text=True,
         )
-        print(link.stderr.strip())
         if link.returncode != 0:
-            print("unexpected: native compile/link failed (invalid-C regression?)")
+            print(link.stderr.strip())
+            print("regression: native compile/link failed (invalid-C regression?)")
             return 1
-        print("reproduced: chelis build panics in Phase 0e RISC DAG (rc=0 / silent panic) but C links and runs")
+
+        run = subprocess.run([str(workdir / "repro")], capture_output=True, text=True, timeout=10)
+        if run.returncode != 0:
+            print(f"regression: binary exited with rc={run.returncode}")
+            return 1
+
+        print(f"stripped multi-module bare-build OK: build clean, link OK, run OK (output={run.stdout.strip()!r})")
         return 0
     finally:
         shutil.rmtree(workdir, ignore_errors=True)

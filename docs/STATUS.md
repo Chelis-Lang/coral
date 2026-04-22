@@ -31,7 +31,7 @@ Known deferred items:
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints typecheck on
-  published `chelis v0.1.18`
+  published `chelis v0.1.19`
 - checked-in `tests/goldens/frame/*.json` fixtures are generated from pandas for a
   deterministic Phase-2 frame slice
 - checked-in `tests/goldens/groupby/*.json` fixtures are generated from pandas for the
@@ -55,7 +55,7 @@ What is not yet proven:
 
 - runtime parity for frame operations end-to-end
 - end-to-end runtime parity harness for Frame, GroupBy, and Join (stripped builds
-  link and run on v0.1.18 but chelis build emits a non-fatal Phase 0e panic; see UPSTREAM_BUGS.md)
+  are fully clean on v0.1.19; a full reef-importing parity harness is the remaining gap)
 - pandas-equivalent sort semantics for NaN-bearing columns
 - negative-test coverage for the full frame error surface
 - runtime parity for GroupBy, Join, and IO module families

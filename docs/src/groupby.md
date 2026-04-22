@@ -33,5 +33,5 @@ def main() -> int64 = {
 ```
 
 The honest gate today is fixture-backed plus compile-checked. Stripped bare
-builds for GroupBy now link and run on `chelis v0.1.18`; a non-fatal Phase 0e
-panic in `chelis build` is still tracked in `docs/UPSTREAM_BUGS.md`.
+builds for GroupBy are fully clean on `chelis v0.1.19`: build, link, and
+execution all pass with no upstream blockers.

@@ -174,7 +174,7 @@ def main() -> int64 = {
 - `describe` follows pandas-style NaN skipping for float columns and uses sample standard deviation (`ddof=1`).
 - `Coral.IO` is currently fixture-backed plus compile-checked; it does not yet have an executed runtime parity lane.
 - `Coral.Window` currently has the strongest executed parity story: pandas-backed goldens plus a runtime build/link/execute test lane.
-- Stripped Frame/GroupBy/Join bare builds now link and run correctly on `chelis v0.1.18`; a non-fatal Phase 0e panic in `chelis build` (rc=0 despite panic) is still tracked in `docs/UPSTREAM_BUGS.md`.
+- Stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.1.19`: build, link, and execution all pass with no upstream blockers.
 
 ## 5. API Surface
 

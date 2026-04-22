@@ -2,19 +2,17 @@
 
 Tracked upstream/toolchain issues that affect Coral development.
 
-- `chelis v0.1.17` still requires the `copy(values)` compatibility fix around
+- `chelis v0.1.18` still requires the `copy(values)` compatibility fix around
   tensor-to-list conversion that Coral already applies in `describe`.
   This remains a relevant compiler-surface change for downstream shells.
-- `chelis v0.1.17` currently emits invalid C for a stripped multi-module bare-build
-  Coral program that combines `Coral.Internal.HAMT` with `Coral.Frame`
-  (and optionally `Coral.GroupBy` / `Coral.Join`). The generated signatures
-  collapse polymorphic values to `int` in several Frame/HAMT paths
-  (`hamt_put`, `slice`, `empty_column`, `drop_nan`), so the C compile/link step
-  fails before execution. Under `v0.1.17` the same repros also surface a lowering
-  panic about `if` not being representable in the Phase 0e RISC DAG. GroupBy widens
-  the same failure with additional bad lowering in `merge_agg`, but it is not
-  required to trigger the bug. Window-only
-  bare builds remain viable, which is why `Coral.Window` has an executed runtime
-  parity lane while Frame/GroupBy/Join are still fixture-locked plus compile-checked.
+- **Fixed in v0.1.18**: the invalid-C type-collapse that previously caused
+  `hamt_put`, `slice`, `empty_column`, and `drop_nan` signatures to collapse
+  to `int` is gone. The stripped multi-module bare-build (frame / groupby / join)
+  now generates valid C, links cleanly, and the resulting binary executes correctly.
+- **New in v0.1.18**: `chelis build` panics inside `crates/chelis-ir/src/lower.rs`
+  with `` `if` is not representable in the Phase 0e RISC DAG `` during a stripped
+  multi-module bare build, but exits **rc=0**. The panic is non-fatal: valid C is
+  written and compiled before the panic fires. This silent-panic / incorrect-exit-code
+  behaviour should be fixed upstream so callers can reliably detect build failures.
   Reproducer:
   [`scripts/repro_multimodule_bare_build.py`](/home/jeff/Documents/scratch/coral/scripts/repro_multimodule_bare_build.py)

@@ -7,13 +7,16 @@ It concatenates stripped Coral modules into one temporary file, prefixes
 function names to avoid obvious user-space symbol collisions, runs
 `chelis build`, then tries to link the generated C with a tiny driver.
 
-Expected current outcome on `chelis v0.1.17`:
-- `chelis build` succeeds
-- native C compile/link fails because generated signatures collapse some
-  polymorphic ADT/value paths to `int`
+Expected current outcome on `chelis v0.1.18`:
+- `chelis build` exits rc=0 (appears to succeed)
+- but its output contains a Phase 0e RISC DAG panic for `if`
+- native C compile/link succeeds and the binary executes
+
+The panic is non-fatal and the generated binary is correct; the upstream
+issue is that `chelis build` should return a non-zero exit code when it panics.
 
 Exit codes:
-- 0: reproduced the known failure
+- 0: reproduced the known failure (panic present in output, rc=0)
 - 1: did not reproduce the expected failure
 """
 from __future__ import annotations
@@ -124,6 +127,12 @@ def main() -> int:
             print("unexpected: `chelis build` failed before native C compile")
             return 1
 
+        PHASE0E_PANIC = "`if` is not representable in the Phase 0e RISC DAG"
+        build_output = (build.stdout or "") + (build.stderr or "")
+        if PHASE0E_PANIC not in build_output:
+            print("unexpected: Phase 0e panic not present in chelis build output")
+            return 1
+
         c_file = out_dir / "main.c"
         h_file = out_dir / "main.h"
         c_file.write_text(c_file.read_text().replace("double main", "double chelis_entry"))
@@ -143,10 +152,10 @@ def main() -> int:
             text=True,
         )
         print(link.stderr.strip())
-        if link.returncode == 0:
-            print("unexpected: native compile/link succeeded; reproducer no longer matches the documented bug")
+        if link.returncode != 0:
+            print("unexpected: native compile/link failed (invalid-C regression?)")
             return 1
-        print("reproduced stripped multi-module bare-build failure")
+        print("reproduced: chelis build panics in Phase 0e RISC DAG (rc=0 / silent panic) but C links and runs")
         return 0
     finally:
         shutil.rmtree(workdir, ignore_errors=True)

@@ -6,7 +6,7 @@ Current scope:
   2. validate checked-in pandas goldens for Frame and Window
   3. execute a bare-build runtime parity lane for Window
   4. keep a compile-level probe for HAMT-backed Frame operations; stripped
-     bare builds are fully clean on v0.1.20 (build, link, and run all pass)
+     bare builds are fully clean on v0.1.21 (build, link, and run all pass)
 """
 from __future__ import annotations
 
@@ -385,7 +385,7 @@ def main() -> int:
         return 1
     if run_phase1_compile_probe() != 0:
         return 1
-    print("phase1 probe: stripped Frame/GroupBy/Join bare builds fully clean on v0.1.20 (build, link, run all pass)")
+    print("phase1 probe: stripped Frame/GroupBy/Join bare builds fully clean on v0.1.21 (build, link, run all pass)")
     print("coral repo checks OK")
     return 0
 

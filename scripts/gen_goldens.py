@@ -108,7 +108,7 @@ def frame_contract() -> dict:
         ],
         "known_deltas": [
             "string sort_by is deferred",
-            "stripped Frame/GroupBy/Join bare-build runtime is blocked upstream on v0.1.20",
+            "stripped Frame/GroupBy/Join bare-build runtime is blocked upstream on v0.1.21",
             "checked-in goldens prove pandas reference behavior even when runtime parity harness is still partial",
         ],
     }

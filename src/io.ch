@@ -39,7 +39,8 @@ def column_values(rows: List[Dict[string, string]], name: string) -> List[string
 def infer_csv_column[n](values: List[string]) -> Column[n] = {
   if all_ints(values) then {
     xs = to_tensor(map(fn (value: string) -> unwrap_int(value), values))
-    xs_zeros = to_tensor(map(fn (unused: int64) -> zero_i64(), to_list(xs)))
+    xs_cpy = copy(xs)
+    xs_zeros = to_tensor(map(fn (unused: int64) -> zero_i64(), to_list(xs_cpy)))
     xs_mask = neq(copy(xs_zeros), xs_zeros)
     IntCol(xs, xs_mask)
   }

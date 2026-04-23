@@ -11,6 +11,15 @@ Tracked upstream/toolchain issues that affect Coral development.
   Coral's frame-based computations. All `grad` usage remains illustrative in docs until
   upstream resolves C-backend lowering for scalar AD.
 
+- **Upstream limitation (v0.1.21): C backend ("Phase 0f") rejects int64 tensors** — `chelis
+  build --target c` panics with "Phase 0f C backend only supports f32/bool tensors, found
+  int64 at node 0" for any program whose dependency graph includes the HAMT module (which
+  uses `tensor[n, int64]` internally for key/value arrays). This means Frame-level runtime
+  tests (build + link + run) cannot execute for any Coral module that uses `from_pairs`.
+  Window tests are unaffected (window.ch operates on f32 tensors only). The negative test
+  suite uses `chelis check` (semantic analysis) instead of build+run, which avoids the
+  backend limitation while still testing type-safety properties of the public API.
+
 - **Upstream blocker (v0.1.21): `Std.IO.Parquet` module is a placeholder** — the module
   resolves at import-check time (score 1.0 on empty import list) but exports no callable
   functions. Probing `read_parquet`, `read_parquet_rows`, `read_parquet_file`, and

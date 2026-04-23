@@ -16,8 +16,8 @@ def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
 
 -- Produce an all-false bool mask of the same length as the given int64 tensor (no missing values).
-def all_false_mask[n](xs: tensor[n, int64]) -> tensor[n, bool] = {
-  ints = to_tensor(map(fn (unused: int64) -> zero_i64(), to_list(xs)))
+def all_false_mask[n](template_vals: tensor[n, int64]) -> tensor[n, bool] = {
+  ints = to_tensor(map(fn (unused: int64) -> zero_i64(), to_list(template_vals)))
   neq(copy(ints), ints)
 }
 
@@ -34,7 +34,7 @@ def agg_sum[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
       | IntCol(xs, xmask) => {
           xs_list = to_list(xs)
           mask_list = to_list(xmask)
-          sum_vals = to_tensor(map(fn (rows: List[int64]) -> sum_i64(select_int_rows(xs_list, filter_unmasked_rows(mask_list, rows, []))), groups))
+          sum_vals = to_tensor(map(fn (rows: List[int64]) -> sum_i64(select_int_rows(xs_list, filter_unmasked_rows(mask_list, rows))), groups))
           sum_mask = all_false_mask(copy(sum_vals))
           from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_sum"), IntCol(sum_vals, sum_mask))])
         }
@@ -50,7 +50,7 @@ def agg_mean[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
       | IntCol(xs, xmask) => {
           xs_list = to_list(xs)
           mask_list = to_list(xmask)
-          from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_mean"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> mean_i64(select_int_rows(xs_list, filter_unmasked_rows(mask_list, rows, []))), groups))))])
+          from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_mean"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> mean_i64(select_int_rows(xs_list, filter_unmasked_rows(mask_list, rows))), groups))))])
         }
       | _ => fail("agg_mean: only float and int columns are supported")
     }
@@ -75,7 +75,7 @@ def agg_min[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
       | IntCol(xs, xmask) => {
           xs_list = to_list(xs)
           mask_list = to_list(xmask)
-          min_vals = to_tensor(map(fn (rows: List[int64]) -> min_i64(select_int_rows(xs_list, filter_unmasked_rows(mask_list, rows, []))), groups))
+          min_vals = to_tensor(map(fn (rows: List[int64]) -> min_i64(select_int_rows(xs_list, filter_unmasked_rows(mask_list, rows))), groups))
           min_mask = all_false_mask(copy(min_vals))
           from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_min"), IntCol(min_vals, min_mask))])
         }
@@ -91,7 +91,7 @@ def agg_max[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
       | IntCol(xs, xmask) => {
           xs_list = to_list(xs)
           mask_list = to_list(xmask)
-          max_vals = to_tensor(map(fn (rows: List[int64]) -> max_i64(select_int_rows(xs_list, filter_unmasked_rows(mask_list, rows, []))), groups))
+          max_vals = to_tensor(map(fn (rows: List[int64]) -> max_i64(select_int_rows(xs_list, filter_unmasked_rows(mask_list, rows))), groups))
           max_mask = all_false_mask(copy(max_vals))
           from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_max"), IntCol(max_vals, max_mask))])
         }
@@ -161,13 +161,8 @@ def append_row_from(groups: List[List[int64]], target: int64, row: int64, idx: i
 def select_float_rows(values: List[f32], rows: List[int64]) -> List[f32] = map(fn (row: int64) -> index(values, row), rows)
 def select_int_rows(values: List[int64], rows: List[int64]) -> List[int64] = map(fn (row: int64) -> index(values, row), rows)
 
-def filter_unmasked_rows(masks: List[bool], rows: List[int64], acc: List[int64]) -> List[int64] = {
-  if eq(len(rows), zero_i64()) then acc else {
-    row = index(rows, zero_i64())
-    m = index(masks, row)
-    next = if m then acc else append(acc, row)
-    filter_unmasked_rows(masks, drop(rows, one_i64()), next)
-  }
+def filter_unmasked_rows(masks: List[bool], rows: List[int64]) -> List[int64] = {
+  fold(fn (acc: List[int64], row: int64) -> if index(masks, row) then acc else append(acc, row), [], rows)
 }
 
 def sum_f32(values: List[f32]) -> f32 = fold(fn (acc: f32, value: f32) -> add(acc, value), cast(0.0, f32), values)

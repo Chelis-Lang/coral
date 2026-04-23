@@ -26,6 +26,7 @@ def main() -> int64 = {
 
 `read_parquet_frame` and `write_parquet_frame` are exported by `Coral.IO` but
 currently call `fail(...)` at runtime. `Std.IO.Parquet` resolves at import time
-in chelis v0.1.21 but exports no callable functions — the stdlib archive contains
+in chelis v0.2.0: `import Std.IO.Parquet` now fails with `unresolved import` (in v0.1.21
+it resolved silently but exported no callable functions). The stdlib archive contains
 no `io/parquet.ch`. Parquet support is gated on upstream `Chelis-Lang/chelis`.
 See `docs/UPSTREAM_BUGS.md` for the full probe log.

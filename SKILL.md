@@ -224,10 +224,10 @@ def main() -> int64 = {
 - String `sort_by` is intentionally deferred.
 - `outer_join` row order: left-sequential first, then right-only rows appended.
 - `melt` is column-major: all rows for value_col[0] appear before value_col[1].
-- Parquet is upstream-blocked (`Std.IO.Parquet` has no callable functions in v0.1.21).
+- Parquet is upstream-blocked (`import Std.IO.Parquet` fails with unresolved import in v0.2.0; was silently-empty in v0.1.21).
 - `describe` skips NaN for float columns and masked entries for int columns; uses sample std (`ddof=1`).
 - `Coral.Window` has the strongest executed parity story: pandas goldens + runtime build/link/execute lane.
-- Stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.1.21`.
+- Stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.2.0`.
 
 ## 5. API Surface
 

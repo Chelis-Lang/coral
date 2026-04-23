@@ -26,14 +26,22 @@ def build_join[n, m, k](left: Frame[n], right: Frame[m], on: string, keep_left: 
   assemble_join(left, right, on, pairs)
 }
 
+-- Extract the display string from a key (no type prefix, unlike key_id which produces "s:x", "i:1").
+def key_display(value: KeyValue) -> string = match value with {
+  | KeyIntValue(v) => to_string(v)
+  | KeyFloatValue(v) => to_string(v)
+  | KeyStringValue(v) => v
+  | KeyBoolValue(v) => to_string(v)
+}
+
 -- Build string key column for outer join: right-only rows (-1 left) get the actual right key value.
--- Note: produces StringCol regardless of source key type; works correctly for StringCol keys.
+-- Uses key_display (not key_id) so the output contains raw values, not prefixed internal IDs.
 def build_outer_key_strs(lkeys: List[KeyValue], rkeys: List[KeyValue], left_rows: List[int64], right_rows: List[int64], acc: List[string]) -> List[string] = {
   if eq(len(left_rows), zero_i64()) then acc
   else {
     lr = index(left_rows, zero_i64())
     rr = index(right_rows, zero_i64())
-    v = if lt(lr, zero_i64()) then key_id(index(rkeys, rr)) else key_id(index(lkeys, lr))
+    v = if lt(lr, zero_i64()) then key_display(index(rkeys, rr)) else key_display(index(lkeys, lr))
     build_outer_key_strs(lkeys, rkeys, drop(left_rows, one_i64()), drop(right_rows, one_i64()), append(acc, v))
   }
 }

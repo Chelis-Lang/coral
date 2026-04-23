@@ -13,6 +13,7 @@ Validated operations in the current slice:
 - `agg_min`
 - `agg_max`
 - `agg` for explicit multi-aggregation specs in requested order
+- `value_counts` — frequency table for a single column (returns a Frame with the key column and a `"count"` column)
 
 ```chelis
 module Coral.BookGroupBy

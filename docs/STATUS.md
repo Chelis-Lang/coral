@@ -25,8 +25,7 @@ Known deferred items:
 
 - string sorting
 - Parquet
-- outer join
-- richer reshape support
+- richer reshape support (stack/unstack goldens, stack with 0 id-cols)
 
 What is currently proven:
 
@@ -39,7 +38,7 @@ What is currently proven:
 - checked-in `tests/goldens/io/*.json` fixtures are generated from pandas / Coral text
   expectations for the current CSV/JSON compile-checked slice
 - checked-in `tests/goldens/join/*.json` fixtures are generated from pandas for the
-  current string-key inner/left join slice
+  current string-key inner/left/outer join slice
 - checked-in `tests/goldens/window/*.json` fixtures are generated from pandas for the
   current rolling/ewm slice
 - `tests/run_coral_tests.py` validates the golden inventory and runs a compile-level

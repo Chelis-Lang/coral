@@ -144,7 +144,7 @@ def native_link_cmd(binary: Path, sources: list[Path], out_dir: Path) -> list[st
 def run_phase1_compile_probe() -> int:
     code = """module Coral.Phase1Probe
 import Coral.Internal.HAMT (hamt_from_pairs, hamt_put, hamt_get, hamt_remove, hamt_contains, hamt_size)
-import Coral.Frame (from_pairs, columns, with_column, rename, drop_column, concat, describe, get_float_col, nrows, ncols)
+import Coral.Frame (from_pairs, columns, with_column, rename, drop_column, concat, describe, get_float_col, nrows, ncols, int_col_of_list)
 import Coral.GroupBy (group_by, agg_count)
 import Coral.IO (write_csv_frame, write_json_frame)
 import Coral.Join (inner_join, left_join)
@@ -171,21 +171,21 @@ def main() -> f32 = {
   next = hamt_put(base, "flag", cast(3, int64))
   final = hamt_remove(next, "qty")
   frame = from_pairs([
-    ("a", IntCol(to_tensor([cast(1, int64), cast(2, int64)]))),
+    ("a", int_col_of_list([cast(1, int64), cast(2, int64)])),
     ("b", FloatCol(to_tensor([cast(1.0, f32), div(cast(0.0, f32), cast(0.0, f32))]))),
     ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64)]), to_tensor([cast(0, int64), cast(0, int64)]))))
   ])
   renamed = rename(frame, "a", "z")
-  extended = with_column(renamed, "c", IntCol(to_tensor([cast(3, int64), cast(4, int64)])))
+  extended = with_column(renamed, "c", int_col_of_list([cast(3, int64), cast(4, int64)]))
   dropped = drop_column(extended, "b")
   stacked = concat([dropped, dropped])
   desc = describe(frame)
   grouped = agg_count(group_by(from_pairs([
     ("city", StringCol(["london", "paris", "london"])),
-    ("qty", IntCol(to_tensor([cast(1, int64), cast(2, int64), cast(3, int64)])))
+    ("qty", int_col_of_list([cast(1, int64), cast(2, int64), cast(3, int64)]))
   ]), "city"))
   io_frame = from_pairs([
-    ("id", IntCol(to_tensor([cast(1, int64), cast(2, int64)]))),
+    ("id", int_col_of_list([cast(1, int64), cast(2, int64)])),
     ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.5, f32)]))),
     ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64)]), to_tensor([cast(0, int64), cast(0, int64)])))),
     ("city", StringCol(["london", "paris"]))
@@ -195,7 +195,7 @@ def main() -> f32 = {
   joined = inner_join(
     from_pairs([
       ("customer", StringCol(["a", "b", "a"])),
-      ("qty", IntCol(to_tensor([cast(1, int64), cast(2, int64), cast(3, int64)])))
+      ("qty", int_col_of_list([cast(1, int64), cast(2, int64), cast(3, int64)]))
     ]),
     from_pairs([
       ("customer", StringCol(["a", "a", "c"])),

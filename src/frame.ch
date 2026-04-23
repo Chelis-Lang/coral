@@ -470,7 +470,7 @@ def is_numeric_type(ty: ColumnType) -> bool = {
 def describe_column[m, n](col: Column[n]) -> Column[m] = {
   match col with {
     | FloatCol(xs) => FloatCol(to_tensor(float_stats_skip_nan(xs)))
-    | IntCol(xs, dmask) => FloatCol(to_tensor(float_stats(ints_to_floats(xs))))
+    | IntCol(xs, dmask) => FloatCol(to_tensor(float_stats_skip_nan(ints_masked_to_floats(xs, dmask))))
     | _ => fail("describe: only numeric columns are supported")
   }
 }
@@ -521,6 +521,19 @@ def non_nan_values(values: List[f32], acc: List[f32]) -> List[f32] = {
 }
 
 def ints_to_floats[n](values: tensor[n, int64]) -> tensor[n, f32] = to_tensor(map(fn (x: int64) -> cast(x, f32), to_list(values)))
+
+def ints_masked_to_floats[n](values: tensor[n, int64], mask: tensor[n, bool]) -> tensor[n, f32] = {
+  to_tensor(int_mask_to_float_list(to_list(values), to_list(mask), []))
+}
+
+def int_mask_to_float_list(values: List[int64], masks: List[bool], acc: List[f32]) -> List[f32] = {
+  if eq(len(values), zero_i64()) then acc else {
+    v = index(values, zero_i64())
+    m = index(masks, zero_i64())
+    fv = if m then nan_f32() else cast(v, f32)
+    int_mask_to_float_list(drop(values, one_i64()), drop(masks, one_i64()), append(acc, fv))
+  }
+}
 
 def bools_to_ints(values: List[bool]) -> List[int64] = {
   map(fn (flag: bool) -> if flag then one_i64() else zero_i64(), values)

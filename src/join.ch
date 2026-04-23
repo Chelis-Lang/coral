@@ -100,8 +100,10 @@ def append_named(lhs: List[(string, Column[n])], rhs: List[(string, Column[n])])
 def build_column[n, k](col: Column[n], rows: List[int64], allow_missing: bool) -> Column[k] = {
   match col with {
     | IntCol(xs, xmask) => {
-        int_vals = to_tensor(map(fn (row: int64) -> if lt(row, zero_i64()) then cast(0, int64) else index(to_list(xs), row), rows))
-        mask_ints = to_tensor(map(fn (row: int64) -> if lt(row, zero_i64()) then one_i64() else zero_i64(), rows))
+        xs_list = to_list(xs)
+        xmask_list = to_list(xmask)
+        int_vals = to_tensor(map(fn (row: int64) -> if lt(row, zero_i64()) then cast(0, int64) else index(xs_list, row), rows))
+        mask_ints = to_tensor(map(fn (row: int64) -> if lt(row, zero_i64()) then one_i64() else if index(xmask_list, row) then one_i64() else zero_i64(), rows))
         mask_zeros = to_tensor(map(fn (row: int64) -> zero_i64(), rows))
         IntCol(int_vals, neq(copy(mask_ints), mask_zeros))
       }

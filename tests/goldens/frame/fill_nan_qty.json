@@ -1,0 +1,28 @@
+{
+  "fixture": "fill_nan_qty",
+  "operation": "fill_nan_int",
+  "expected_frame": {
+    "nrows": 3,
+    "ncols": 2,
+    "columns": [
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris",
+          "oslo"
+        ]
+      },
+      {
+        "name": "qty",
+        "type": "int",
+        "values": [
+          -1,
+          5,
+          8
+        ]
+      }
+    ]
+  }
+}

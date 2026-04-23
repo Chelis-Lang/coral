@@ -15,6 +15,12 @@ type GroupedFrame[n] =
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
 
+-- Produce an all-false bool mask of the same length as the given int64 tensor (no missing values).
+def all_false_mask[n](xs: tensor[n, int64]) -> tensor[n, bool] = {
+  ints = to_tensor(map(fn (unused: int64) -> zero_i64(), to_list(xs)))
+  neq(copy(ints), ints)
+}
+
 def group_by[n](df: Frame[n], key_name: string) -> GroupedFrame[n] = {
   template = get_column(df, key_name)
   grouped = group_keys(key_values(df, key_name), [], [])
@@ -25,7 +31,11 @@ def agg_sum[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
   match gf with {
     | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => match get_column(df, col) with {
       | FloatCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_sum"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> sum_f32(select_float_rows(to_list(xs), rows)), groups))) )])
-      | IntCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_sum"), IntCol(to_tensor(map(fn (rows: List[int64]) -> sum_i64(select_int_rows(to_list(xs), rows)), groups))) )])
+      | IntCol(xs, xmask) => {
+          sum_vals = to_tensor(map(fn (rows: List[int64]) -> sum_i64(select_int_rows(to_list(xs), rows)), groups))
+          sum_mask = all_false_mask(copy(sum_vals))
+          from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_sum"), IntCol(sum_vals, sum_mask))])
+        }
       | _ => fail("agg_sum: only float and int columns are supported")
     }
   }
@@ -35,7 +45,7 @@ def agg_mean[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
   match gf with {
     | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => match get_column(df, col) with {
       | FloatCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_mean"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> mean_f32(select_float_rows(to_list(xs), rows)), groups))) )])
-      | IntCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_mean"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> mean_i64(select_int_rows(to_list(xs), rows)), groups))) )])
+      | IntCol(xs, xmask) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_mean"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> mean_i64(select_int_rows(to_list(xs), rows)), groups))) )])
       | _ => fail("agg_mean: only float and int columns are supported")
     }
   }
@@ -44,7 +54,11 @@ def agg_mean[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
 def agg_count[n, m](gf: GroupedFrame[n]) -> Frame[m] = {
   match gf with {
     | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } =>
-      from_pairs([(key_name, key_values_to_column_like(keys, key_template)), ("count", IntCol(to_tensor(map(fn (rows: List[int64]) -> len(rows), groups))))])
+      {
+        count_vals = to_tensor(map(fn (rows: List[int64]) -> len(rows), groups))
+        count_mask = all_false_mask(copy(count_vals))
+        from_pairs([(key_name, key_values_to_column_like(keys, key_template)), ("count", IntCol(count_vals, count_mask))])
+      }
   }
 }
 
@@ -52,7 +66,11 @@ def agg_min[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
   match gf with {
     | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => match get_column(df, col) with {
       | FloatCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_min"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> min_f32(select_float_rows(to_list(xs), rows)), groups))) )])
-      | IntCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_min"), IntCol(to_tensor(map(fn (rows: List[int64]) -> min_i64(select_int_rows(to_list(xs), rows)), groups))) )])
+      | IntCol(xs, xmask) => {
+          min_vals = to_tensor(map(fn (rows: List[int64]) -> min_i64(select_int_rows(to_list(xs), rows)), groups))
+          min_mask = all_false_mask(copy(min_vals))
+          from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_min"), IntCol(min_vals, min_mask))])
+        }
       | _ => fail("agg_min: only float and int columns are supported")
     }
   }
@@ -62,7 +80,11 @@ def agg_max[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
   match gf with {
     | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => match get_column(df, col) with {
       | FloatCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_max"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> max_f32(select_float_rows(to_list(xs), rows)), groups))) )])
-      | IntCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_max"), IntCol(to_tensor(map(fn (rows: List[int64]) -> max_i64(select_int_rows(to_list(xs), rows)), groups))) )])
+      | IntCol(xs, xmask) => {
+          max_vals = to_tensor(map(fn (rows: List[int64]) -> max_i64(select_int_rows(to_list(xs), rows)), groups))
+          max_mask = all_false_mask(copy(max_vals))
+          from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_max"), IntCol(max_vals, max_mask))])
+        }
       | _ => fail("agg_max: only float and int columns are supported")
     }
   }

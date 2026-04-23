@@ -143,6 +143,22 @@ def frame_fixtures() -> dict[str, dict]:
         "concat_base_parts.json": {"fixture": "concat_base_parts", "operation": "concat", "expected_frame": frame_payload(concat_parts, BASE_SCHEMA)},
         "describe_numeric.json": {"fixture": "describe_numeric", "operation": "describe", "expected_frame": describe_payload(base)},
         "value_counts_city.json": generate_value_counts_city(),
+        "fill_nan_qty.json": generate_fill_nan_qty(),
+    }
+
+
+def generate_fill_nan_qty() -> dict:
+    df = pd.DataFrame({
+        "city": ["london", "paris", "oslo"],
+        "qty": pd.array([pd.NA, 5, 8], dtype=pd.Int64Dtype()),
+    })
+    filled = df.copy()
+    filled["qty"] = filled["qty"].fillna(-1).astype(int)
+    schema = {"city": "string", "qty": "int"}
+    return {
+        "fixture": "fill_nan_qty",
+        "operation": "fill_nan_int",
+        "expected_frame": frame_payload(filled, schema),
     }
 
 

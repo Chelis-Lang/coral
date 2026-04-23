@@ -47,6 +47,7 @@ REQUIRED_FRAME_GOLDENS = [
     "concat_base_parts.json",
     "describe_numeric.json",
     "value_counts_city.json",
+    "fill_nan_qty.json",
 ]
 REQUIRED_GROUPBY_GOLDENS = [
     "README.json",

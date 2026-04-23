@@ -3,7 +3,7 @@ import Coral.Frame (Column, Frame, from_pairs, columns, get_column)
 import Std.IO (write_text)
 import Std.IO.Csv (read_csv)
 import Std.IO.Json (Json, json_array, json_object, load_json)
-export (read_csv_frame, write_csv_frame, read_json_frame, write_json_frame)
+export (read_csv_frame, write_csv_frame, read_json_frame, write_json_frame, read_parquet_frame, write_parquet_frame)
 
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
@@ -37,7 +37,11 @@ def write_json_frame[n](df: Frame[n], path: string) -> unit = write_text(path, r
 def column_values(rows: List[Dict[string, string]], name: string) -> List[string] = map(fn (row: Dict[string, string]) -> match dict_get(row, name) with { | Some(value) => value | None => "" }, rows)
 
 def infer_csv_column[n](values: List[string]) -> Column[n] = {
-  if all_ints(values) then IntCol(to_tensor(map(fn (value: string) -> unwrap_int(value), values)))
+  if all_ints(values) then {
+    xs = to_tensor(map(fn (value: string) -> unwrap_int(value), values))
+    xs_mask = all_false_mask(copy(xs))
+    IntCol(xs, xs_mask)
+  }
   else if all_floats(values) then FloatCol(to_tensor(map(fn (value: string) -> unwrap_float(value), values)))
   else if all_bools(values) then BoolCol(bools_to_tensor(map(fn (value: string) -> eq(value, "true"), values)))
   else StringCol(values)
@@ -85,7 +89,7 @@ def json_row[n](df: Frame[n], names: List[string], idx: int64, acc: List[string]
 
 def json_cell[n](col: Column[n], idx: int64) -> string = {
   match col with {
-    | IntCol(xs) => to_string(index(to_list(xs), idx))
+    | IntCol(xs, imask) => to_string(index(to_list(xs), idx))
     | FloatCol(xs) => to_string(index(to_list(xs), idx))
     | StringCol(xs) => string_concat("\"", string_concat(index(xs, idx), "\""))
     | BoolCol(xs) => to_string(index(to_list(xs), idx))
@@ -94,7 +98,7 @@ def json_cell[n](col: Column[n], idx: int64) -> string = {
 
 def column_value_string[n](col: Column[n], idx: int64) -> string = {
   match col with {
-    | IntCol(xs) => to_string(index(to_list(xs), idx))
+    | IntCol(xs, imask) => to_string(index(to_list(xs), idx))
     | FloatCol(xs) => to_string(index(to_list(xs), idx))
     | StringCol(xs) => index(xs, idx)
     | BoolCol(xs) => to_string(index(to_list(xs), idx))
@@ -104,7 +108,7 @@ def column_value_string[n](col: Column[n], idx: int64) -> string = {
 def row_count[n](df: Frame[n]) -> int64 = {
   names = columns(df)
   if eq(len(names), zero_i64()) then zero_i64() else match get_column(df, index(names, zero_i64())) with {
-    | IntCol(xs) => numel(copy(xs))
+    | IntCol(xs, imask) => numel(copy(xs))
     | FloatCol(xs) => numel(copy(xs))
     | StringCol(xs) => len(xs)
     | BoolCol(xs) => numel(copy(xs))
@@ -156,3 +160,14 @@ def bools_to_tensor[n](values: List[bool]) -> tensor[n, bool] = {
   zeros = to_tensor(map(fn (flag: bool) -> zero_i64(), values))
   neq(copy(ints), zeros)
 }
+
+-- Produce an all-false bool mask of the same length as the given int64 tensor (no missing values).
+def all_false_mask[n](xs: tensor[n, int64]) -> tensor[n, bool] = {
+  ints = to_tensor(map(fn (unused: int64) -> zero_i64(), to_list(xs)))
+  neq(copy(ints), ints)
+}
+
+-- read_parquet_frame and write_parquet_frame require Std.IO.Parquet,
+-- which is not yet in the chelis runtime. Tracked as upstream blocker.
+def read_parquet_frame[n](path: string) -> Frame[n] = fail("read_parquet_frame requires Std.IO.Parquet (not in current runtime)")
+def write_parquet_frame[n](df: Frame[n], path: string) -> string = fail("write_parquet_frame requires Std.IO.Parquet (not in current runtime)")

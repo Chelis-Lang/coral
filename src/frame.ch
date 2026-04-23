@@ -9,8 +9,10 @@ export (
   filter, head, tail, slice, sort_by,
   with_column, mutate, rename, drop_column,
   is_nan, fill_nan, drop_nan, any_nan, count_nan,
+  is_nan_int, fill_nan_int, drop_nan_int, any_nan_int, count_nan_int,
   concat, describe,
-  key_id, key_values, key_values_to_column_like
+  key_id, key_values, key_values_to_column_like,
+  int_col_of_list
 )
 
 type ColumnType =
@@ -20,7 +22,7 @@ type ColumnType =
   | BoolType
 
 type Column[n] =
-  | IntCol(tensor[n, int64])
+  | IntCol(tensor[n, int64], tensor[n, bool])   -- second field: missing mask (true=missing)
   | FloatCol(tensor[n, f32])
   | StringCol(List[string])
   | BoolCol(tensor[n, bool])
@@ -38,6 +40,26 @@ def zero_i64() -> int64 = cast(0, int64)
 def zero_i32() -> int32 = cast(0, int32)
 def one_i64() -> int64 = cast(1, int64)
 def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))
+
+-- Convert a List[bool] to a bool tensor via the int comparison trick
+-- (to_tensor does not accept List[bool] directly).
+def bool_list_to_tensor[n](values: List[bool]) -> tensor[n, bool] = {
+  ints = to_tensor(map(fn (flag: bool) -> if flag then one_i64() else zero_i64(), values))
+  zeros = to_tensor(map(fn (flag: bool) -> zero_i64(), values))
+  neq(copy(ints), zeros)
+}
+
+-- All-false bool tensor with same size as the given int64 tensor (no missing values).
+def zeros_bool_n[n](template: tensor[n, int64]) -> tensor[n, bool] = {
+  bool_list_to_tensor(map(fn (unused: int64) -> false, to_list(template)))
+}
+
+-- Build an IntCol from an int64 list with an all-false missing mask.
+def int_col_of_list[n](values: List[int64]) -> Column[n] = {
+  xs = to_tensor(values)
+  zm = zeros_bool_n(copy(xs))
+  IntCol(xs, zm)
+}
 
 def from_columns[n](cols: Dict[string, Column[n]]) -> Frame[n] = from_pairs(dict_entries(cols))
 
@@ -74,7 +96,14 @@ def get_float_col[n](df: Frame[n], name: string) -> tensor[n, f32] = {
 
 def get_int_col[n](df: Frame[n], name: string) -> tensor[n, int64] = {
   match get_column(df, name) with {
-    | IntCol(col) => col
+    | IntCol(col, imask) => col
+    | _ => fail(string_concat("column is not int: ", name))
+  }
+}
+
+def get_int_mask[n](df: Frame[n], name: string) -> tensor[n, bool] = {
+  match get_column(df, name) with {
+    | IntCol(gmvals, mask) => mask
     | _ => fail(string_concat("column is not int: ", name))
   }
 }
@@ -101,7 +130,7 @@ def columns[n](df: Frame[n]) -> List[string] = {
 
 def column_type[n](df: Frame[n], name: string) -> ColumnType = {
   match get_column(df, name) with {
-    | IntCol(_) => IntType
+    | IntCol(ival, imask) => IntType
     | FloatCol(_) => FloatType
     | StringCol(_) => StringType
     | BoolCol(_) => BoolType
@@ -147,7 +176,7 @@ def slice[n, k](df: Frame[n], start: int64, finish: int64) -> Frame[k] = {
 def sort_by[n](df: Frame[n], name: string, ascending: bool) -> Frame[n] = {
   match get_column(df, name) with {
     | FloatCol(col) => reindex_all(df, orient_perm(sort(copy(col), zero_i32()).1, ascending))
-    | IntCol(col) => reindex_all(df, orient_perm(sort(copy(col), zero_i32()).1, ascending))
+    | IntCol(col, smask) => reindex_all(df, orient_perm(sort(copy(col), zero_i32()).1, ascending))
     | BoolCol(col) => reindex_all(df, orient_perm(sort(copy(col), zero_i32()).1, ascending))
     | StringCol(col) => fail("sort_by: string columns are deferred in v0.1.0")
   }
@@ -203,6 +232,52 @@ def any_nan[n](col: tensor[n, f32]) -> bool = fold(fn (acc: bool, flag: bool) ->
 
 def count_nan[n](col: tensor[n, f32]) -> int64 = fold(fn (acc: int64, flag: bool) -> if flag then add(acc, one_i64()) else acc, zero_i64(), to_list(is_nan(col)))
 
+-- Integer column NaN helpers (operate via the boolean mask, true = missing).
+def is_nan_int[n](df: Frame[n], col_name: string) -> tensor[n, bool] = {
+  match get_column(df, col_name) with {
+    | IntCol(ivals, mask) => mask
+    | _ => fail(string_concat("is_nan_int: column is not int: ", col_name))
+  }
+}
+
+def any_nan_int[n](df: Frame[n], col_name: string) -> bool = {
+  fold(fn (acc: bool, v: bool) -> or(acc, v), false, to_list(is_nan_int(df, col_name)))
+}
+
+def count_nan_int[n](df: Frame[n], col_name: string) -> int64 = {
+  fold(fn (acc: int64, v: bool) -> if v then add(acc, one_i64()) else acc, zero_i64(), to_list(is_nan_int(df, col_name)))
+}
+
+def fill_nan_int[n](df: Frame[n], col_name: string, fill_val: int64) -> Frame[n] = {
+  match get_column(df, col_name) with {
+    | IntCol(xs, mask) => {
+        filled = to_tensor(fill_int_list(to_list(xs), to_list(mask), fill_val, []))
+        fm = zeros_bool_n(copy(filled))
+        with_column(df, col_name, IntCol(filled, fm))
+      }
+    | _ => fail(string_concat("fill_nan_int: column is not int: ", col_name))
+  }
+}
+
+def fill_int_list(values: List[int64], masks: List[bool], fill_val: int64, acc: List[int64]) -> List[int64] = {
+  if eq(len(values), zero_i64()) then acc else {
+    v = index(values, zero_i64())
+    m = index(masks, zero_i64())
+    next = if m then fill_val else v
+    fill_int_list(drop(values, one_i64()), drop(masks, one_i64()), fill_val, append(acc, next))
+  }
+}
+
+def drop_nan_int[n, k](df: Frame[n], col_name: string) -> Frame[k] = {
+  match get_column(df, col_name) with {
+    | IntCol(dnvals, mask) => {
+        keep = bool_list_to_tensor(map(fn (flag: bool) -> not(flag), to_list(mask)))
+        filter(df, keep)
+      }
+    | _ => fail(string_concat("drop_nan_int: column is not int: ", col_name))
+  }
+}
+
 def concat[n, k](frames: List[Frame[n]]) -> Frame[k] = {
   if eq(len(frames), zero_i64()) then Frame { cols: hamt_from_pairs([]), col_order: [] }
   else {
@@ -234,16 +309,29 @@ def key_values[n](df: Frame[n], name: string) -> List[KeyValue] = column_key_val
 
 def key_values_to_column_like[m, n](keys: List[KeyValue], template: Column[n]) -> Column[m] = {
   match template with {
-    | IntCol(col) => IntCol(to_tensor(map(fn (key: KeyValue) -> match key with { | KeyIntValue(v) => v | _ => fail("key type mismatch") }, keys)))
+    | IntCol(col, ktmpl) => keys_to_int_col(keys, [], [])
     | FloatCol(col) => FloatCol(to_tensor(map(fn (key: KeyValue) -> match key with { | KeyFloatValue(v) => v | _ => fail("key type mismatch") }, keys)))
     | StringCol(col) => StringCol(map(fn (key: KeyValue) -> match key with { | KeyStringValue(v) => v | _ => fail("key type mismatch") }, keys))
     | BoolCol(col) => fail("bool regrouping is not supported yet")
   }
 }
 
+def keys_to_int_col[m](keys: List[KeyValue], vals_acc: List[int64], mask_acc: List[bool]) -> Column[m] = {
+  if eq(len(keys), zero_i64()) then IntCol(to_tensor(vals_acc), bool_list_to_tensor(mask_acc))
+  else {
+    key = index(keys, zero_i64())
+    pair = match key with {
+      | KeyIntValue(v) => (v, false)
+      | KeyStringValue(s) => (zero_i64(), true)
+      | _ => fail("key type mismatch")
+    }
+    keys_to_int_col(drop(keys, one_i64()), append(vals_acc, pair.0), append(mask_acc, pair.1))
+  }
+}
+
 def empty_column[n](ty: ColumnType) -> Column[n] = {
   match ty with {
-    | IntType => IntCol(to_tensor([]))
+    | IntType => IntCol(to_tensor([]), bool_list_to_tensor([]))
     | FloatType => FloatCol(to_tensor([]))
     | StringType => StringCol([])
     | BoolType => BoolCol(to_tensor([]))
@@ -252,7 +340,7 @@ def empty_column[n](ty: ColumnType) -> Column[n] = {
 
 def column_len[n](col: Column[n]) -> int64 = {
   match col with {
-    | IntCol(xs) => numel(copy(xs))
+    | IntCol(xs, lmask) => numel(copy(xs))
     | FloatCol(xs) => numel(copy(xs))
     | StringCol(xs) => len(xs)
     | BoolCol(xs) => numel(copy(xs))
@@ -298,7 +386,7 @@ def mask_to_index_list(items: List[(int64, bool)], acc: List[int64]) -> List[int
 
 def reindex_column[n, k](col: Column[n], idx_tensor: tensor[k, int64], idx_list: List[int64]) -> Column[k] = {
   match col with {
-    | IntCol(xs) => IntCol(gather(copy(xs), idx_tensor, zero_i32()))
+    | IntCol(xs, mask) => IntCol(gather(copy(xs), copy(idx_tensor), zero_i32()), gather(copy(mask), idx_tensor, zero_i32()))
     | FloatCol(xs) => FloatCol(gather(copy(xs), idx_tensor, zero_i32()))
     | StringCol(xs) => StringCol(list_gather_string(xs, idx_list))
     | BoolCol(xs) => BoolCol(gather(copy(xs), idx_tensor, zero_i32()))
@@ -343,16 +431,28 @@ def schema_eq_names[n](names: List[string], lhs: Frame[n], rhs: Frame[n]) -> boo
 def concat_column[n, k](name: string, frames: List[Frame[n]]) -> Column[k] = {
   sample = get_column(index(frames, zero_i64()), name)
   match sample with {
-    | IntCol(col) => IntCol(to_tensor(concat_int_lists(map(fn (frame: Frame[n]) -> to_list(get_int_col(frame, name)), frames), [])))
+    | IntCol(col, cmask) => {
+        all_vals = concat_int_lists(map(fn (frame: Frame[n]) -> to_list(get_int_col(frame, name)), frames), [])
+        all_masks = concat_bool_lists(map(fn (frame: Frame[n]) -> to_list(get_int_mask(frame, name)), frames), [])
+        IntCol(to_tensor(all_vals), bool_list_to_tensor(all_masks))
+      }
     | FloatCol(col) => FloatCol(to_tensor(concat_float_lists(map(fn (frame: Frame[n]) -> to_list(get_float_col(frame, name)), frames), [])))
     | StringCol(col) => StringCol(concat_strings(map(fn (frame: Frame[n]) -> get_string_col(frame, name), frames), []))
     | BoolCol(col) => {
         int_list = concat_int_lists(map(fn (frame: Frame[n]) -> bools_to_ints(to_list(get_bool_col(frame, name))), frames), [])
-        ints = to_tensor(int_list)
         zeros = to_tensor(map(fn (value: int64) -> zero_i64(), int_list))
+        ints = to_tensor(int_list)
         BoolCol(neq(copy(ints), zeros))
       }
   }
+}
+
+def concat_bool_lists(parts: List[List[bool]], acc: List[bool]) -> List[bool] = {
+  if eq(len(parts), zero_i64()) then acc else concat_bool_lists(drop(parts, one_i64()), append_all_bools(acc, index(parts, zero_i64())))
+}
+
+def append_all_bools(lhs: List[bool], rhs: List[bool]) -> List[bool] = {
+  if eq(len(rhs), zero_i64()) then lhs else append_all_bools(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
 }
 
 def concat_strings(parts: List[List[string]], acc: List[string]) -> List[string] = {
@@ -370,7 +470,7 @@ def is_numeric_type(ty: ColumnType) -> bool = {
 def describe_column[m, n](col: Column[n]) -> Column[m] = {
   match col with {
     | FloatCol(xs) => FloatCol(to_tensor(float_stats_skip_nan(xs)))
-    | IntCol(xs) => FloatCol(to_tensor(float_stats(ints_to_floats(xs))))
+    | IntCol(xs, dmask) => FloatCol(to_tensor(float_stats(ints_to_floats(xs))))
     | _ => fail("describe: only numeric columns are supported")
   }
 }
@@ -428,10 +528,19 @@ def bools_to_ints(values: List[bool]) -> List[int64] = {
 
 def column_key_values[n](col: Column[n]) -> List[KeyValue] = {
   match col with {
-    | IntCol(xs) => map(fn (x: int64) -> KeyIntValue(x), to_list(xs))
+    | IntCol(xs, mask) => map2_int_key(to_list(xs), to_list(mask), [])
     | FloatCol(xs) => map(fn (x: f32) -> KeyFloatValue(x), to_list(xs))
     | StringCol(xs) => map(fn (x: string) -> KeyStringValue(x), xs)
     | BoolCol(xs) => map(fn (x: bool) -> KeyBoolValue(x), to_list(xs))
+  }
+}
+
+def map2_int_key(values: List[int64], masks: List[bool], acc: List[KeyValue]) -> List[KeyValue] = {
+  if eq(len(values), zero_i64()) then acc else {
+    v = index(values, zero_i64())
+    m = index(masks, zero_i64())
+    key = if m then KeyStringValue("NULL") else KeyIntValue(v)
+    map2_int_key(drop(values, one_i64()), drop(masks, one_i64()), append(acc, key))
   }
 }
 
@@ -492,7 +601,6 @@ def concat_int_lists(parts: List[List[int64]], acc: List[int64]) -> List[int64] 
 def append_all_ints(lhs: List[int64], rhs: List[int64]) -> List[int64] = {
   if eq(len(rhs), zero_i64()) then lhs else append_all_ints(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
 }
-
 
 def concat_float_lists(parts: List[List[f32]], acc: List[f32]) -> List[f32] = {
   if eq(len(parts), zero_i64()) then acc else concat_float_lists(drop(parts, one_i64()), append_all_floats(acc, index(parts, zero_i64())))

@@ -2,6 +2,15 @@
 
 Tracked upstream/toolchain issues that affect Coral development.
 
+- **Upstream blocker (v0.1.21): `Std.IO.Parquet` module is a placeholder** — the module
+  resolves at import-check time (score 1.0 on empty import list) but exports no callable
+  functions. Probing `read_parquet`, `read_parquet_rows`, `read_parquet_file`, and
+  `write_parquet` all return `UnboundVariable`. The stdlib archive (`chelis-std-0.1.0`)
+  contains `io/csv.ch`, `io/json.ch`, and `io/safetensors.ch` but no `io/parquet.ch`.
+  `read_parquet_frame` / `write_parquet_frame` remain `fail(...)` stubs in `src/io.ch`
+  until parquet lands upstream. Track the `Chelis-Lang/chelis` release notes for when
+  `Std.IO.Parquet` becomes functional.
+
 - `chelis v0.1.18` still requires the `copy(values)` compatibility fix around
   tensor-to-list conversion that Coral already applies in `describe`.
   This remains a relevant compiler-surface change for downstream shells.

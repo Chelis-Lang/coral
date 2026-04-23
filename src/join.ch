@@ -1,6 +1,6 @@
 module Coral.Join
 import Coral.Frame (Column, Frame, KeyValue, columns, from_pairs, get_column, key_id, key_values, nrows)
-export (inner_join, left_join)
+export (inner_join, left_join, outer_join)
 
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
@@ -10,15 +10,40 @@ def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))
 def inner_join[n, m, k](left: Frame[n], right: Frame[m], on: string) -> Frame[k] = build_join(left, right, on, false)
 def left_join[n, m, k](left: Frame[n], right: Frame[m], on: string) -> Frame[k] = build_join(left, right, on, true)
 
+def outer_join[n, m, k](left: Frame[n], right: Frame[m], on: string) -> Frame[k] = {
+  lkeys = key_values(left, on)
+  rkeys = key_values(right, on)
+  left_pairs = join_pairs(lkeys, rkeys, true, zero_i64(), [])
+  right_extra = right_unmatched_pairs(lkeys, rkeys, zero_i64(), [])
+  all_pairs = append_pairs(left_pairs, right_extra)
+  assemble_join(left, right, on, all_pairs)
+}
+
 def build_join[n, m, k](left: Frame[n], right: Frame[m], on: string, keep_left: bool) -> Frame[k] = {
   left_keys = key_values(left, on)
   right_keys = key_values(right, on)
   pairs = join_pairs(left_keys, right_keys, keep_left, zero_i64(), [])
+  assemble_join(left, right, on, pairs)
+}
+
+def assemble_join[n, m, k](left: Frame[n], right: Frame[m], on: string, pairs: List[(int64, int64)]) -> Frame[k] = {
   left_rows = map(fn (pair: (int64, int64)) -> pair.0, pairs)
   right_rows = map(fn (pair: (int64, int64)) -> pair.1, pairs)
   left_cols = map(fn (name: string) -> (name, build_column(get_column(left, name), left_rows, false)), columns(left))
   right_cols = map(fn (name: string) -> if eq(name, on) then ("", StringCol([])) else (right_name(columns(left), name), build_column(get_column(right, name), right_rows, true)), columns(right))
   from_pairs(append_named(left_cols, right_cols))
+}
+
+def right_unmatched_pairs(left_keys: List[KeyValue], right_keys: List[KeyValue], idx: int64, acc: List[(int64, int64)]) -> List[(int64, int64)] = {
+  if gte(idx, len(right_keys)) then acc
+  else {
+    right_key = index(right_keys, idx)
+    matches = matching_rows(left_keys, key_id(right_key), zero_i64(), [])
+    if eq(len(matches), zero_i64()) then
+      right_unmatched_pairs(left_keys, right_keys, add(idx, one_i64()), append(acc, (neg_one_i64(), idx)))
+    else
+      right_unmatched_pairs(left_keys, right_keys, add(idx, one_i64()), acc)
+  }
 }
 
 def right_name(left_names: List[string], name: string) -> string = if contains_name(left_names, name) then string_concat(name, "_right") else name

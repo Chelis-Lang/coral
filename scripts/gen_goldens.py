@@ -22,6 +22,7 @@ GROUPBY_GOLDENS = REPO / "tests" / "goldens" / "groupby"
 IO_GOLDENS = REPO / "tests" / "goldens" / "io"
 JOIN_GOLDENS = REPO / "tests" / "goldens" / "join"
 WINDOW_GOLDENS = REPO / "tests" / "goldens" / "window"
+RESHAPE_GOLDENS = REPO / "tests" / "goldens" / "reshape"
 
 BASE_SCHEMA = {
     "id": "int",
@@ -141,6 +142,20 @@ def frame_fixtures() -> dict[str, dict]:
         "drop_nan_price.json": {"fixture": "drop_nan_price", "operation": "drop_nan", "expected_frame": frame_payload(dropped_nan.reset_index(drop=True), BASE_SCHEMA)},
         "concat_base_parts.json": {"fixture": "concat_base_parts", "operation": "concat", "expected_frame": frame_payload(concat_parts, BASE_SCHEMA)},
         "describe_numeric.json": {"fixture": "describe_numeric", "operation": "describe", "expected_frame": describe_payload(base)},
+        "value_counts_city.json": generate_value_counts_city(),
+    }
+
+
+def generate_value_counts_city() -> dict:
+    df = pd.DataFrame({"city": ["london", "paris", "london", "paris"]})
+    counts = df["city"].value_counts(sort=False)
+    vc_df = counts.reset_index()
+    vc_df.columns = ["city", "count"]
+    schema = {"city": "string", "count": "int"}
+    return {
+        "fixture": "value_counts_city",
+        "operation": "value_counts",
+        "expected_frame": frame_payload(vc_df, schema),
     }
 
 
@@ -254,12 +269,17 @@ def join_fixtures() -> dict[str, dict]:
     inner = left.merge(right, on="customer", how="inner", sort=False)
     left_joined = left.merge(right, on="customer", how="left", sort=False)
     left_joined["region"] = left_joined["region"].fillna("")
+    outer_joined = left.merge(right, on="customer", how="outer", sort=False)
+    outer_joined["region"] = outer_joined["region"].fillna("")
+    outer_joined["qty"] = outer_joined["qty"].fillna(0).astype(int)
     inner_schema = {"customer": "string", "qty": "int", "region": "string", "score": "float"}
     left_schema = {"customer": "string", "qty": "int", "region": "string", "score": "float"}
+    outer_schema = {"customer": "string", "qty": "int", "region": "string", "score": "float"}
     return {
         "README.json": join_contract(),
         "inner_join_customer.json": {"fixture": "inner_join_customer", "operation": "inner_join", "expected_frame": frame_payload(inner, inner_schema)},
         "left_join_customer.json": {"fixture": "left_join_customer", "operation": "left_join", "expected_frame": frame_payload(left_joined, left_schema)},
+        "outer_join_customer.json": {"fixture": "outer_join_customer", "operation": "outer_join", "expected_frame": frame_payload(outer_joined, outer_schema)},
     }
 
 
@@ -369,6 +389,66 @@ def check_json(path: Path, payload: dict) -> list[str]:
     return []
 
 
+def reshape_contract() -> dict:
+    return {
+        "schema_version": 1,
+        "note": "Coral reshape goldens are produced from pandas and cover pivot and melt.",
+        "phase_slice": [
+            "pivot with string index_col and columns_col, float values_col",
+            "melt with id_cols and float value_cols",
+        ],
+        "known_deltas": [
+            "only FloatCol values_col is supported in v0.1",
+            "pivot index_col and columns_col must be StringCol",
+            "melt id_cols must be StringCol in v0.1",
+        ],
+    }
+
+
+def reshape_base() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "city": ["london", "paris", "oslo", "london", "paris", "oslo"],
+            "product": ["a", "a", "a", "b", "b", "b"],
+            "qty": [5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+            "price": [10.0, 20.0, 30.0, 40.0, 50.0, 60.0],
+        }
+    )
+
+
+def reshape_fixtures() -> dict[str, dict]:
+    base = reshape_base()
+
+    pivot_df = base.pivot(index="city", columns="product", values="price").reset_index()
+    pivot_df.columns.name = None
+    pivot_schema = {"city": "string", "a": "float", "b": "float"}
+
+    melt_df = base[["city", "qty", "price"]].melt(
+        id_vars=["city"], value_vars=["qty", "price"], var_name="variable", value_name="value"
+    )
+    melt_schema = {"variable": "string", "value": "float", "city": "string"}
+    melt_reordered = melt_df[["variable", "value", "city"]].reset_index(drop=True)
+
+    return {
+        "README.json": reshape_contract(),
+        "pivot_city_product_price.json": {
+            "fixture": "pivot_city_product_price",
+            "operation": "pivot",
+            "index_col": "city",
+            "columns_col": "product",
+            "values_col": "price",
+            "expected_frame": frame_payload(pivot_df, pivot_schema),
+        },
+        "melt_city_qty_price.json": {
+            "fixture": "melt_city_qty_price",
+            "operation": "melt",
+            "id_cols": ["city"],
+            "value_cols": ["qty", "price"],
+            "expected_frame": frame_payload(melt_reordered, melt_schema),
+        },
+    }
+
+
 def write_or_check(base_dir: Path, expected: dict[str, dict], *, check: bool) -> list[str]:
     issues: list[str] = []
     for rel_name, payload in expected.items():
@@ -392,13 +472,14 @@ def main() -> int:
     issues.extend(write_or_check(IO_GOLDENS, io_fixtures(), check=args.check))
     issues.extend(write_or_check(JOIN_GOLDENS, join_fixtures(), check=args.check))
     issues.extend(write_or_check(WINDOW_GOLDENS, window_fixtures(), check=args.check))
+    issues.extend(write_or_check(RESHAPE_GOLDENS, reshape_fixtures(), check=args.check))
 
     if args.check:
         if issues:
             for issue in issues:
                 print(issue)
             return 1
-        print("frame, groupby, io, join, and window goldens match pandas")
+        print("frame, groupby, io, join, window, and reshape goldens match pandas")
     return 0
 
 

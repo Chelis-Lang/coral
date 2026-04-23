@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "note": "Coral reshape goldens are produced from pandas and cover pivot and melt.",
+  "phase_slice": [
+    "pivot with string index_col and columns_col, float values_col",
+    "melt with id_cols and float value_cols"
+  ],
+  "known_deltas": [
+    "only FloatCol values_col is supported in v0.1",
+    "pivot index_col and columns_col must be StringCol",
+    "melt id_cols must be StringCol in v0.1"
+  ]
+}

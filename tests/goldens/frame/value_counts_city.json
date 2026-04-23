@@ -1,0 +1,26 @@
+{
+  "fixture": "value_counts_city",
+  "operation": "value_counts",
+  "expected_frame": {
+    "nrows": 2,
+    "ncols": 2,
+    "columns": [
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris"
+        ]
+      },
+      {
+        "name": "count",
+        "type": "int",
+        "values": [
+          2,
+          2
+        ]
+      }
+    ]
+  }
+}

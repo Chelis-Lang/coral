@@ -31,6 +31,7 @@ GROUPBY_GOLDENS = REPO / "tests" / "goldens" / "groupby"
 IO_GOLDENS = REPO / "tests" / "goldens" / "io"
 JOIN_GOLDENS = REPO / "tests" / "goldens" / "join"
 WINDOW_GOLDENS = REPO / "tests" / "goldens" / "window"
+RESHAPE_GOLDENS = REPO / "tests" / "goldens" / "reshape"
 REQUIRED_FRAME_GOLDENS = [
     "README.json",
     "base.json",
@@ -45,6 +46,7 @@ REQUIRED_FRAME_GOLDENS = [
     "drop_nan_price.json",
     "concat_base_parts.json",
     "describe_numeric.json",
+    "value_counts_city.json",
 ]
 REQUIRED_GROUPBY_GOLDENS = [
     "README.json",
@@ -66,6 +68,7 @@ REQUIRED_JOIN_GOLDENS = [
     "README.json",
     "inner_join_customer.json",
     "left_join_customer.json",
+    "outer_join_customer.json",
 ]
 REQUIRED_WINDOW_GOLDENS = [
     "README.json",
@@ -75,6 +78,11 @@ REQUIRED_WINDOW_GOLDENS = [
     "rolling_min_w3.json",
     "rolling_max_w3.json",
     "ewm_alpha_0_5.json",
+]
+REQUIRED_RESHAPE_GOLDENS = [
+    "README.json",
+    "pivot_city_product_price.json",
+    "melt_city_qty_price.json",
 ]
 
 
@@ -365,6 +373,7 @@ def main() -> int:
         (CHELIS, "check", "src/io.ch"),
         (CHELIS, "check", "src/join.ch"),
         (CHELIS, "check", "src/window.ch"),
+        (CHELIS, "check", "src/reshape.ch"),
     ]
     for step in steps:
         if run(*step) != 0:
@@ -378,6 +387,8 @@ def main() -> int:
     if validate_checked_in_goldens(JOIN_GOLDENS, REQUIRED_JOIN_GOLDENS, "join") != 0:
         return 1
     if validate_checked_in_goldens(WINDOW_GOLDENS, REQUIRED_WINDOW_GOLDENS, "window") != 0:
+        return 1
+    if validate_checked_in_goldens(RESHAPE_GOLDENS, REQUIRED_RESHAPE_GOLDENS, "reshape") != 0:
         return 1
     if run_pandas_check_if_available() != 0:
         return 1

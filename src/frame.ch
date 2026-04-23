@@ -7,7 +7,7 @@ export (
   get_column, get_float_col, get_int_col, get_string_col, get_bool_col,
   columns, column_type, nrows, ncols,
   filter, head, tail, slice, sort_by,
-  with_column, rename, drop_column,
+  with_column, mutate, rename, drop_column,
   is_nan, fill_nan, drop_nan, any_nan, count_nan,
   concat, describe,
   key_id, key_values, key_values_to_column_like
@@ -165,6 +165,8 @@ def with_column[n](df: Frame[n], name: string, col: Column[n]) -> Frame[n] = {
     }
   }
 }
+
+def mutate[n](df: Frame[n], name: string, col: Column[n]) -> Frame[n] = with_column(df, name, col)
 
 def rename[n](df: Frame[n], old_name: string, new_name: string) -> Frame[n] = {
   if contains_string(columns(df), new_name) then fail("rename: target column already exists")

@@ -1,6 +1,6 @@
 module Coral.GroupBy
 import Coral.Frame (Column, Frame, KeyValue, key_id, key_values, key_values_to_column_like, get_column, get_float_col, get_int_col, with_column, from_pairs)
-export (AggFn, GroupedFrame, group_by, agg_sum, agg_mean, agg_count, agg_min, agg_max, agg)
+export (AggFn, GroupedFrame, group_by, agg_sum, agg_mean, agg_count, agg_min, agg_max, agg, value_counts)
 
 type AggFn =
   | AggSum
@@ -89,6 +89,11 @@ def apply_specs[n, m](base: Frame[m], gf: GroupedFrame[n], specs: List[(string, 
     }
     apply_specs(next, gf, drop(specs, one_i64()))
   }
+}
+
+def value_counts[n, m](df: Frame[n], col_name: string) -> Frame[m] = {
+  gf = group_by(df, col_name)
+  agg_count(gf)
 }
 
 def merge_agg[m](base: Frame[m], extra: Frame[m], name: string) -> Frame[m] = with_column(base, name, get_column(extra, name))

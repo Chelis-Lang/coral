@@ -1,0 +1,71 @@
+{
+  "fixture": "melt_city_qty_price",
+  "operation": "melt",
+  "id_cols": [
+    "city"
+  ],
+  "value_cols": [
+    "qty",
+    "price"
+  ],
+  "expected_frame": {
+    "nrows": 12,
+    "ncols": 3,
+    "columns": [
+      {
+        "name": "variable",
+        "type": "string",
+        "values": [
+          "qty",
+          "qty",
+          "qty",
+          "qty",
+          "qty",
+          "qty",
+          "price",
+          "price",
+          "price",
+          "price",
+          "price",
+          "price"
+        ]
+      },
+      {
+        "name": "value",
+        "type": "float",
+        "values": [
+          5.0,
+          6.0,
+          7.0,
+          8.0,
+          9.0,
+          10.0,
+          10.0,
+          20.0,
+          30.0,
+          40.0,
+          50.0,
+          60.0
+        ]
+      },
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris",
+          "oslo",
+          "london",
+          "paris",
+          "oslo",
+          "london",
+          "paris",
+          "oslo",
+          "london",
+          "paris",
+          "oslo"
+        ]
+      }
+    ]
+  }
+}

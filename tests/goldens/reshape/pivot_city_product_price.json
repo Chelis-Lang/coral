@@ -1,0 +1,40 @@
+{
+  "fixture": "pivot_city_product_price",
+  "operation": "pivot",
+  "index_col": "city",
+  "columns_col": "product",
+  "values_col": "price",
+  "expected_frame": {
+    "nrows": 3,
+    "ncols": 3,
+    "columns": [
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "oslo",
+          "paris"
+        ]
+      },
+      {
+        "name": "a",
+        "type": "float",
+        "values": [
+          10.0,
+          30.0,
+          20.0
+        ]
+      },
+      {
+        "name": "b",
+        "type": "float",
+        "values": [
+          40.0,
+          60.0,
+          50.0
+        ]
+      }
+    ]
+  }
+}

@@ -11,6 +11,7 @@ Current parity-backed scope:
 - float-NaN helpers
 - vertical `concat`
 - numeric `describe`
+- `sort_by` on int, float, bool, and string columns
 - single-key `group_by` with `sum` / `mean` / `count` / `min` / `max`
 - string-key `inner_join` and `left_join` for the current supported output slice
 - CSV/JSON read-write expectations for int / float / bool / string columns
@@ -19,7 +20,6 @@ Current parity-backed scope:
 
 Documented deltas:
 
-- string `sort_by` is deferred
 - stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.2.0`:
   build, link, and execution all pass; acceptance gate is fixture goldens plus
   the compile-level probe in `tests/run_coral_tests.py`

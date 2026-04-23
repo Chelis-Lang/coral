@@ -1,0 +1,40 @@
+{
+  "fixture": "sort_by_city_desc",
+  "operation": "sort_by",
+  "expected_frame": {
+    "nrows": 4,
+    "ncols": 3,
+    "columns": [
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "paris",
+          "oslo",
+          "london",
+          "berlin"
+        ]
+      },
+      {
+        "name": "price",
+        "type": "float",
+        "values": [
+          20.0,
+          30.0,
+          10.0,
+          15.0
+        ]
+      },
+      {
+        "name": "qty",
+        "type": "int",
+        "values": [
+          2,
+          1,
+          5,
+          3
+        ]
+      }
+    ]
+  }
+}

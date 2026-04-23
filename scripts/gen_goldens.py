@@ -108,7 +108,6 @@ def frame_contract() -> dict:
             "describe",
         ],
         "known_deltas": [
-            "string sort_by is deferred",
             "stripped Frame/GroupBy/Join bare-build runtime is blocked upstream on v0.2.0",
             "checked-in goldens prove pandas reference behavior even when runtime parity harness is still partial",
         ],
@@ -144,6 +143,38 @@ def frame_fixtures() -> dict[str, dict]:
         "describe_numeric.json": {"fixture": "describe_numeric", "operation": "describe", "expected_frame": describe_payload(base)},
         "value_counts_city.json": generate_value_counts_city(),
         "fill_nan_qty.json": generate_fill_nan_qty(),
+        "sort_by_city_asc.json": generate_sort_by_city_asc(),
+        "sort_by_city_desc.json": generate_sort_by_city_desc(),
+    }
+
+
+def generate_sort_by_city_asc() -> dict:
+    df = pd.DataFrame({
+        "city": ["paris", "london", "oslo", "berlin"],
+        "price": [20.0, 10.0, 30.0, 15.0],
+        "qty": [2, 5, 1, 3],
+    })
+    result = df.sort_values("city", ascending=True).reset_index(drop=True)
+    schema = {"city": "string", "price": "float", "qty": "int"}
+    return {
+        "fixture": "sort_by_city_asc",
+        "operation": "sort_by",
+        "expected_frame": frame_payload(result, schema),
+    }
+
+
+def generate_sort_by_city_desc() -> dict:
+    df = pd.DataFrame({
+        "city": ["paris", "london", "oslo", "berlin"],
+        "price": [20.0, 10.0, 30.0, 15.0],
+        "qty": [2, 5, 1, 3],
+    })
+    result = df.sort_values("city", ascending=False).reset_index(drop=True)
+    schema = {"city": "string", "price": "float", "qty": "int"}
+    return {
+        "fixture": "sort_by_city_desc",
+        "operation": "sort_by",
+        "expected_frame": frame_payload(result, schema),
     }
 
 

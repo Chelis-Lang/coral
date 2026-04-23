@@ -1,6 +1,5 @@
 # Limitations
 
-- string `sort_by` is deferred
 - Parquet I/O is deferred
 - bool-heavy regrouping and join-output paths are still narrower than the numeric and string paths
 - `from_columns` / `empty` column order should not be treated as parity-stable until

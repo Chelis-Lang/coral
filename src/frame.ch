@@ -173,12 +173,58 @@ def slice[n, k](df: Frame[n], start: int64, finish: int64) -> Frame[k] = {
   from_pairs(map(fn (name: string) -> (name, reindex_column(get_column(df, name), idx, idx_list)), columns(df)))
 }
 
+-- Lexicographic string comparison helpers for string sort_by
+
+def str_char_lt(lch: string, rch: string) -> bool = {
+  lt(char_code(lch), char_code(rch))
+}
+
+def str_lt(lhs: string, rhs: string) -> bool = {
+  str_lt_pos(lhs, rhs, zero_i64(), string_len(lhs), string_len(rhs))
+}
+
+def str_lt_pos(lhs: string, rhs: string, pos: int64, llen: int64, rlen: int64) -> bool = {
+  if eq(pos, llen) then neq(llen, rlen)
+  else if eq(pos, rlen) then false
+  else {
+    lch = string_slice(lhs, pos, one_i64())
+    rch = string_slice(rhs, pos, one_i64())
+    if neq(lch, rch) then str_char_lt(lch, rch)
+    else str_lt_pos(lhs, rhs, add(pos, one_i64()), llen, rlen)
+  }
+}
+
+def append_all_enum_pairs(lhs: List[(int64, string)], rhs: List[(int64, string)]) -> List[(int64, string)] = {
+  if eq(len(rhs), zero_i64()) then lhs
+  else append_all_enum_pairs(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
+}
+
+def enum_pair_insert(xs: List[(int64, string)], pair: (int64, string)) -> List[(int64, string)] = {
+  if eq(len(xs), zero_i64()) then [pair]
+  else if str_lt(pair.1, index(xs, zero_i64()).1) then append_all_enum_pairs([pair], xs)
+  else append(enum_pair_insert(drop(xs, one_i64()), pair), index(xs, zero_i64()))
+}
+
+def enum_insertion_sort(unsorted: List[(int64, string)], acc: List[(int64, string)]) -> List[(int64, string)] = {
+  if eq(len(unsorted), zero_i64()) then acc
+  else enum_insertion_sort(drop(unsorted, one_i64()), enum_pair_insert(acc, index(unsorted, zero_i64())))
+}
+
+def extract_perm_indices(pairs: List[(int64, string)], acc: List[int64]) -> List[int64] = {
+  if eq(len(pairs), zero_i64()) then acc
+  else extract_perm_indices(drop(pairs, one_i64()), append(acc, index(pairs, zero_i64()).0))
+}
+
 def sort_by[n](df: Frame[n], name: string, ascending: bool) -> Frame[n] = {
   match get_column(df, name) with {
     | FloatCol(col) => reindex_all(df, orient_perm(sort(copy(col), zero_i32()).1, ascending))
     | IntCol(col, smask) => reindex_all(df, orient_perm(sort(copy(col), zero_i32()).1, ascending))
     | BoolCol(col) => reindex_all(df, orient_perm(sort(copy(col), zero_i32()).1, ascending))
-    | StringCol(col) => fail("sort_by: string columns are deferred in v0.1.0")
+    | StringCol(col) => {
+        sorted_pairs = enum_insertion_sort(enumerate(col), [])
+        perm = to_tensor(extract_perm_indices(sorted_pairs, []))
+        reindex_all(df, orient_perm(perm, ascending))
+      }
   }
 }
 

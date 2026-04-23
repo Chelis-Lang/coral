@@ -44,11 +44,11 @@ jobs:
           sed -i "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/chelis-std/reef.toml
           chelis reef publish /tmp/reef-deps/chelis-std
-          gh release download v0.1.4 \
+          gh release download v0.2.0 \
             --repo Chelis-Lang/nautilus \
-            --pattern 'nautilus-0.1.4.tar.zst' \
+            --pattern 'nautilus-0.2.0.tar.zst' \
             --dir /tmp/reef-deps/nautilus-dl
-          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.1.4.tar.zst \
+          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.2.0.tar.zst \
             -C /tmp/reef-deps/nautilus
           sed -i "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/nautilus/reef.toml

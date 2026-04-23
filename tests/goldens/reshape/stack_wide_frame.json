@@ -1,0 +1,38 @@
+{
+  "fixture": "stack_wide_frame",
+  "operation": "stack",
+  "value_cols": [
+    "qty",
+    "price"
+  ],
+  "expected_frame": {
+    "nrows": 6,
+    "ncols": 2,
+    "columns": [
+      {
+        "name": "variable",
+        "type": "string",
+        "values": [
+          "qty",
+          "qty",
+          "qty",
+          "price",
+          "price",
+          "price"
+        ]
+      },
+      {
+        "name": "value",
+        "type": "float",
+        "values": [
+          5.0,
+          6.0,
+          7.0,
+          10.0,
+          20.0,
+          30.0
+        ]
+      }
+    ]
+  }
+}

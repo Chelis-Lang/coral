@@ -87,6 +87,8 @@ REQUIRED_RESHAPE_GOLDENS = [
     "README.json",
     "pivot_city_product_price.json",
     "melt_city_qty_price.json",
+    "stack_wide_frame.json",
+    "unstack_stacked_frame.json",
 ]
 
 

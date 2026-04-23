@@ -1,0 +1,35 @@
+{
+  "fixture": "unstack_stacked_frame",
+  "operation": "unstack",
+  "index_col": "city",
+  "expected_frame": {
+    "nrows": 2,
+    "ncols": 3,
+    "columns": [
+      {
+        "name": "city",
+        "type": "string",
+        "values": [
+          "london",
+          "paris"
+        ]
+      },
+      {
+        "name": "qty",
+        "type": "float",
+        "values": [
+          5.0,
+          6.0
+        ]
+      },
+      {
+        "name": "price",
+        "type": "float",
+        "values": [
+          10.0,
+          20.0
+        ]
+      }
+    ]
+  }
+}

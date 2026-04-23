@@ -475,6 +475,48 @@ def reshape_base() -> pd.DataFrame:
     )
 
 
+def gen_stack_wide_frame() -> dict:
+    # Coral stack(df) = melt(df, [], columns(df)) — no id_cols, all columns as value_cols.
+    # Only FloatCol columns are supported, so use a purely numeric frame.
+    df = pd.DataFrame({
+        "qty": [5.0, 6.0, 7.0],
+        "price": [10.0, 20.0, 30.0],
+    })
+    # pandas equivalent: melt with no id_vars, all columns as value_vars.
+    result = df.melt(id_vars=[], value_vars=["qty", "price"], var_name="variable", value_name="value")
+    result = result[["variable", "value"]].reset_index(drop=True)
+    schema = {"variable": "string", "value": "float"}
+    return {
+        "fixture": "stack_wide_frame",
+        "operation": "stack",
+        "value_cols": ["qty", "price"],
+        "expected_frame": frame_payload(result, schema),
+    }
+
+
+def gen_unstack_stacked_frame() -> dict:
+    # Coral unstack(df, index_col) = pivot(df, index_col, "variable", "value").
+    # Build a stacked frame that has an index_col, a "variable" col, and a "value" col,
+    # then pivot on index_col to recover wide form.
+    df = pd.DataFrame({
+        "city": ["london", "paris", "london", "paris"],
+        "variable": ["qty", "qty", "price", "price"],
+        "value": [5.0, 6.0, 10.0, 20.0],
+    })
+    # pivot: index="city", columns="variable", values="value"
+    result = df.pivot(index="city", columns="variable", values="value").reset_index()
+    result.columns.name = None
+    # column order from unique_strings (first-seen): city, qty, price
+    result = result[["city", "qty", "price"]].reset_index(drop=True)
+    schema = {"city": "string", "qty": "float", "price": "float"}
+    return {
+        "fixture": "unstack_stacked_frame",
+        "operation": "unstack",
+        "index_col": "city",
+        "expected_frame": frame_payload(result, schema),
+    }
+
+
 def reshape_fixtures() -> dict[str, dict]:
     base = reshape_base()
 
@@ -505,6 +547,8 @@ def reshape_fixtures() -> dict[str, dict]:
             "value_cols": ["qty", "price"],
             "expected_frame": frame_payload(melt_reordered, melt_schema),
         },
+        "stack_wide_frame.json": gen_stack_wide_frame(),
+        "unstack_stacked_frame.json": gen_unstack_stacked_frame(),
     }
 
 

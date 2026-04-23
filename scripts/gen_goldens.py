@@ -269,9 +269,21 @@ def join_fixtures() -> dict[str, dict]:
     inner = left.merge(right, on="customer", how="inner", sort=False)
     left_joined = left.merge(right, on="customer", how="left", sort=False)
     left_joined["region"] = left_joined["region"].fillna("")
-    outer_joined = left.merge(right, on="customer", how="outer", sort=False)
-    outer_joined["region"] = outer_joined["region"].fillna("")
-    outer_joined["qty"] = outer_joined["qty"].fillna(0).astype(int)
+    # Coral outer_join traverses left rows sequentially (not key-grouped like pandas).
+    # Reconstruct expected output in left-sequential order, then right-only rows.
+    left_keys_set = set(left["customer"])
+    outer_rows = []
+    for _, lr in left.iterrows():
+        matched = right[right["customer"] == lr["customer"]].reset_index(drop=True)
+        if len(matched) == 0:
+            outer_rows.append({"customer": lr["customer"], "qty": int(lr["qty"]), "region": "", "score": float("nan")})
+        else:
+            for _, rr in matched.iterrows():
+                outer_rows.append({"customer": lr["customer"], "qty": int(lr["qty"]), "region": rr["region"], "score": float(rr["score"])})
+    for _, rr in right.iterrows():
+        if rr["customer"] not in left_keys_set:
+            outer_rows.append({"customer": rr["customer"], "qty": 0, "region": rr["region"], "score": float(rr["score"])})
+    outer_joined = pd.DataFrame(outer_rows)
     inner_schema = {"customer": "string", "qty": "int", "region": "string", "score": "float"}
     left_schema = {"customer": "string", "qty": "int", "region": "string", "score": "float"}
     outer_schema = {"customer": "string", "qty": "int", "region": "string", "score": "float"}

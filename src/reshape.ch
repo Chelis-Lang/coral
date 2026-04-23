@@ -62,44 +62,44 @@ def pivot[n, m](df: Frame[n], index_col: string, columns_col: string, values_col
   }
 }
 
-def melt_one_row[n](df: Frame[n], value_cols: List[string], row: int64, var_acc: List[string], val_acc: List[f32]) -> (List[string], List[f32]) = {
-  if eq(len(value_cols), zero_i64()) then (var_acc, val_acc)
+-- Column-major melt: all rows for value_col[0] before all rows for value_col[1].
+-- This matches pandas melt(value_vars=...) default output order.
+def melt_one_col[n](df: Frame[n], col_name: string, num_rows: int64, row: int64, var_acc: List[string], val_acc: List[f32]) -> (List[string], List[f32]) = {
+  if gte(row, num_rows) then (var_acc, val_acc)
   else {
-    col_name = index(value_cols, zero_i64())
     cell = match get_column(df, col_name) with {
       | FloatCol(xs) => index(to_list(xs), row)
       | _ => fail("melt: value_cols must be float")
     }
-    melt_one_row(df, drop(value_cols, one_i64()), row, append(var_acc, col_name), append(val_acc, cell))
+    melt_one_col(df, col_name, num_rows, add(row, one_i64()), append(var_acc, col_name), append(val_acc, cell))
   }
 }
 
-def melt_var_val_rows[n](df: Frame[n], value_cols: List[string], num_rows: int64, row: int64, var_acc: List[string], val_acc: List[f32]) -> (List[string], List[f32]) = {
-  if gte(row, num_rows) then (var_acc, val_acc)
+def melt_var_val_cols[n](df: Frame[n], value_cols: List[string], num_rows: int64, var_acc: List[string], val_acc: List[f32]) -> (List[string], List[f32]) = {
+  if eq(len(value_cols), zero_i64()) then (var_acc, val_acc)
   else {
-    pair = melt_one_row(df, value_cols, row, var_acc, val_acc)
-    melt_var_val_rows(df, value_cols, num_rows, add(row, one_i64()), pair.0, pair.1)
+    pair = melt_one_col(df, index(value_cols, zero_i64()), num_rows, zero_i64(), var_acc, val_acc)
+    melt_var_val_cols(df, drop(value_cols, one_i64()), num_rows, pair.0, pair.1)
   }
 }
 
-def replicate_string(value: string, count: int64, acc: List[string]) -> List[string] = {
-  if lte(count, zero_i64()) then acc else replicate_string(value, sub(count, one_i64()), append(acc, value))
-}
-
-def melt_id_col[n](df: Frame[n], id_col: string, value_cols_count: int64, num_rows: int64, row: int64, acc: List[string]) -> List[string] = {
+-- Append id_col[0..num_rows] once to acc.
+def melt_append_col_pass(id_vals: List[string], num_rows: int64, row: int64, acc: List[string]) -> List[string] = {
   if gte(row, num_rows) then acc
-  else {
-    cell = index(get_string_col(df, id_col), row)
-    next = replicate_string(cell, value_cols_count, acc)
-    melt_id_col(df, id_col, value_cols_count, num_rows, add(row, one_i64()), next)
-  }
+  else melt_append_col_pass(id_vals, num_rows, add(row, one_i64()), append(acc, index(id_vals, row)))
+}
+
+-- Repeat id_col values once per value_col (column-major repetition).
+def melt_repeat_col(id_vals: List[string], num_rows: int64, reps: int64, acc: List[string]) -> List[string] = {
+  if lte(reps, zero_i64()) then acc
+  else melt_repeat_col(id_vals, num_rows, sub(reps, one_i64()), melt_append_col_pass(id_vals, num_rows, zero_i64(), acc))
 }
 
 def melt_build_id_cols[n, m](id_cols: List[string], df: Frame[n], value_cols_count: int64, num_rows: int64, base: Frame[m]) -> Frame[m] = {
   if eq(len(id_cols), zero_i64()) then base
   else {
     name = index(id_cols, zero_i64())
-    col_data = melt_id_col(df, name, value_cols_count, num_rows, zero_i64(), [])
+    col_data = melt_repeat_col(get_string_col(df, name), num_rows, value_cols_count, [])
     next = with_column(base, name, StringCol(col_data))
     melt_build_id_cols(drop(id_cols, one_i64()), df, value_cols_count, num_rows, next)
   }
@@ -107,12 +107,11 @@ def melt_build_id_cols[n, m](id_cols: List[string], df: Frame[n], value_cols_cou
 
 def melt[n, m](df: Frame[n], id_cols: List[string], value_cols: List[string]) -> Frame[m] = {
   num_rows = nrows(df)
-  value_cols_count = len(value_cols)
-  var_val = melt_var_val_rows(df, value_cols, num_rows, zero_i64(), [], [])
+  var_val = melt_var_val_cols(df, value_cols, num_rows, [], [])
   var_col = StringCol(var_val.0)
   val_col = FloatCol(to_tensor(var_val.1))
   base = from_pairs([("variable", var_col), ("value", val_col)])
-  melt_build_id_cols(id_cols, df, value_cols_count, num_rows, base)
+  melt_build_id_cols(id_cols, df, len(value_cols), num_rows, base)
 }
 
 def stack[n, m](df: Frame[n]) -> Frame[m] = melt(df, [], columns(df))

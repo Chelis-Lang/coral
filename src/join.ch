@@ -16,7 +16,7 @@ def outer_join[n, m, k](left: Frame[n], right: Frame[m], on: string) -> Frame[k]
   left_pairs = join_pairs(lkeys, rkeys, true, zero_i64(), [])
   right_extra = right_unmatched_pairs(lkeys, rkeys, zero_i64(), [])
   all_pairs = append_pairs(left_pairs, right_extra)
-  assemble_join(left, right, on, all_pairs)
+  assemble_outer_join(left, right, on, lkeys, rkeys, all_pairs)
 }
 
 def build_join[n, m, k](left: Frame[n], right: Frame[m], on: string, keep_left: bool) -> Frame[k] = {
@@ -24,6 +24,27 @@ def build_join[n, m, k](left: Frame[n], right: Frame[m], on: string, keep_left: 
   right_keys = key_values(right, on)
   pairs = join_pairs(left_keys, right_keys, keep_left, zero_i64(), [])
   assemble_join(left, right, on, pairs)
+}
+
+-- Build string key column for outer join: right-only rows (-1 left) get the actual right key value.
+-- Note: produces StringCol regardless of source key type; works correctly for StringCol keys.
+def build_outer_key_strs(lkeys: List[KeyValue], rkeys: List[KeyValue], left_rows: List[int64], right_rows: List[int64], acc: List[string]) -> List[string] = {
+  if eq(len(left_rows), zero_i64()) then acc
+  else {
+    lr = index(left_rows, zero_i64())
+    rr = index(right_rows, zero_i64())
+    v = if lt(lr, zero_i64()) then key_id(index(rkeys, rr)) else key_id(index(lkeys, lr))
+    build_outer_key_strs(lkeys, rkeys, drop(left_rows, one_i64()), drop(right_rows, one_i64()), append(acc, v))
+  }
+}
+
+def assemble_outer_join[n, m, k](left: Frame[n], right: Frame[m], on: string, lkeys: List[KeyValue], rkeys: List[KeyValue], pairs: List[(int64, int64)]) -> Frame[k] = {
+  left_rows = map(fn (pair: (int64, int64)) -> pair.0, pairs)
+  right_rows = map(fn (pair: (int64, int64)) -> pair.1, pairs)
+  key_strs = build_outer_key_strs(lkeys, rkeys, left_rows, right_rows, [])
+  left_cols = map(fn (name: string) -> if eq(name, on) then (name, StringCol(key_strs)) else (name, build_column(get_column(left, name), left_rows, false)), columns(left))
+  right_cols = map(fn (name: string) -> if eq(name, on) then ("", StringCol([])) else (right_name(columns(left), name), build_column(get_column(right, name), right_rows, true)), columns(right))
+  from_pairs(append_named(left_cols, right_cols))
 }
 
 def assemble_join[n, m, k](left: Frame[n], right: Frame[m], on: string, pairs: List[(int64, int64)]) -> Frame[k] = {

@@ -39,7 +39,8 @@ def column_values(rows: List[Dict[string, string]], name: string) -> List[string
 def infer_csv_column[n](values: List[string]) -> Column[n] = {
   if all_ints(values) then {
     xs = to_tensor(map(fn (value: string) -> unwrap_int(value), values))
-    xs_mask = all_false_mask(copy(xs))
+    xs_zeros = to_tensor(map(fn (unused: int64) -> zero_i64(), to_list(xs)))
+    xs_mask = neq(copy(xs_zeros), xs_zeros)
     IntCol(xs, xs_mask)
   }
   else if all_floats(values) then FloatCol(to_tensor(map(fn (value: string) -> unwrap_float(value), values)))
@@ -159,12 +160,6 @@ def bools_to_tensor[n](values: List[bool]) -> tensor[n, bool] = {
   ints = to_tensor(map(fn (flag: bool) -> if flag then one_i64() else zero_i64(), values))
   zeros = to_tensor(map(fn (flag: bool) -> zero_i64(), values))
   neq(copy(ints), zeros)
-}
-
--- Produce an all-false bool mask of the same length as the given int64 tensor (no missing values).
-def all_false_mask[n](xs: tensor[n, int64]) -> tensor[n, bool] = {
-  ints = to_tensor(map(fn (unused: int64) -> zero_i64(), to_list(xs)))
-  neq(copy(ints), ints)
 }
 
 -- read_parquet_frame and write_parquet_frame require Std.IO.Parquet,

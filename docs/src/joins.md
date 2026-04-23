@@ -1,20 +1,18 @@
 # Joins
 
-`Coral.Join` currently covers string-key `inner_join` and `left_join`, with
-results locked to checked-in pandas fixtures for the supported output slice.
-The current implementation uses host-path equality matching rather than
-sort-merge ordering.
+`Coral.Join` covers `inner_join`, `left_join`, and `outer_join` with string keys.
+The implementation uses host-path equality matching rather than sort-merge ordering.
 
 ```chelis
 module Coral.BookJoin
 import Coral.Frame (from_pairs, nrows)
-import Coral.Join (left_join)
+import Coral.Join (left_join, outer_join)
 export (main)
 
 def main() -> int64 = {
   left = from_pairs([
     ("customer", StringCol(["a", "b", "a"])),
-    ("qty", IntCol(to_tensor([cast(1, int64), cast(2, int64), cast(3, int64)])))
+    ("qty", int_col_of_list([cast(1, int64), cast(2, int64), cast(3, int64)]))
   ])
   right = from_pairs([
     ("customer", StringCol(["a", "c"])),
@@ -24,13 +22,17 @@ def main() -> int64 = {
 }
 ```
 
-Current scope notes:
+## outer_join
 
-- `inner_join` and `left_join` are validated
-- right-hand key column duplication is suppressed
-- overlapping right column names are suffixed with `_right`
-- bool output columns from the joined right side are still deferred
-- `outer_join` remains out of scope for the current pass
+`outer_join` includes all rows from both frames. Left-only rows get NaN/empty for right
+columns; right-only rows get 0 with an integer mask (missing) for left int columns and
+NaN for left float columns.
 
-As with GroupBy, the current proof is fixture-backed plus compile-checked while
-the upstream multi-module bare-build issue remains open.
+Row order: left-sequential traversal first, then right-only rows appended at the end.
+
+## Semantics notes
+
+- Right-hand key column is suppressed in the output
+- Overlapping right column names are suffixed with `_right`
+- Bool output columns from the joined right side are deferred
+- Integer columns from the source frame have their missing-value mask propagated through joins

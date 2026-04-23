@@ -3,10 +3,11 @@
 
 Current scope:
   1. typecheck the shell entrypoints and core module slices
-  2. validate checked-in pandas goldens for Frame and Window
+  2. validate checked-in pandas goldens for Frame, GroupBy, IO, Join, Window, Reshape
   3. execute a bare-build runtime parity lane for Window
   4. keep a compile-level probe for HAMT-backed Frame operations; stripped
      bare builds are fully clean on v0.1.21 (build, link, and run all pass)
+  5. negative test suite: wrong column name, type mismatch, fill_nan_int type error
 """
 from __future__ import annotations
 
@@ -364,6 +365,108 @@ def run_window_runtime_checks() -> int:
     return 0
 
 
+NEGATIVE_CASES = [
+    {
+        "name": "wrong_column_name",
+        "desc": "get_column with nonexistent column name",
+        "expected_fragment": "missing column",
+        "code": """\
+module NegWrongCol
+import Coral.Frame (from_pairs, get_column)
+def main() -> f32 = {
+  df = from_pairs([("x", FloatCol(to_tensor([cast(1.0, f32)])))])
+  _ = get_column(df, "nonexistent")
+  cast(0.0, f32)
+}
+""",
+    },
+    {
+        "name": "type_mismatch_get_float",
+        "desc": "get_float_col on an int column",
+        "expected_fragment": "column is not float",
+        "code": """\
+module NegTypeMismatch
+import Coral.Frame (from_pairs, get_float_col, int_col_of_list)
+def main() -> f32 = {
+  df = from_pairs([("qty", int_col_of_list([cast(1, int64)]))])
+  _ = get_float_col(df, "qty")
+  cast(0.0, f32)
+}
+""",
+    },
+    {
+        "name": "fill_nan_int_wrong_type",
+        "desc": "fill_nan_int on a float column",
+        "expected_fragment": "fill_nan_int: column is not int",
+        "code": """\
+module NegFillNanInt
+import Coral.Frame (from_pairs, fill_nan_int)
+def main() -> f32 = {
+  df = from_pairs([("price", FloatCol(to_tensor([cast(1.0, f32)])))])
+  _ = fill_nan_int(df, "price", cast(0, int64))
+  cast(0.0, f32)
+}
+""",
+    },
+]
+
+
+def run_negative_case(case: dict) -> int:
+    workdir = Path(tempfile.mkdtemp(prefix=f"coral-neg-{case['name']}-"))
+    try:
+        main_ch = workdir / "main.ch"
+        main_ch.write_text(case["code"])
+        out_dir = workdir / "out"
+        build = subprocess.run(
+            [CHELIS, "build", str(main_ch), "-o", str(out_dir)],
+            cwd=str(REPO),
+            capture_output=True,
+            text=True,
+        )
+        if build.returncode != 0:
+            print(f"negative test {case['name']}: build failed (expected runtime fail) — {(build.stdout + build.stderr).strip()[:200]}")
+            return 1
+        c_file = out_dir / "main.c"
+        h_file = out_dir / "main.h"
+        c_file.write_text(c_file.read_text().replace("double main", "double chelis_entry"))
+        if h_file.exists():
+            h_file.write_text(h_file.read_text().replace("double main", "double chelis_entry"))
+        driver = workdir / "driver.c"
+        driver.write_text(
+            "#include <stdio.h>\n"
+            "double chelis_entry__main(void);\n"
+            "int main(){ chelis_entry__main(); return 0; }\n"
+        )
+        binary = workdir / "neg_check"
+        link = subprocess.run(
+            native_link_cmd(binary, [c_file, driver], out_dir),
+            capture_output=True,
+            text=True,
+        )
+        if link.returncode != 0:
+            print(f"negative test {case['name']}: link failed — {link.stderr.strip()[:200]}")
+            return 1
+        run_bin = subprocess.run([str(binary)], capture_output=True, text=True)
+        combined = run_bin.stdout + run_bin.stderr
+        if run_bin.returncode == 0:
+            print(f"negative test {case['name']}: expected non-zero exit, got rc=0 (output={combined.strip()!r})")
+            return 1
+        if case["expected_fragment"] not in combined:
+            print(f"negative test {case['name']}: expected {case['expected_fragment']!r} in output, got {combined.strip()!r}")
+            return 1
+        print(f"negative test OK: {case['name']} — rc={run_bin.returncode}, found {case['expected_fragment']!r}")
+        return 0
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
+
+
+def run_negative_checks() -> int:
+    for case in NEGATIVE_CASES:
+        if run_negative_case(case) != 0:
+            return 1
+    return 0
+
+
 def main() -> int:
     steps = [
         (CHELIS, "check", "src/core.ch"),
@@ -398,6 +501,8 @@ def main() -> int:
     if run_phase1_compile_probe() != 0:
         return 1
     print("phase1 probe: stripped Frame/GroupBy/Join bare builds fully clean on v0.1.21 (build, link, run all pass)")
+    if run_negative_checks() != 0:
+        return 1
     print("coral repo checks OK")
     return 0
 

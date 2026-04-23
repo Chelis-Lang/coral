@@ -2,6 +2,15 @@
 
 Tracked upstream/toolchain issues that affect Coral development.
 
+- **Upstream blocker (v0.1.21): `grad` type-checks but fails to build** — `grad(f, wrt=x)`
+  and `grad(f)(x)` both type-check with score 1.0, but `chelis build --target c` rejects
+  every reachable pattern with: "can't lower these defs — their body applies/binds `grad`
+  in a position the host lane can't resolve." The error message suggests using pure tensor
+  ops (sum, mul, einsum) and a "local wrapper over function param" pattern, but `grad`
+  simultaneously requires "scalar floating output", making the combination unreachable for
+  Coral's frame-based computations. All `grad` usage remains illustrative in docs until
+  upstream resolves C-backend lowering for scalar AD.
+
 - **Upstream blocker (v0.1.21): `Std.IO.Parquet` module is a placeholder** — the module
   resolves at import-check time (score 1.0 on empty import list) but exports no callable
   functions. Probing `read_parquet`, `read_parquet_rows`, `read_parquet_file`, and

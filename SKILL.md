@@ -11,9 +11,10 @@ numeric tensor columns, and host-path string operations.
 ### Surf
 
 ```chelis-fragment
-import Coral.Frame (Frame, from_pairs, get_float_col, filter, sort_by, with_column)
-import Coral.GroupBy (group_by, agg_sum, agg_mean, agg_count)
-import Coral.Join (inner_join, left_join)
+import Coral.Frame (Frame, from_pairs, get_float_col, filter, sort_by, with_column, int_col_of_list)
+import Coral.GroupBy (group_by, agg_sum, agg_mean, agg_count, value_counts)
+import Coral.Join (inner_join, left_join, outer_join)
+import Coral.Reshape (pivot, melt, stack, unstack)
 import Coral.Window (rolling_mean, ewm)
 import Coral.IO (read_csv_frame, write_csv_frame, read_json_frame, write_json_frame)
 ```
@@ -46,12 +47,12 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat02
-import Coral.Frame (from_pairs, filter, nrows)
+import Coral.Frame (from_pairs, filter, nrows, int_col_of_list)
 export (main)
 
 def main() -> int64 = {
   frame = from_pairs([
-    ("qty", IntCol(to_tensor([cast(5, int64), cast(6, int64), cast(7, int64)]))),
+    ("qty", int_col_of_list([cast(5, int64), cast(6, int64), cast(7, int64)])),
     ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64), cast(1, int64)]), to_tensor([cast(0, int64), cast(0, int64), cast(0, int64)]))))
   ])
   kept = filter(frame, neq(to_tensor([cast(1, int64), cast(0, int64), cast(1, int64)]), to_tensor([cast(0, int64), cast(0, int64), cast(0, int64)])))
@@ -61,16 +62,16 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat03
-import Coral.Frame (from_pairs, rename, with_column, drop_column, columns, ncols)
+import Coral.Frame (from_pairs, rename, with_column, drop_column, columns, ncols, int_col_of_list)
 export (main)
 
 def main() -> int64 = {
   frame = from_pairs([
     ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.0, f32)]))),
-    ("qty", IntCol(to_tensor([cast(2, int64), cast(3, int64)])))
+    ("qty", int_col_of_list([cast(2, int64), cast(3, int64)]))
   ])
   renamed = rename(frame, "price", "cost")
-  extended = with_column(renamed, "extra", IntCol(to_tensor([cast(1, int64), cast(1, int64)])))
+  extended = with_column(renamed, "extra", int_col_of_list([cast(1, int64), cast(1, int64)]))
   trimmed = drop_column(extended, "qty")
   add(ncols(trimmed), len(columns(trimmed)))
 }
@@ -78,17 +79,17 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat04
-import Coral.Frame (from_pairs, fill_nan, drop_nan, concat, describe, nrows, get_float_col)
+import Coral.Frame (from_pairs, fill_nan, drop_nan, concat, describe, nrows, get_float_col, int_col_of_list)
 export (main)
 
 def main() -> f32 = {
   base = from_pairs([
     ("price", FloatCol(to_tensor([cast(10.0, f32), div(cast(0.0, f32), cast(0.0, f32)), cast(30.0, f32)]))),
-    ("qty", IntCol(to_tensor([cast(1, int64), cast(2, int64), cast(3, int64)])))
+    ("qty", int_col_of_list([cast(1, int64), cast(2, int64), cast(3, int64)]))
   ])
   filled = from_pairs([
     ("price", FloatCol(fill_nan(get_float_col(base, "price"), cast(99.0, f32)))),
-    ("qty", IntCol(to_tensor([cast(1, int64), cast(2, int64), cast(3, int64)])))
+    ("qty", int_col_of_list([cast(1, int64), cast(2, int64), cast(3, int64)]))
   ])
   stacked = concat([drop_nan(base, "price"), drop_nan(filled, "price")])
   desc = describe(stacked)
@@ -112,14 +113,14 @@ def main() -> f32 = {
 
 ```chelis
 module Coral.Pat06
-import Coral.Frame (from_pairs, nrows)
+import Coral.Frame (from_pairs, nrows, int_col_of_list)
 import Coral.GroupBy (group_by, agg_sum)
 export (main)
 
 def main() -> int64 = {
   frame = from_pairs([
     ("city", StringCol(["london", "paris", "london"])),
-    ("qty", IntCol(to_tensor([cast(5, int64), cast(6, int64), cast(7, int64)])))
+    ("qty", int_col_of_list([cast(5, int64), cast(6, int64), cast(7, int64)]))
   ])
   totals = agg_sum(group_by(frame, "city"), "qty")
   nrows(totals)
@@ -128,14 +129,14 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat07
-import Coral.Frame (from_pairs, nrows)
+import Coral.Frame (from_pairs, nrows, int_col_of_list)
 import Coral.Join (left_join)
 export (main)
 
 def main() -> int64 = {
   left = from_pairs([
     ("customer", StringCol(["a", "b", "a"])),
-    ("qty", IntCol(to_tensor([cast(1, int64), cast(2, int64), cast(3, int64)])))
+    ("qty", int_col_of_list([cast(1, int64), cast(2, int64), cast(3, int64)]))
   ])
   right = from_pairs([
     ("customer", StringCol(["a", "c"])),
@@ -147,13 +148,13 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat08
-import Coral.Frame (from_pairs, ncols)
+import Coral.Frame (from_pairs, ncols, int_col_of_list)
 import Coral.IO (write_csv_frame, write_json_frame)
 export (main)
 
 def main() -> int64 = {
   frame = from_pairs([
-    ("id", IntCol(to_tensor([cast(1, int64), cast(2, int64)]))),
+    ("id", int_col_of_list([cast(1, int64), cast(2, int64)])),
     ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.5, f32)]))),
     ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64)]), to_tensor([cast(0, int64), cast(0, int64)])))),
     ("city", StringCol(["london", "paris"]))
@@ -164,22 +165,75 @@ def main() -> int64 = {
 }
 ```
 
+```chelis
+module Coral.Pat09
+import Coral.Frame (from_pairs, nrows)
+import Coral.GroupBy (value_counts)
+export (main)
+
+def main() -> int64 = {
+  df = from_pairs([("city", StringCol(["london", "paris", "london"]))])
+  vc = value_counts(df, "city")
+  nrows(vc)
+}
+```
+
+```chelis
+module Coral.Pat10
+import Coral.Frame (from_pairs, nrows, int_col_of_list)
+import Coral.Join (outer_join)
+export (main)
+
+def main() -> int64 = {
+  left = from_pairs([
+    ("customer", StringCol(["a", "b"])),
+    ("qty", int_col_of_list([cast(1, int64), cast(2, int64)]))
+  ])
+  right = from_pairs([
+    ("customer", StringCol(["a", "c"])),
+    ("score", FloatCol(to_tensor([cast(10.0, f32), cast(40.0, f32)])))
+  ])
+  nrows(outer_join(left, right, "customer"))
+}
+```
+
+```chelis
+module Coral.Pat11
+import Coral.Frame (from_pairs, nrows)
+import Coral.Reshape (melt)
+export (main)
+
+def main() -> int64 = {
+  df = from_pairs([
+    ("city", StringCol(["london", "paris", "london"])),
+    ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.0, f32), cast(30.0, f32)])))
+  ])
+  melted = melt(df, ["city"], ["price"])
+  nrows(melted)
+}
+```
+
 ## 4. Gotchas
 
+- Integer columns use a two-field `IntCol(values, bool_mask)` representation; always use
+  `int_col_of_list([...])` to construct int columns — never `IntCol(to_tensor([...]))` directly.
+- Integer NaN uses `_int` suffix helpers: `fill_nan_int`, `drop_nan_int`, `is_nan_int`,
+  `any_nan_int`, `count_nan_int`. Float NaN uses the non-suffixed versions.
 - Prefer mask-first filtering over scalar predicate helpers.
-- The current validated frame slice is `from_pairs`, typed access, filter, head/tail/slice, mutation, NaN helpers, concat, and `describe`.
-- String grouping and joins use host-path equality logic.
+- String grouping and joins use host-path equality logic (not sort-merge).
 - String `sort_by` is intentionally deferred.
-- Reshape and Parquet are not first-pass features.
-- `describe` follows pandas-style NaN skipping for float columns and uses sample standard deviation (`ddof=1`).
-- `Coral.IO` is currently fixture-backed plus compile-checked; it does not yet have an executed runtime parity lane.
-- `Coral.Window` currently has the strongest executed parity story: pandas-backed goldens plus a runtime build/link/execute test lane.
-- Stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.1.21`: build, link, and execution all pass with no upstream blockers.
+- `outer_join` row order: left-sequential first, then right-only rows appended.
+- `melt` is column-major: all rows for value_col[0] appear before value_col[1].
+- Parquet is upstream-blocked (`Std.IO.Parquet` has no callable functions in v0.1.21).
+- `describe` skips NaN for float columns and masked entries for int columns; uses sample std (`ddof=1`).
+- `Coral.Window` has the strongest executed parity story: pandas goldens + runtime build/link/execute lane.
+- Stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.1.21`.
 
 ## 5. API Surface
 
-- `Coral.Frame`: typed columns, accessors, filtering, sorting, mutation, NaN helpers, concat, `describe`
-- `Coral.GroupBy`: grouping and aggregations
-- `Coral.Join`: `inner_join`, `left_join`
-- `Coral.Window`: rolling and EWM
-- `Coral.IO`: CSV and JSON read/write
+- `Coral.Frame`: typed columns, accessors, filtering, sorting, mutation (`mutate`/`with_column`), int+float NaN helpers, concat, `describe`, `int_col_of_list`
+- `Coral.GroupBy`: `group_by`, aggregations (sum/mean/count/min/max), `value_counts`; masked int rows skipped in agg
+- `Coral.Join`: `inner_join`, `left_join`, `outer_join`
+- `Coral.Reshape`: `pivot`, `melt`, `stack`, `unstack`
+- `Coral.Window`: `rolling_mean`, `rolling_std`, `rolling_max`, `ewm`
+- `Coral.IO`: CSV + JSON read/write; Parquet upstream-blocked

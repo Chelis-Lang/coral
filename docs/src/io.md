@@ -1,19 +1,17 @@
-# CSV And JSON
+# IO
 
-`Coral.IO` currently provides CSV and JSON read/write helpers for the first
-compile-checked slice. Read inference now covers int, float, bool, and string
-columns. Write formatting covers those same types for Coral-generated CSV and
-JSON output.
+`Coral.IO` provides CSV, JSON, and Parquet read/write helpers. Read inference
+covers int, float, bool, and string columns.
 
 ```chelis
 module Coral.BookIO
-import Coral.Frame (from_pairs, ncols)
+import Coral.Frame (from_pairs, ncols, int_col_of_list)
 import Coral.IO (write_csv_frame, write_json_frame)
 export (main)
 
 def main() -> int64 = {
   frame = from_pairs([
-    ("id", IntCol(to_tensor([cast(1, int64), cast(2, int64)]))),
+    ("id", int_col_of_list([cast(1, int64), cast(2, int64)])),
     ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.5, f32)]))),
     ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64)]), to_tensor([cast(0, int64), cast(0, int64)])))),
     ("city", StringCol(["london", "paris"]))
@@ -24,11 +22,10 @@ def main() -> int64 = {
 }
 ```
 
-Current proof level:
+## Parquet
 
-- checked-in fixtures for CSV/JSON expectations
-- compile-checked import/use coverage in the main harness
-- no executed runtime parity lane yet
-
-This split is intentional and documented: Window is the only module family with
-executed runtime parity in the current repo state.
+`read_parquet_frame` and `write_parquet_frame` are exported by `Coral.IO` but
+currently call `fail(...)` at runtime. `Std.IO.Parquet` resolves at import time
+in chelis v0.1.21 but exports no callable functions — the stdlib archive contains
+no `io/parquet.ch`. Parquet support is gated on upstream `Chelis-Lang/chelis`.
+See `docs/UPSTREAM_BUGS.md` for the full probe log.

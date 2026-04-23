@@ -5,7 +5,7 @@ The implementation uses host-path equality matching rather than sort-merge order
 
 ```chelis
 module Coral.BookJoin
-import Coral.Frame (from_pairs, nrows)
+import Coral.Frame (from_pairs, nrows, int_col_of_list)
 import Coral.Join (left_join, outer_join)
 export (main)
 

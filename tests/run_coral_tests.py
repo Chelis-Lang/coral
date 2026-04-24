@@ -5,9 +5,13 @@ Current scope:
   1. typecheck the shell entrypoints and core module slices
   2. validate checked-in pandas goldens for Frame, GroupBy, IO, Join, Window, Reshape
   3. execute a bare-build runtime parity lane for Window
-  4. keep a compile-level probe for HAMT-backed Frame operations; stripped
+  4. execute a bare-build runtime parity lane for Frame core algorithms (fill_int_list,
+     str_lt, bool_list_to_tensor, enum_insertion_sort) using the prefixed-concat
+     approach; HAMT-dependent operations (from_pairs, value_counts, inner_join) require
+     the reef build path which produces libraries, not runnable executables
+  5. keep a compile-level probe for HAMT-backed Frame operations; stripped
      bare builds are fully clean on v0.2.1 (build, link, and run all pass)
-  5. negative test suite: check-time error detection (unbound symbol, type mismatch, wrong-type arg)
+  6. negative test suite: check-time error detection (unbound symbol, type mismatch, wrong-type arg)
 """
 from __future__ import annotations
 
@@ -24,6 +28,7 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
 from scripts.chelis_toolchain import resolve_chelis_bin
+import scripts.repro_multimodule_bare_build as _repro
 
 
 CHELIS = resolve_chelis_bin()
@@ -369,6 +374,119 @@ def run_window_runtime_checks() -> int:
     return 0
 
 
+_FRAME_RT_INT_FILL = """
+def main() -> f32 = {
+  result = frame__fill_int_list(
+    [cast(0, int64), cast(5, int64), cast(8, int64)],
+    [true, false, false],
+    cast(-1, int64),
+    []
+  )
+  ok = and(
+    and(eq(index(result, cast(0, int64)), cast(-1, int64)),
+        eq(index(result, cast(1, int64)), cast(5, int64))),
+    eq(index(result, cast(2, int64)), cast(8, int64))
+  )
+  if ok then cast(1.0, f32) else cast(0.0, f32)
+}
+"""
+
+_FRAME_RT_STR_SORT = """
+def main() -> f32 = {
+  ok1 = frame__str_lt("berlin", "paris")
+  ok2 = frame__str_lt("apple", "banana")
+  ok3 = not(frame__str_lt("oslo", "london"))
+  ok4 = not(frame__str_lt("paris", "paris"))
+  sorted_pairs = frame__enum_insertion_sort(
+    [(cast(0, int64), "paris"), (cast(1, int64), "berlin"), (cast(2, int64), "oslo")],
+    []
+  )
+  perm = frame__extract_perm_indices(sorted_pairs, [])
+  sort_ok = and(
+    and(eq(index(perm, cast(0, int64)), cast(1, int64)),
+        eq(index(perm, cast(1, int64)), cast(2, int64))),
+    eq(index(perm, cast(2, int64)), cast(0, int64))
+  )
+  if and(and(ok1, and(ok2, and(ok3, ok4))), sort_ok)
+    then cast(1.0, f32)
+    else cast(0.0, f32)
+}
+"""
+
+_FRAME_RT_BOOL_TENSOR = """
+def main() -> f32 = {
+  btensor = frame__bool_list_to_tensor([true, false, true, false])
+  blist = to_list(btensor)
+  ok = and(
+    and(eq(index(blist, cast(0, int64)), true),
+        eq(index(blist, cast(1, int64)), false)),
+    and(eq(index(blist, cast(2, int64)), true),
+        eq(index(blist, cast(3, int64)), false))
+  )
+  if ok then cast(1.0, f32) else cast(0.0, f32)
+}
+"""
+
+_FRAME_RT_CASES = [
+    ("fill_int_list", "frame", _FRAME_RT_INT_FILL),
+    ("str_lt+enum_insertion_sort", "frame", _FRAME_RT_STR_SORT),
+    ("bool_list_to_tensor", "frame", _FRAME_RT_BOOL_TENSOR),
+]
+
+
+def run_frame_runtime_case(label: str, preset_name: str, program: str) -> int:
+    body = _repro.build_prefixed_modules(_repro.MODULE_PRESETS[preset_name]) + "\n" + program
+    workdir = Path(tempfile.mkdtemp(prefix=f"coral-frame-rt-{label.replace('+', '-')}-"))
+    try:
+        main_ch = workdir / "main.ch"
+        main_ch.write_text(body)
+        out_dir = workdir / "out"
+        build = subprocess.run(
+            [CHELIS, "build", str(main_ch), "-o", str(out_dir)],
+            capture_output=True,
+            text=True,
+        )
+        if build.returncode != 0:
+            print(f"frame runtime build failed [{label}]: {(build.stdout + build.stderr).strip()}")
+            return 1
+        c_file = out_dir / "main.c"
+        h_file = out_dir / "main.h"
+        c_file.write_text(c_file.read_text().replace("double main", "double chelis_entry"))
+        if h_file.exists():
+            h_file.write_text(h_file.read_text().replace("double main", "double chelis_entry"))
+        driver = workdir / "driver.c"
+        driver.write_text(
+            "#include <stdio.h>\n"
+            "double chelis_entry__main(void);\n"
+            "int main(){ printf(\"%.6f\\n\", chelis_entry__main()); return 0; }\n"
+        )
+        binary = workdir / "frame_rt_check"
+        link = subprocess.run(
+            native_link_cmd(binary, [c_file, driver], out_dir),
+            capture_output=True,
+            text=True,
+        )
+        if link.returncode != 0:
+            print(f"frame runtime link failed [{label}]: {link.stderr.strip()}")
+            return 1
+        run_bin = subprocess.run([str(binary)], capture_output=True, text=True)
+        output = run_bin.stdout.strip()
+        if run_bin.returncode != 0 or output not in {"1", "1.000000"}:
+            print(f"frame runtime mismatch [{label}]: rc={run_bin.returncode}, stdout={output!r}, stderr={run_bin.stderr.strip()!r}")
+            return 1
+        print(f"frame runtime OK: {label}")
+        return 0
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
+
+
+def run_frame_runtime_checks() -> int:
+    for label, preset, program in _FRAME_RT_CASES:
+        if run_frame_runtime_case(label, preset, program) != 0:
+            return 1
+    return 0
+
+
 NEGATIVE_CASES = [
     {
         "name": "nrows_type_mismatch",
@@ -489,6 +607,8 @@ def main() -> int:
     if run_pandas_check_if_available() != 0:
         return 1
     if run_window_runtime_checks() != 0:
+        return 1
+    if run_frame_runtime_checks() != 0:
         return 1
     if run_phase1_compile_probe() != 0:
         return 1

@@ -51,9 +51,14 @@ What is currently proven:
 
 What is not yet proven:
 
-- runtime parity for frame operations end-to-end
-- end-to-end runtime parity harness for Frame, GroupBy, and Join (stripped builds
-  are fully clean on v0.2.1; a full reef-importing parity harness is the remaining gap)
+- runtime parity for HAMT-dependent frame operations end-to-end — `from_pairs`,
+  `value_counts`, `inner_join`, and any function that stores/retrieves values through
+  the HAMT cannot be runtime-tested via the stripped-build prefixed-concat approach
+  because the Chelis C backend does not specialize the generic `hamt_from_pairs[a]`
+  function when `a = Column[n]` in the concatenated context: the value slot is
+  initialized to NULL (0) instead of the actual column value, causing a runtime panic.
+  The reef build path correctly specializes generics but produces libraries, not
+  runnable executables.
 - pandas-equivalent sort semantics for NaN-bearing columns
 - negative-test coverage for the full frame error surface
 - runtime parity for GroupBy, Join, and IO module families

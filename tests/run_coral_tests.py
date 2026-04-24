@@ -10,7 +10,7 @@ Current scope:
      approach; HAMT-dependent operations (from_pairs, value_counts, inner_join) require
      the reef build path which produces libraries, not runnable executables
   5. keep a compile-level probe for HAMT-backed Frame operations; stripped
-     bare builds are fully clean on v0.2.2 (build, link, and run all pass)
+     bare builds are fully clean on v0.2.3 (build, link, and run all pass)
   6. negative test suite: check-time error detection (unbound symbol, type mismatch, wrong-type arg)
 """
 from __future__ import annotations
@@ -618,7 +618,7 @@ def main() -> int:
         return 1
     if run_phase1_compile_probe() != 0:
         return 1
-    print("phase1 probe: stripped Frame/GroupBy/Join bare builds fully clean on v0.2.2 (build, link, run all pass)")
+    print("phase1 probe: stripped Frame/GroupBy/Join bare builds fully clean on v0.2.3 (build, link, run all pass)")
     if run_negative_checks() != 0:
         return 1
     print("coral repo checks OK")

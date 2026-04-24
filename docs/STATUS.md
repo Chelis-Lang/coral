@@ -29,7 +29,7 @@ Known deferred items:
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints typecheck on
-  published `chelis v0.2.2`
+  published `chelis v0.2.3`
 - checked-in `tests/goldens/frame/*.json` fixtures (17 total) are generated from pandas,
   covering construction, filter, head/tail/slice, rename/with_column/drop, NaN helpers,
   concat, describe, value_counts, and sort_by (string asc+desc, int, float, bool)

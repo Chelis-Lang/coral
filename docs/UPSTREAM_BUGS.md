@@ -11,6 +11,7 @@ Tracked upstream/toolchain issues that affect Coral development.
   Coral's frame-based computations. All `grad` usage remains illustrative in docs until
   upstream resolves C-backend lowering for scalar AD. Probed v0.2.1: STILL BLOCKED (same error).
   Probed v0.2.2: STILL BLOCKED (same error: "can't lower these defs — their body applies/binds `grad` (or `vmap`) in a position the host lane can't resolve", exit 1).
+  Probed v0.2.3: STILL BLOCKED (same error, exit 1).
 
 - **Upstream limitation (v0.1.21, still present v0.2.0): C backend ("Phase 0f") rejects int64 tensors** — `chelis
   build --target c` panics with "Phase 0f C backend only supports f32/bool tensors, found
@@ -25,6 +26,7 @@ Tracked upstream/toolchain issues that affect Coral development.
   stripped Frame/GroupBy/Join bare builds all pass `chelis build --target c` cleanly
   (exit 0, no panic, valid C, link succeeds, binary executes correctly).
   Probed v0.2.2: STILL RESOLVED — all three repro bare-builds (frame, groupby, join) pass cleanly (exit 0, valid C, link and run OK).
+  Probed v0.2.3: STILL RESOLVED — all three repro bare-builds pass cleanly (exit 0, valid C, link and run OK).
 
 - **Upstream blocker (v0.1.21, still present v0.2.0): `Std.IO.Parquet` module is absent** — in v0.1.21
   the module resolved at import-check time (score 1.0 on empty import list) but exported no callable
@@ -39,6 +41,7 @@ Tracked upstream/toolchain issues that affect Coral development.
   (regression from v0.2.0 fixed; back to v0.1.21 behavior), but `chelis build --target c`
   panics at `lower.rs:1631` (exit 101). The module still exports no callable functions; stubs remain.
   Probed v0.2.2: STILL PARTIALLY RESTORED — `chelis check` resolves the import at score 1.0 (unchanged); build behavior not re-probed (stubs remain; same status as v0.2.1).
+  Probed v0.2.3: STILL PARTIALLY RESTORED — `chelis check` resolves the import at score 1.0 (unchanged); stubs remain.
 
 - `chelis v0.1.18` still requires the `copy(values)` compatibility fix around
   tensor-to-list conversion that Coral already applies in `describe`.

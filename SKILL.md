@@ -224,10 +224,10 @@ def main() -> int64 = {
 - String `sort_by` is supported and golden-validated: lexicographic ascending and descending, with runtime parity for the insertion sort and comparison path.
 - `outer_join` row order: left-sequential first, then right-only rows appended.
 - `melt` is column-major: all rows for value_col[0] appear before value_col[1].
-- Parquet is upstream-blocked (`import Std.IO.Parquet` resolves at check time in v0.2.2 but build panics; functions not callable).
+- Parquet is upstream-blocked (`import Std.IO.Parquet` resolves at check time in v0.2.3 but build panics; functions not callable).
 - `describe` skips NaN for float columns and masked entries for int columns; uses sample std (`ddof=1`).
 - `Coral.Window` and `Coral.Frame` both have an executed runtime parity lane: pandas goldens + runtime build/link/execute lane. Frame covers fill_int_list, str_lt+enum_insertion_sort, and bool_list_to_tensor. GroupBy, Join, and IO are fixture-backed plus compile-checked.
-- Stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.2.2`.
+- Stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.2.3`.
 
 ## 5. API Surface
 

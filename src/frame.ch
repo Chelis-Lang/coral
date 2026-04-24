@@ -202,7 +202,7 @@ def append_all_enum_pairs(lhs: List[(int64, string)], rhs: List[(int64, string)]
 def enum_pair_insert(xs: List[(int64, string)], pair: (int64, string)) -> List[(int64, string)] = {
   if eq(len(xs), zero_i64()) then [pair]
   else if str_lt(pair.1, index(xs, zero_i64()).1) then append_all_enum_pairs([pair], xs)
-  else append(enum_pair_insert(drop(xs, one_i64()), pair), index(xs, zero_i64()))
+  else append_all_enum_pairs([index(xs, zero_i64())], enum_pair_insert(drop(xs, one_i64()), pair))
 }
 
 def enum_insertion_sort(unsorted: List[(int64, string)], acc: List[(int64, string)]) -> List[(int64, string)] = {

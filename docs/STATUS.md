@@ -23,14 +23,13 @@ Hard constraint recorded for alpha:
 
 Known deferred items:
 
-- string sorting
 - Parquet
-- richer reshape support (stack/unstack goldens, stack with 0 id-cols)
+- `stack` with mixed-type frames (string + float columns): `melt` requires float value_cols; stack on a pure-float frame works correctly
 
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints typecheck on
-  published `chelis v0.2.0`
+  published `chelis v0.2.1`
 - checked-in `tests/goldens/frame/*.json` fixtures are generated from pandas for a
   deterministic Phase-2 frame slice
 - checked-in `tests/goldens/groupby/*.json` fixtures are generated from pandas for the
@@ -54,7 +53,7 @@ What is not yet proven:
 
 - runtime parity for frame operations end-to-end
 - end-to-end runtime parity harness for Frame, GroupBy, and Join (stripped builds
-  are fully clean on v0.2.0; a full reef-importing parity harness is the remaining gap)
+  are fully clean on v0.2.1; a full reef-importing parity harness is the remaining gap)
 - pandas-equivalent sort semantics for NaN-bearing columns
 - negative-test coverage for the full frame error surface
 - runtime parity for GroupBy, Join, and IO module families

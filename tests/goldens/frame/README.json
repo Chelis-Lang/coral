@@ -20,10 +20,12 @@
     "rename/with_column/drop_column",
     "NaN helpers via frame outputs",
     "concat",
-    "describe"
+    "describe",
+    "value_counts",
+    "sort_by (string, int, float, bool columns \u2014 ascending and descending)"
   ],
   "known_deltas": [
-    "stripped Frame/GroupBy/Join bare-build runtime is blocked upstream on v0.2.1",
-    "checked-in goldens prove pandas reference behavior even when runtime parity harness is still partial"
+    "stripped bare-build runtime for HAMT-dependent operations (from_pairs, value_counts) is blocked by generic specialization in the prefixed-concat context; core algorithm runtime lane (fill_int_list, str_lt+sort, bool_list_to_tensor) runs and passes",
+    "checked-in goldens prove pandas reference behavior"
   ]
 }

@@ -20,8 +20,8 @@ Current parity-backed scope:
 
 Documented deltas:
 
-- stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.2.1`:
+- stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.2.2`:
   build, link, and execution all pass; acceptance gate is fixture goldens plus
   the compile-level probe in `tests/run_coral_tests.py`
 - GroupBy, Join, and IO are currently fixture-backed plus compile-checked
-- Window is the only module family with an executed runtime parity lane today
+- Window and Frame both have an executed runtime parity lane; GroupBy, Join, and IO are fixture-backed plus compile-checked

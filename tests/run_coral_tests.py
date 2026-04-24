@@ -10,7 +10,7 @@ Current scope:
      approach; HAMT-dependent operations (from_pairs, value_counts, inner_join) require
      the reef build path which produces libraries, not runnable executables
   5. keep a compile-level probe for HAMT-backed Frame operations; stripped
-     bare builds are fully clean on v0.2.1 (build, link, and run all pass)
+     bare builds are fully clean on v0.2.2 (build, link, and run all pass)
   6. negative test suite: check-time error detection (unbound symbol, type mismatch, wrong-type arg)
 """
 from __future__ import annotations
@@ -401,13 +401,19 @@ def main() -> f32 = {
     [(cast(0, int64), "paris"), (cast(1, int64), "berlin"), (cast(2, int64), "oslo")],
     []
   )
-  perm = frame__extract_perm_indices(sorted_pairs, [])
-  sort_ok = and(
-    and(eq(index(perm, cast(0, int64)), cast(1, int64)),
-        eq(index(perm, cast(1, int64)), cast(2, int64))),
-    eq(index(perm, cast(2, int64)), cast(0, int64))
+  perm_asc = frame__extract_perm_indices(sorted_pairs, [])
+  asc_ok = and(
+    and(eq(index(perm_asc, cast(0, int64)), cast(1, int64)),
+        eq(index(perm_asc, cast(1, int64)), cast(2, int64))),
+    eq(index(perm_asc, cast(2, int64)), cast(0, int64))
   )
-  if and(and(ok1, and(ok2, and(ok3, ok4))), sort_ok)
+  perm_rev = frame__reverse_ints(perm_asc, [])
+  desc_ok = and(
+    and(eq(index(perm_rev, cast(0, int64)), cast(0, int64)),
+        eq(index(perm_rev, cast(1, int64)), cast(2, int64))),
+    eq(index(perm_rev, cast(2, int64)), cast(1, int64))
+  )
+  if and(and(ok1, and(ok2, and(ok3, ok4))), and(asc_ok, desc_ok))
     then cast(1.0, f32)
     else cast(0.0, f32)
 }
@@ -612,7 +618,7 @@ def main() -> int:
         return 1
     if run_phase1_compile_probe() != 0:
         return 1
-    print("phase1 probe: stripped Frame/GroupBy/Join bare builds fully clean on v0.2.1 (build, link, run all pass)")
+    print("phase1 probe: stripped Frame/GroupBy/Join bare builds fully clean on v0.2.2 (build, link, run all pass)")
     if run_negative_checks() != 0:
         return 1
     print("coral repo checks OK")

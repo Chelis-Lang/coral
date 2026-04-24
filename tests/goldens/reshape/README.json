@@ -1,13 +1,16 @@
 {
   "schema_version": 1,
-  "note": "Coral reshape goldens are produced from pandas and cover pivot and melt.",
+  "note": "Coral reshape goldens are produced from pandas and cover pivot, melt, stack, and unstack.",
   "phase_slice": [
     "pivot with string index_col and columns_col, float values_col",
-    "melt with id_cols and float value_cols"
+    "melt with id_cols and float value_cols",
+    "stack: wide frame to long form with 'variable' and 'value' columns",
+    "unstack: long form back to wide frame"
   ],
   "known_deltas": [
     "only FloatCol values_col is supported in v0.1",
     "pivot index_col and columns_col must be StringCol",
-    "melt id_cols must be StringCol in v0.1"
+    "melt id_cols must be StringCol in v0.1",
+    "stack with mixed-type frames (string + float columns) is deferred: melt requires float value_cols"
   ]
 }

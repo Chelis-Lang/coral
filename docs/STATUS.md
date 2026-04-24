@@ -29,9 +29,10 @@ Known deferred items:
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints typecheck on
-  published `chelis v0.2.1`
-- checked-in `tests/goldens/frame/*.json` fixtures are generated from pandas for a
-  deterministic Phase-2 frame slice
+  published `chelis v0.2.2`
+- checked-in `tests/goldens/frame/*.json` fixtures (17 total) are generated from pandas,
+  covering construction, filter, head/tail/slice, rename/with_column/drop, NaN helpers,
+  concat, describe, value_counts, and sort_by (string asc+desc, int, float, bool)
 - checked-in `tests/goldens/groupby/*.json` fixtures are generated from pandas for the
   current single-key aggregation slice
 - checked-in `tests/goldens/io/*.json` fixtures are generated from pandas / Coral text
@@ -40,14 +41,22 @@ What is currently proven:
   current string-key inner/left/outer join slice
 - checked-in `tests/goldens/window/*.json` fixtures are generated from pandas for the
   current rolling/ewm slice
+- checked-in `tests/goldens/reshape/*.json` fixtures (5 total) cover pivot, melt,
+  stack, and unstack
 - `tests/run_coral_tests.py` validates the golden inventory and runs a compile-level
   probe covering HAMT-backed frame mutation, bool-column concat, and `describe`
 - `tests/run_coral_tests.py` executes a bare-build runtime parity lane for
   `rolling_sum`, `rolling_mean`, `rolling_std`, `rolling_min`, `rolling_max`, and
   `ewm(alpha, adjust=False)`
+- `tests/run_coral_tests.py` executes a bare-build runtime parity lane for Frame core
+  algorithms: `fill_int_list` (NaN-fill logic), `str_lt` + `enum_insertion_sort`
+  (string sort), and `bool_list_to_tensor` (mask creation)
+- negative test suite validates `TypeMismatch` and `UnboundVariable` at check time
 - `src/io.ch` now supports bool inference on read and bool rendering on CSV/JSON write
-- SKILL examples and the mdBook now cover the current validated GroupBy, Join,
-  IO, and Window slices without overstating runtime status
+- `src/apismoke.ch` imports all float NaN helpers: `is_nan`, `fill_nan`, `drop_nan`,
+  `any_nan`, `count_nan`
+- SKILL examples and the mdBook cover the current validated GroupBy, Join, IO,
+  Window, and Reshape slices without overstating runtime status
 
 What is not yet proven:
 

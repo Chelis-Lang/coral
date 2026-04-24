@@ -106,10 +106,12 @@ def frame_contract() -> dict:
             "NaN helpers via frame outputs",
             "concat",
             "describe",
+            "value_counts",
+            "sort_by (string, int, float, bool columns — ascending and descending)",
         ],
         "known_deltas": [
-            "stripped Frame/GroupBy/Join bare-build runtime is blocked upstream on v0.2.1",
-            "checked-in goldens prove pandas reference behavior even when runtime parity harness is still partial",
+            "stripped bare-build runtime for HAMT-dependent operations (from_pairs, value_counts) is blocked by generic specialization in the prefixed-concat context; core algorithm runtime lane (fill_int_list, str_lt+sort, bool_list_to_tensor) runs and passes",
+            "checked-in goldens prove pandas reference behavior",
         ],
     }
 
@@ -451,15 +453,18 @@ def check_json(path: Path, payload: dict) -> list[str]:
 def reshape_contract() -> dict:
     return {
         "schema_version": 1,
-        "note": "Coral reshape goldens are produced from pandas and cover pivot and melt.",
+        "note": "Coral reshape goldens are produced from pandas and cover pivot, melt, stack, and unstack.",
         "phase_slice": [
             "pivot with string index_col and columns_col, float values_col",
             "melt with id_cols and float value_cols",
+            "stack: wide frame to long form with 'variable' and 'value' columns",
+            "unstack: long form back to wide frame",
         ],
         "known_deltas": [
             "only FloatCol values_col is supported in v0.1",
             "pivot index_col and columns_col must be StringCol",
             "melt id_cols must be StringCol in v0.1",
+            "stack with mixed-type frames (string + float columns) is deferred: melt requires float value_cols",
         ],
     }
 

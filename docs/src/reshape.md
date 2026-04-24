@@ -2,7 +2,7 @@
 
 `Coral.Reshape` provides wide-to-long and long-to-wide transformations on
 `Frame` values. All four operations are compile-checked against
-`chelis v0.2.1`.
+`chelis v0.2.2`.
 
 Validated operations in the current slice:
 

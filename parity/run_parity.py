@@ -16,6 +16,7 @@ Scope:
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -252,10 +253,18 @@ def validate_checked_in_goldens(base_dir: Path, required: list[str], label: str)
     return 0
 
 
-def run_pandas_check_if_available() -> int:
+def run_pandas_check(strict: bool) -> int:
+    """Compare Coral against pandas via gen_goldens --check.
+
+    Without --strict: skip silently if pandas is missing (legacy local-dev mode).
+    With --strict: fail loudly if pandas is missing (CI mode per spec).
+    """
     try:
         import pandas  # noqa: F401
     except ModuleNotFoundError:
+        if strict:
+            print("ERROR: pandas not installed and --strict was passed", file=sys.stderr)
+            return 2
         print("pandas not installed; skipping `parity/gen_goldens.py --check`")
         return 0
 
@@ -472,6 +481,16 @@ def run_negative_checks() -> int:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Coral pandas-parity checks (run after `chelis test tests/` for full coverage)."
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Fail (exit 2) if pandas is not installed instead of silently skipping the comparison. Use in CI.",
+    )
+    args = parser.parse_args()
+
     steps = [
         (CHELIS, "check", "src/core.ch"),
         (CHELIS, "check", "src/apismoke.ch"),
@@ -498,8 +517,9 @@ def main() -> int:
         return 1
     if validate_checked_in_goldens(RESHAPE_GOLDENS, REQUIRED_RESHAPE_GOLDENS, "reshape") != 0:
         return 1
-    if run_pandas_check_if_available() != 0:
-        return 1
+    rc = run_pandas_check(strict=args.strict)
+    if rc != 0:
+        return rc
     if run_window_runtime_checks() != 0:
         return 1
     if run_phase1_compile_probe() != 0:

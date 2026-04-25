@@ -40,14 +40,14 @@ scale.
 | `Coral.Join` | `inner_join` and `left_join` |
 | `Coral.Window` | rolling sum/mean/std/min/max and EWM |
 | `Coral.IO` | CSV and JSON read/write |
-| `Coral.Reshape` | reshape placeholders (`pivot`, `melt`) pending a lighter follow-up pass |
+| `Coral.Reshape` | `pivot`, `melt`, `stack`, `unstack` |
 
 ## Toolchain
 
 Pinned to `chelis v0.2.4` in `reef.toml`:
 
 ```toml
-compiler = "=0.2.2"
+compiler = "=0.2.4"
 ```
 
 ## Build
@@ -72,15 +72,17 @@ python parity/run_parity.py            # pandas-comparison oracle
 
 - `Frame` column storage uses a persistent HAMT, not a
   plain `Dict`
-- the `Window` module has the first runtime-executed pandas parity lane in
-  this repo
-- `IO` now supports bool inference/read and bool CSV/JSON write formatting in the
+- `Window` and `Frame` both have a runtime-executed pandas parity lane
+- `IO` supports bool inference/read and bool CSV/JSON write formatting in the
   compile-checked slice
-- string `sort_by` is deferred
-- Parquet I/O is deferred
-- `outer_join` is deferred
-- reshape APIs exist but are currently placeholders
+- `sort_by` covers int, float, bool, and string columns
+- `outer_join` is implemented and golden-validated
+- `Coral.Reshape` ships `pivot`, `melt`, `stack`, and `unstack`
+- Parquet I/O is upstream-blocked (see `docs/UPSTREAM_BUGS.md`)
 - null semantics are intentionally narrower than pandas in the first pass
+- chelis v0.2.4 evaluator gap blocks tensor-tensor `eq`/`neq`/`lt`/`gt`
+  inside `chelis test`; IntCol/BoolCol/`is_nan` tensor functions cannot
+  be exercised from `tests/*.ch` until upstream lifts that limitation
 
 ## License
 

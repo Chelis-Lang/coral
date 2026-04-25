@@ -2,6 +2,32 @@
 
 Tracked upstream/toolchain issues that affect Coral development.
 
+- **Upstream blocker (v0.2.4): `chelis test` evaluator does not support
+  tensor-broadcast comparison ops** — the `chelis test` runner uses the
+  eval interpreter, which rejects tensor-tensor `eq`/`neq`/`lt`/`gt` and
+  tensor-scalar `gt` with `eq/neq expect matching scalar args, got
+  (Tensor, Tensor)` or `ordered comparison expects matching numeric args,
+  got (Some(Tensor(...)), Some(Float(150.0)))`. `to_tensor([true, ...])`
+  is also rejected (`to_tensor expects numeric List elements, got bool`).
+  Consequences for Coral's `tests/*.ch` suite:
+  - `int_col_of_list`, `IntCol(values, mask)`, `BoolCol(...)`, `filter`
+    (needs a bool tensor mask), `is_nan`/`fill_nan`/`drop_nan` (call
+    `neq` on float tensors internally), `is_nan_int`/`fill_nan_int`/
+    `drop_nan_int` (need an IntCol input), and any aggregation that
+    emits IntCol (`agg_count`, `value_counts`, `agg_sum` on ints)
+    cannot be invoked from `chelis test` until upstream lifts this gap.
+  - `tests/*.ch` works around the gap with element-wise scalar
+    reimplementations (`is_nan_local(x: f32) -> bool = neq(x, x)` then
+    folded over `to_list(t)`). The actual `Coral.Frame.is_nan` /
+    `any_nan` / `count_nan` / `drop_nan` tensor exports remain
+    runtime-unverified at the `chelis test` level.
+  - The `chelis build`-target lane still supports tensor broadcasts
+    correctly, so `parity/run_parity.py` window runtime parity covers
+    those code paths end-to-end.
+  Probed v0.2.4: BLOCKED. Re-probe each release; the gap is between the
+  eval interpreter and the typed runtime, not the C backend.
+
+
 - **Upstream blocker (v0.1.21, still present v0.2.0, still present v0.2.1): `grad` type-checks but fails to build** — `grad(f, wrt=x)`
   and `grad(f)(x)` both type-check with score 1.0, but `chelis build --target c` rejects
   every reachable pattern with: "can't lower these defs — their body applies/binds `grad`

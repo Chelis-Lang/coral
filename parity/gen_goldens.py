@@ -17,12 +17,12 @@ except ModuleNotFoundError as exc:  # pragma: no cover
 
 
 REPO = Path(__file__).resolve().parent.parent
-FRAME_GOLDENS = REPO / "tests" / "goldens" / "frame"
-GROUPBY_GOLDENS = REPO / "tests" / "goldens" / "groupby"
-IO_GOLDENS = REPO / "tests" / "goldens" / "io"
-JOIN_GOLDENS = REPO / "tests" / "goldens" / "join"
-WINDOW_GOLDENS = REPO / "tests" / "goldens" / "window"
-RESHAPE_GOLDENS = REPO / "tests" / "goldens" / "reshape"
+FRAME_GOLDENS = REPO / "parity" / "goldens" / "frame"
+GROUPBY_GOLDENS = REPO / "parity" / "goldens" / "groupby"
+IO_GOLDENS = REPO / "parity" / "goldens" / "io"
+JOIN_GOLDENS = REPO / "parity" / "goldens" / "join"
+WINDOW_GOLDENS = REPO / "parity" / "goldens" / "window"
+RESHAPE_GOLDENS = REPO / "parity" / "goldens" / "reshape"
 
 BASE_SCHEMA = {
     "id": "int",

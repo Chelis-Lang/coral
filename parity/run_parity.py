@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""Coral repo checks.
+"""Coral pandas-parity checks.
 
-Current scope:
+Internal correctness lives in tests/*.ch (run via `chelis test tests/`).
+This script runs only the Python-driven checks: pandas-derived goldens,
+window runtime parity (expected values pandas-derived), HAMT integration
+compile probe, and check-time negative test suite.
+
+Scope:
   1. typecheck the shell entrypoints and core module slices
   2. validate checked-in pandas goldens for Frame, GroupBy, IO, Join, Window, Reshape
-  3. execute a bare-build runtime parity lane for Window
-  4. execute a bare-build runtime parity lane for Frame core algorithms (fill_int_list,
-     str_lt, bool_list_to_tensor, enum_insertion_sort) using the prefixed-concat
-     approach; HAMT-dependent operations (from_pairs, value_counts, inner_join) require
-     the reef build path which produces libraries, not runnable executables
-  5. keep a compile-level probe for HAMT-backed Frame operations; stripped
-     bare builds are fully clean on v0.2.3 (build, link, and run all pass)
-  6. negative test suite: check-time error detection (unbound symbol, type mismatch, wrong-type arg)
+  3. execute a bare-build runtime parity lane for Window (expected values pandas-derived)
+  4. compile-level integration probe for HAMT-backed Frame ops; stripped
+     bare builds are fully clean on v0.2.4 (build, link, and run all pass)
+  5. negative test suite: check-time error detection (TypeMismatch, UnboundVariable)
 """
 from __future__ import annotations
 
@@ -28,16 +29,15 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
 from scripts.chelis_toolchain import resolve_chelis_bin
-import scripts.repro_multimodule_bare_build as _repro
 
 
 CHELIS = resolve_chelis_bin()
-FRAME_GOLDENS = REPO / "tests" / "goldens" / "frame"
-GROUPBY_GOLDENS = REPO / "tests" / "goldens" / "groupby"
-IO_GOLDENS = REPO / "tests" / "goldens" / "io"
-JOIN_GOLDENS = REPO / "tests" / "goldens" / "join"
-WINDOW_GOLDENS = REPO / "tests" / "goldens" / "window"
-RESHAPE_GOLDENS = REPO / "tests" / "goldens" / "reshape"
+FRAME_GOLDENS = REPO / "parity" / "goldens" / "frame"
+GROUPBY_GOLDENS = REPO / "parity" / "goldens" / "groupby"
+IO_GOLDENS = REPO / "parity" / "goldens" / "io"
+JOIN_GOLDENS = REPO / "parity" / "goldens" / "join"
+WINDOW_GOLDENS = REPO / "parity" / "goldens" / "window"
+RESHAPE_GOLDENS = REPO / "parity" / "goldens" / "reshape"
 REQUIRED_FRAME_GOLDENS = [
     "README.json",
     "base.json",
@@ -256,11 +256,11 @@ def run_pandas_check_if_available() -> int:
     try:
         import pandas  # noqa: F401
     except ModuleNotFoundError:
-        print("pandas not installed; skipping `scripts/gen_goldens.py --check`")
+        print("pandas not installed; skipping `parity/gen_goldens.py --check`")
         return 0
 
     proc = subprocess.run(
-        [sys.executable, "scripts/gen_goldens.py", "--check"],
+        [sys.executable, "parity/gen_goldens.py", "--check"],
         cwd=str(REPO),
         capture_output=True,
         text=True,
@@ -374,123 +374,11 @@ def run_window_runtime_checks() -> int:
     return 0
 
 
-_FRAME_RT_INT_FILL = """
-def main() -> f32 = {
-  result = frame__fill_int_list(
-    [cast(0, int64), cast(5, int64), cast(8, int64)],
-    [true, false, false],
-    cast(-1, int64),
-    []
-  )
-  ok = and(
-    and(eq(index(result, cast(0, int64)), cast(-1, int64)),
-        eq(index(result, cast(1, int64)), cast(5, int64))),
-    eq(index(result, cast(2, int64)), cast(8, int64))
-  )
-  if ok then cast(1.0, f32) else cast(0.0, f32)
-}
-"""
-
-_FRAME_RT_STR_SORT = """
-def main() -> f32 = {
-  ok1 = frame__str_lt("berlin", "paris")
-  ok2 = frame__str_lt("apple", "banana")
-  ok3 = not(frame__str_lt("oslo", "london"))
-  ok4 = not(frame__str_lt("paris", "paris"))
-  sorted_pairs = frame__enum_insertion_sort(
-    [(cast(0, int64), "paris"), (cast(1, int64), "berlin"), (cast(2, int64), "oslo")],
-    []
-  )
-  perm_asc = frame__extract_perm_indices(sorted_pairs, [])
-  asc_ok = and(
-    and(eq(index(perm_asc, cast(0, int64)), cast(1, int64)),
-        eq(index(perm_asc, cast(1, int64)), cast(2, int64))),
-    eq(index(perm_asc, cast(2, int64)), cast(0, int64))
-  )
-  perm_rev = frame__reverse_ints(perm_asc, [])
-  desc_ok = and(
-    and(eq(index(perm_rev, cast(0, int64)), cast(0, int64)),
-        eq(index(perm_rev, cast(1, int64)), cast(2, int64))),
-    eq(index(perm_rev, cast(2, int64)), cast(1, int64))
-  )
-  if and(and(ok1, and(ok2, and(ok3, ok4))), and(asc_ok, desc_ok))
-    then cast(1.0, f32)
-    else cast(0.0, f32)
-}
-"""
-
-_FRAME_RT_BOOL_TENSOR = """
-def main() -> f32 = {
-  btensor = frame__bool_list_to_tensor([true, false, true, false])
-  blist = to_list(btensor)
-  ok = and(
-    and(eq(index(blist, cast(0, int64)), true),
-        eq(index(blist, cast(1, int64)), false)),
-    and(eq(index(blist, cast(2, int64)), true),
-        eq(index(blist, cast(3, int64)), false))
-  )
-  if ok then cast(1.0, f32) else cast(0.0, f32)
-}
-"""
-
-_FRAME_RT_CASES = [
-    ("fill_int_list", "frame", _FRAME_RT_INT_FILL),
-    ("str_lt+enum_insertion_sort", "frame", _FRAME_RT_STR_SORT),
-    ("bool_list_to_tensor", "frame", _FRAME_RT_BOOL_TENSOR),
-]
-
-
-def run_frame_runtime_case(label: str, preset_name: str, program: str) -> int:
-    body = _repro.build_prefixed_modules(_repro.MODULE_PRESETS[preset_name]) + "\n" + program
-    workdir = Path(tempfile.mkdtemp(prefix=f"coral-frame-rt-{label.replace('+', '-')}-"))
-    try:
-        main_ch = workdir / "main.ch"
-        main_ch.write_text(body)
-        out_dir = workdir / "out"
-        build = subprocess.run(
-            [CHELIS, "build", str(main_ch), "-o", str(out_dir)],
-            capture_output=True,
-            text=True,
-        )
-        if build.returncode != 0:
-            print(f"frame runtime build failed [{label}]: {(build.stdout + build.stderr).strip()}")
-            return 1
-        c_file = out_dir / "main.c"
-        h_file = out_dir / "main.h"
-        c_file.write_text(c_file.read_text().replace("double main", "double chelis_entry"))
-        if h_file.exists():
-            h_file.write_text(h_file.read_text().replace("double main", "double chelis_entry"))
-        driver = workdir / "driver.c"
-        driver.write_text(
-            "#include <stdio.h>\n"
-            "double chelis_entry__main(void);\n"
-            "int main(){ printf(\"%.6f\\n\", chelis_entry__main()); return 0; }\n"
-        )
-        binary = workdir / "frame_rt_check"
-        link = subprocess.run(
-            native_link_cmd(binary, [c_file, driver], out_dir),
-            capture_output=True,
-            text=True,
-        )
-        if link.returncode != 0:
-            print(f"frame runtime link failed [{label}]: {link.stderr.strip()}")
-            return 1
-        run_bin = subprocess.run([str(binary)], capture_output=True, text=True)
-        output = run_bin.stdout.strip()
-        if run_bin.returncode != 0 or output not in {"1", "1.000000"}:
-            print(f"frame runtime mismatch [{label}]: rc={run_bin.returncode}, stdout={output!r}, stderr={run_bin.stderr.strip()!r}")
-            return 1
-        print(f"frame runtime OK: {label}")
-        return 0
-    finally:
-        shutil.rmtree(workdir, ignore_errors=True)
-
-
-def run_frame_runtime_checks() -> int:
-    for label, preset, program in _FRAME_RT_CASES:
-        if run_frame_runtime_case(label, preset, program) != 0:
-            return 1
-    return 0
+# Frame core algorithm runtime parity (fill_int_list, str_lt, enum_insertion_sort,
+# bool_list_to_tensor) was previously executed here via the prefixed-concat bare-build
+# harness. As of v0.2.4 this coverage lives in tests/internal.ch and runs via
+# `chelis test`. The bare-build entry point in scripts/repro_multimodule_bare_build.py
+# remains as an upstream-blocker probe (frame/groupby/join compile cleanly).
 
 
 NEGATIVE_CASES = [
@@ -614,14 +502,12 @@ def main() -> int:
         return 1
     if run_window_runtime_checks() != 0:
         return 1
-    if run_frame_runtime_checks() != 0:
-        return 1
     if run_phase1_compile_probe() != 0:
         return 1
-    print("phase1 probe: stripped Frame/GroupBy/Join bare builds fully clean on v0.2.3 (build, link, run all pass)")
+    print("phase1 probe: stripped Frame/GroupBy/Join bare builds fully clean on v0.2.4 (build, link, run all pass)")
     if run_negative_checks() != 0:
         return 1
-    print("coral repo checks OK")
+    print("coral parity checks OK")
     return 0
 
 

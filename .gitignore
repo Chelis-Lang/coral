@@ -8,3 +8,19 @@ reef.lock
 *.swo
 __pycache__/
 *.py[cod]
+
+# generated artifacts in repo root from chelis build / test scratch
+chelis_blas.h
+chelis_math.h
+chelis_runtime.h
+chelis_simd.h
+libchelis_runtime.a
+probev*.c
+probev*.h
+smoke_io.csv
+test_io_*.csv
+test_io_*.json
+phase-probe.csv
+phase-probe.json
+skill-io.csv
+skill-io.json

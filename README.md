@@ -44,10 +44,10 @@ scale.
 
 ## Toolchain
 
-Pinned to `chelis v0.2.4` in `reef.toml`:
+Pinned to `chelis v0.2.5` in `reef.toml`:
 
 ```toml
-compiler = "=0.2.4"
+compiler = "=0.2.5"
 ```
 
 ## Build
@@ -80,9 +80,11 @@ python parity/run_parity.py            # pandas-comparison oracle
 - `Coral.Reshape` ships `pivot`, `melt`, `stack`, and `unstack`
 - Parquet I/O is upstream-blocked (see `docs/UPSTREAM_BUGS.md`)
 - null semantics are intentionally narrower than pandas in the first pass
-- chelis v0.2.4 evaluator gap blocks tensor-tensor `eq`/`neq`/`lt`/`gt`
-  inside `chelis test`; IntCol/BoolCol/`is_nan` tensor functions cannot
-  be exercised from `tests/*.ch` until upstream lifts that limitation
+- chelis v0.2.5 narrows the prior evaluator gap: tensor-tensor
+  `eq`/`neq`/`lt`/`gt` and IntCol / `is_nan` / `count_nan` / `any_nan`
+  tensor exports are now exercised from `tests/*.ch`. Still blocked at
+  the eval level: `to_tensor([bool, ...])` (so bool CSV/JSON round trips
+  stay compile-checked only) and tensor-scalar `gt(tensor, scalar)`
 
 ## License
 

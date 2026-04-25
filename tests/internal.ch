@@ -9,12 +9,12 @@ import Coral.Frame (
 )
 
 -- These tests exercise internal frame algorithms via the public exports.
--- The chelis v0.2.4 test evaluator does not broadcast eq/neq/lt over tensors,
--- which prevents constructing IntCol/BoolCol values (their construction goes
--- through frame::bool_list_to_tensor). The internal-frame coverage below
--- focuses on the string-sort path (str_lt + enum_insertion_sort +
--- extract_perm_indices + reverse_ints + list_gather_string) and the
--- float/string slicing path, which all work end-to-end in the eval runtime.
+-- chelis v0.2.5 broadcasts tensor-tensor eq/neq/lt/gt in the test evaluator,
+-- which unblocks IntCol construction (mask via `neq(int_tensor, int_tensor)`).
+-- BoolCol construction via `to_tensor([bool, ...])` remains blocked. The
+-- internal-frame coverage below focuses on the string-sort path
+-- (str_lt + enum_insertion_sort + extract_perm_indices + reverse_ints +
+-- list_gather_string) and the float/string slicing path.
 
 def test_string_sort_lexicographic() -> unit ! { Test } = {
   -- Confirms str_lt + enum_insertion_sort + extract_perm_indices end-to-end:

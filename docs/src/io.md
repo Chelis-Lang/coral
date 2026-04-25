@@ -25,8 +25,10 @@ def main() -> int64 = {
 ## Parquet
 
 `read_parquet_frame` and `write_parquet_frame` are exported by `Coral.IO` but
-currently call `fail(...)` at runtime. `Std.IO.Parquet` resolves at import time
-In chelis v0.2.4, `import Std.IO.Parquet (read_parquet)` resolves at check time (score 1.0)
-but `chelis build --target c` panics at `lower.rs` (exit 101); functions remain uncallable.
-The stdlib archive contains no `io/parquet.ch`. Parquet support is gated on upstream
-`Chelis-Lang/chelis`. See `docs/UPSTREAM_BUGS.md` for the full probe log.
+currently call `fail(...)` at runtime. In chelis v0.2.5, `import Std.IO.Parquet
+(read_parquet)` resolves at check time (score 1.0) and `chelis build --target c`
+exits 0 (the prior `lower.rs` panic is gone), but linking fails because the
+runtime symbol `pkg__chelis__std__Std__IO__Parquet__read_parquet` is not
+implemented in `libchelis_runtime`. Parquet support remains gated on upstream
+`Chelis-Lang/chelis` shipping the runtime backing. See `docs/UPSTREAM_BUGS.md`
+for the full probe log.

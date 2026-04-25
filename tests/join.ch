@@ -3,10 +3,10 @@ import Std.Test (assert_eq_int, assert_close)
 import Coral.Frame (Column, Frame, from_pairs, nrows, ncols, get_float_col)
 import Coral.Join (inner_join, left_join, outer_join)
 
--- NOTE: the chelis 0.2.4 evaluator (used by `chelis test`) does not implement
--- tensor-tensor eq/neq, so any IntCol construction fails (its mask is built
--- from `neq(int_tensor, int_tensor)`). All numeric columns below use FloatCol.
--- Hand-computed expected values are derived directly from the inputs.
+-- NOTE: chelis v0.2.5 unblocks tensor-tensor eq/neq in `chelis test`. The
+-- FloatCol-based assertions below remain valid; they cover the join row-set
+-- and column-set behavior independently of the eval gap. Hand-computed
+-- expected values are derived directly from the inputs.
 
 def zero_i64() -> int64 = cast(0, int64)
 

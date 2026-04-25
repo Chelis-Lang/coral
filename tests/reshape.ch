@@ -3,13 +3,12 @@ import Std.Test (assert_eq_int, assert_close)
 import Coral.Frame (Column, Frame, from_pairs, nrows, ncols, get_float_col, get_string_col)
 import Coral.Reshape (pivot, melt, stack, unstack)
 
--- NOTE: the chelis 0.2.4 evaluator (used by `chelis test`) does not implement
--- tensor-tensor eq/neq, which Coral's IntCol mask construction relies on. All
--- numeric columns below are FloatCol. Hand-computed expected values are
--- derived directly from the inputs, not from any pandas golden.
---
--- Coral.Reshape.melt and pivot only accept FloatCol value columns (per
--- src/reshape.ch); id/index/columns args must be StringCol.
+-- NOTE: chelis v0.2.5 unblocks tensor-tensor eq/neq in `chelis test`. The
+-- FloatCol-based assertions below remain valid; they cover melt/pivot/stack/
+-- unstack independently of the eval gap. Coral.Reshape.melt and pivot only
+-- accept FloatCol value columns (per src/reshape.ch); id/index/columns args
+-- must be StringCol. Hand-computed expected values are derived directly from
+-- the inputs, not from any pandas golden.
 
 def zero_i64() -> int64 = cast(0, int64)
 

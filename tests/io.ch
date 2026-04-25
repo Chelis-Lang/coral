@@ -3,27 +3,17 @@ import Std.Test (assert_true, assert_eq_int, assert_eq_string, assert_close)
 import Coral.Frame (
   Frame, Column, ColumnType,
   from_pairs, nrows, ncols, columns,
-  get_float_col, get_string_col
+  get_float_col, get_string_col, get_int_col,
+  int_col_of_list
 )
 import Coral.IO (write_csv_frame, read_csv_frame, write_json_frame, read_json_frame)
 
--- NOTE: In the chelis 0.2.4 evaluator, element-wise tensor comparisons
--- (`neq(copy(t), t)`, etc.) raise a runtime "eq/neq expect matching scalar
--- args" error. This means:
---
---   * `int_col_of_list` cannot be called from test code (its all-false mask
---     is built via `neq` on int tensors).
---   * Reading a CSV/JSON column whose textual values parse as ints triggers
---     `infer_csv_column`'s `IntCol` branch, which builds the same broken
---     mask. So whole-number float values like `10.0` (which `to_string`
---     renders as `"10"`) round-trip through the int path and crash.
---   * Similarly, columns of `"true"/"false"` round-trip through
---     `bools_to_tensor`, which is also `neq`-based and crashes.
---
--- Tests below stick to non-integer float values and string columns so the
--- inference picks `FloatCol` / `StringCol` and the round trip evaluates.
--- Bool/Int column round trips are blocked by the runtime, not by the IO
--- module itself.
+-- NOTE: chelis v0.2.5 unblocks tensor-tensor eq/neq, so `int_col_of_list`
+-- and the IntCol round trip through `infer_csv_column` work in `chelis test`.
+-- Bool inference still depends on `to_tensor([bool, ...])` which v0.2.5 has
+-- not fixed, so bool round trips remain blocked at the eval level. Float and
+-- string round trips have always worked. Int round trips are exercised by
+-- the new test_int_round_trip_csv test.
 
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
@@ -76,6 +66,23 @@ def test_csv_bool_column_roundtrip() -> unit ! { Test, IO } = {
   _ = assert_eq_int(nrows(back), cast(3, int64), "flag csv nrows == 3");
   _ = assert_eq_string(index(flags, zero_i64()), "yes", "flag_text[0] == yes");
   assert_eq_string(index(flags, cast(2, int64)), "yes", "flag_text[2] == yes")
+}
+
+-- v0.2.5 unblock: int round-trip exercises infer_csv_column's IntCol
+-- branch, which builds the missing mask via tensor-tensor neq. Previously
+-- this crashed in the eval interpreter.
+def test_csv_int_roundtrip() -> unit ! { Test, IO } = {
+  df = from_pairs([
+    ("qty", int_col_of_list([cast(7, int64), cast(42, int64), cast(99, int64)])),
+    ("name", StringCol(["a", "b", "c"]))
+  ])
+  _ = write_csv_frame(df, "test_io_int.csv");
+  back = read_csv_frame("test_io_int.csv")
+  qtys = to_list(get_int_col(back, "qty"))
+  qsum = fold(fn (acc: int64, v: int64) -> add(acc, v), zero_i64(), qtys)
+  _ = assert_eq_int(nrows(back), cast(3, int64), "int round-trip nrows == 3");
+  _ = assert_eq_int(qsum, cast(148, int64), "int round-trip preserves values: 7+42+99 == 148");
+  assert_eq_int(index(qtys, one_i64()), cast(42, int64), "qty[1] == 42")
 }
 
 -- Multi-column write+read: confirms the writer/reader handle 2 cols and

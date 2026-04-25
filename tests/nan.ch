@@ -3,23 +3,16 @@ import Std.Test (assert_true, assert_false, assert_eq_int, assert_eq_bool, asser
 import Coral.Frame (
   Frame, Column,
   from_pairs, nrows, ncols, get_float_col,
-  fill_nan
+  fill_nan, is_nan, any_nan, count_nan
 )
 
--- NOTE: The chelis 0.2.4 evaluator does not support element-wise tensor
--- comparisons such as `neq(copy(t), t)`. Several Coral.Frame helpers depend
--- on that pattern and therefore cannot be exercised under `chelis test`:
---
---   * `is_nan`, `any_nan`, `count_nan`, `drop_nan` (all call `is_nan`,
---     which is `neq(copy(col), col)` on a float tensor).
---   * `int_col_of_list` and `bool_list_to_tensor` (build the bool mask via
---     `neq` on int tensors), so any IntCol-backed test is blocked too.
---   * `is_nan_int` / `fill_nan_int` / `drop_nan_int` (require an IntCol
---     to exist first; we cannot construct one in test code).
---
--- The tests below cover the fragments that *do* run: scalar NaN semantics
--- (`neq(x, x)` on f32 scalars, which the runtime supports), and `fill_nan`
--- which is a `map`-over-`to_list` scalar fold and therefore evaluates.
+-- NOTE: chelis 0.2.5 unblocks tensor-tensor `eq`/`neq`/`lt`/`gt` in the
+-- `chelis test` evaluator, so `is_nan`, `any_nan`, `count_nan`, and IntCol
+-- construction are now exercisable directly (see test_*_tensor functions
+-- below). The earlier scalar workarounds (`is_nan_scalar`, `any_nan_scalar`,
+-- `count_nan_scalar`) are retained as redundant cross-checks. Still blocked
+-- under v0.2.5: `to_tensor([true, false, ...])` (bool list to tensor) and
+-- tensor-scalar `gt(tensor, scalar)`.
 
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
@@ -121,4 +114,34 @@ def test_fill_nan_then_frame_roundtrip() -> unit ! { Test } = {
   _ = assert_close(index(vals, zero_i64()), cast(1.0, f32), cast(1e-5, f32), "x[0] == 1.0");
   _ = assert_close(index(vals, one_i64()), cast(0.0, f32), cast(1e-5, f32), "x[1] filled to 0.0");
   assert_close(index(vals, cast(2, int64)), cast(3.0, f32), cast(1e-5, f32), "x[2] == 3.0")
+}
+
+-- v0.2.5 unblock: exercise Coral.Frame.is_nan tensor export end-to-end.
+-- Tensor [1.0, NaN, 2.0, NaN, 3.0] -> mask [F, T, F, T, F]; sum of true = 2.
+def test_is_nan_tensor_export() -> unit ! { Test } = {
+  t = to_tensor([cast(1.0, f32), nan_f32(), cast(2.0, f32), nan_f32(), cast(3.0, f32)])
+  m = is_nan(t)
+  cnt = fold(fn (acc: int64, x: bool) -> if x then add(acc, one_i64()) else acc, zero_i64(), to_list(m))
+  _ = assert_eq_int(cnt, cast(2, int64), "tensor is_nan: two trues for two NaNs");
+  -- cross-check: position 0 is false, position 1 is true
+  bs = to_list(m)
+  _ = assert_eq_bool(index(bs, zero_i64()), false, "is_nan[0] == false (1.0 is not NaN)");
+  assert_eq_bool(index(bs, one_i64()), true, "is_nan[1] == true (NaN)")
+}
+
+-- v0.2.5 unblock: exercise Coral.Frame.count_nan tensor export.
+def test_count_nan_tensor_export() -> unit ! { Test } = {
+  t = to_tensor([nan_f32(), cast(1.0, f32), nan_f32(), cast(2.0, f32), nan_f32()])
+  c = count_nan(t)
+  _ = assert_eq_int(c, cast(3, int64), "count_nan: 3 NaNs");
+  clean = to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)])
+  assert_eq_int(count_nan(clean), zero_i64(), "count_nan on clean tensor == 0")
+}
+
+-- v0.2.5 unblock: exercise Coral.Frame.any_nan tensor export.
+def test_any_nan_tensor_export() -> unit ! { Test } = {
+  with_nan = to_tensor([cast(1.0, f32), nan_f32(), cast(2.0, f32)])
+  without_nan = to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)])
+  _ = assert_true(any_nan(with_nan), "any_nan tensor: true when present");
+  assert_false(any_nan(without_nan), "any_nan tensor: false when absent")
 }

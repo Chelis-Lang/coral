@@ -11,7 +11,7 @@ Scope:
   2. validate checked-in pandas goldens for Frame, GroupBy, IO, Join, Window, Reshape
   3. execute a bare-build runtime parity lane for Window (expected values pandas-derived)
   4. compile-level integration probe for HAMT-backed Frame ops; stripped
-     bare builds are fully clean on v0.2.4 (build, link, and run all pass)
+     bare builds are fully clean on v0.2.5 (build, link, and run all pass)
   5. negative test suite: check-time error detection (TypeMismatch, UnboundVariable)
 """
 from __future__ import annotations
@@ -385,7 +385,7 @@ def run_window_runtime_checks() -> int:
 
 # Frame core algorithm runtime parity (fill_int_list, str_lt, enum_insertion_sort,
 # bool_list_to_tensor) was previously executed here via the prefixed-concat bare-build
-# harness. As of v0.2.4 this coverage lives in tests/internal.ch and runs via
+# harness. As of v0.2.5 this coverage lives in tests/internal.ch and runs via
 # `chelis test`. The bare-build entry point in scripts/repro_multimodule_bare_build.py
 # remains as an upstream-blocker probe (frame/groupby/join compile cleanly).
 
@@ -524,7 +524,7 @@ def main() -> int:
         return 1
     if run_phase1_compile_probe() != 0:
         return 1
-    print("phase1 probe: stripped Frame/GroupBy/Join bare builds fully clean on v0.2.4 (build, link, run all pass)")
+    print("phase1 probe: stripped Frame/GroupBy/Join bare builds fully clean on v0.2.5 (build, link, run all pass)")
     if run_negative_checks() != 0:
         return 1
     print("coral parity checks OK")

@@ -26,6 +26,16 @@ Tracked upstream/toolchain issues that affect Coral development.
     those code paths end-to-end.
   Probed v0.2.4: BLOCKED. Re-probe each release; the gap is between the
   eval interpreter and the typed runtime, not the C backend.
+  Probed v0.2.5: PARTIALLY RESOLVED — tensor-tensor `eq`/`neq`/`lt`/`gt`
+  on f32 and int64 tensors now work in `chelis test`, which unblocks
+  `IntCol(values, mask)` construction (mask via `neq(int_tensor,
+  int_tensor)`), `is_nan` / `count_nan` / `any_nan` on float tensors, and
+  IntCol-emitting aggregations. Still blocked under v0.2.5:
+  `to_tensor([true, false, ...])` (rejected with `to_tensor expects
+  numeric List elements, got bool`) and tensor-scalar `gt(tensor, scalar)`
+  (rejected with `type mismatch: tensor[Wildcard, f32] vs f32`). Bool
+  CSV/JSON round trips and any code path that calls `bool_list_to_tensor`
+  remain blocked at the eval level.
 
 
 - **Upstream blocker (v0.1.21, still present v0.2.0, still present v0.2.1): `grad` type-checks but fails to build** — `grad(f, wrt=x)`
@@ -39,6 +49,7 @@ Tracked upstream/toolchain issues that affect Coral development.
   Probed v0.2.2: STILL BLOCKED (same error: "can't lower these defs — their body applies/binds `grad` (or `vmap`) in a position the host lane can't resolve", exit 1).
   Probed v0.2.3: STILL BLOCKED (same error, exit 1).
   Probed v0.2.4: STILL BLOCKED (same lowering error; identical workaround guidance, exit 1).
+  Probed v0.2.5: STILL BLOCKED — `chelis check` resolves `grad(f)(x)` at score 1.0 (107 typed nodes, no errors), but `chelis build --target c` rejects with the same "can't lower these defs" error and identical workaround guidance, exit 1.
 
 - **Upstream limitation (v0.1.21, still present v0.2.0): C backend ("Phase 0f") rejects int64 tensors** — `chelis
   build --target c` panics with "Phase 0f C backend only supports f32/bool tensors, found
@@ -55,6 +66,7 @@ Tracked upstream/toolchain issues that affect Coral development.
   Probed v0.2.2: STILL RESOLVED — all three repro bare-builds (frame, groupby, join) pass cleanly (exit 0, valid C, link and run OK).
   Probed v0.2.3: STILL RESOLVED — all three repro bare-builds pass cleanly (exit 0, valid C, link and run OK).
   Probed v0.2.4: STILL RESOLVED — int64 tensor programs build, link, and run cleanly; HAMT-dependent ops also runtime-tested via `chelis test` end-to-end (from_pairs, with_column, describe, value_counts).
+  Probed v0.2.5: STILL RESOLVED — int64 tensor `chelis build --target c` exits 0, valid C generated.
 
 - **Upstream blocker (v0.1.21, still present v0.2.0): `Std.IO.Parquet` module is absent** — in v0.1.21
   the module resolved at import-check time (score 1.0 on empty import list) but exported no callable
@@ -71,6 +83,7 @@ Tracked upstream/toolchain issues that affect Coral development.
   Probed v0.2.2: STILL PARTIALLY RESTORED — `chelis check` resolves the import at score 1.0 (unchanged); build behavior not re-probed (stubs remain; same status as v0.2.1).
   Probed v0.2.3: STILL PARTIALLY RESTORED — `chelis check` resolves the import at score 1.0 (unchanged); stubs remain.
   Probed v0.2.4: STILL PARTIALLY RESTORED — `chelis check` resolves the import at score 1.0 (unchanged); stubs remain.
+  Probed v0.2.5: BUILD-CLEAN, LINK FAILS — `chelis check` resolves at score 1.0 and `chelis build --target c` now exits 0 (the lower.rs panic from v0.2.1+ is gone), but native `gcc` link fails with "implicit declaration of function `pkg__chelis__std__Std__IO__Parquet__read_parquet`" because the runtime library does not implement the symbol. `read_parquet_frame` / `write_parquet_frame` stubs remain in `src/io.ch` until upstream ships the runtime backing.
 
 - `chelis v0.1.18` still requires the `copy(values)` compatibility fix around
   tensor-to-list conversion that Coral already applies in `describe`.

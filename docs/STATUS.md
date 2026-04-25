@@ -31,7 +31,7 @@ Known deferred items:
 
 Test harness layout (Phase 3t):
 
-- `tests/*.ch` — Chelis-native tests run via `chelis test tests/`. 57 tests
+- `tests/*.ch` — Chelis-native tests run via `chelis test tests/`. 62 tests
   across frame, window, groupby, join, reshape, io, nan, internal. All
   expected values are mathematical identities, hand-computed from inputs,
   structural assertions, or round-trip identities — never pandas-derived.
@@ -48,7 +48,7 @@ Test harness layout (Phase 3t):
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints
-  typecheck on published `chelis v0.2.4`
+  typecheck on published `chelis v0.2.5`
 - 8 `tests/*.ch` modules cover construction, filter (via mask
   consumers), head/tail/slice, rename/with_column/drop, sort_by
   (string asc/desc, float), concat, describe, single-key aggregations
@@ -78,14 +78,15 @@ What is currently proven:
 
 What is not yet proven:
 
-- chelis v0.2.4 evaluator (used by `chelis test`) does not implement
-  tensor-tensor `eq`/`neq` / `lt`/`gt`. As a result, IntCol/BoolCol
-  construction and the float-tensor `is_nan`/`any_nan`/`count_nan`/
-  `drop_nan` exports cannot be exercised from `tests/*.ch` directly.
-  Tests work around this with element-wise scalar reimplementations
-  where possible; the original tensor-level functions remain
-  runtime-unverified at the `chelis test` level. Window/Frame runtime
-  parity covers the `chelis build`-target path.
+- chelis v0.2.5 unblocked tensor-tensor `eq`/`neq`/`lt`/`gt` in
+  `chelis test`, which lets Coral's `is_nan` / `any_nan` / `count_nan`
+  tensor exports, IntCol construction, `agg_count`, `value_counts`, and
+  the int CSV round-trip run end-to-end via `chelis test`. Still
+  blocked at the eval level: `to_tensor([bool, ...])` (so BoolCol
+  construction from a bool list and bool CSV/JSON round trips remain
+  runtime-unverified at the `chelis test` level) and tensor-scalar
+  `gt(tensor, scalar)`. Window/Frame runtime parity covers the
+  `chelis build`-target path.
 - pandas-equivalent sort semantics for NaN-bearing columns
 - negative-test coverage for the full frame error surface
 - runtime parity for GroupBy, Join, and IO module families against

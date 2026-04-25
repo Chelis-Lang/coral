@@ -61,9 +61,11 @@ binary:
 ```sh
 chelis check src/frame.ch
 chelis reef build
-python tests/run_static_checks.py
-python tests/run_skill_checks.py
+chelis test tests/                     # internal correctness (Chelis-native)
+python scripts/run_static_checks.py
+python scripts/run_skill_checks.py
 python scripts/validate_book_examples.py
+python parity/run_parity.py            # pandas-comparison oracle
 ```
 
 ## Current deltas

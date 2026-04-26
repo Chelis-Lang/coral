@@ -37,10 +37,9 @@ Test harness layout (Phase 3t):
   structural assertions, or round-trip identities — never pandas-derived.
 - `parity/` — pandas-comparison oracle. `parity/run_parity.py` runs the
   golden inventory check, `parity/gen_goldens.py --check` (regenerates
-  goldens from pandas and compares), the window runtime parity lane
-  (expected values pandas-derived), the HAMT integration compile probe,
-  and the negative test suite. `parity/goldens/` holds 44 pandas-derived
-  JSON fixtures.
+  goldens from pandas and compares), a 2-fixture window runtime parity
+  cross-check (rolling_mean + ewm), and the negative test suite.
+  `parity/goldens/` holds 44 pandas-derived JSON fixtures.
 - `scripts/` — documentation/lint validators (`run_static_checks.py`,
   `run_skill_checks.py`, `validate_book_examples.py`) plus the
   upstream-blocker probe `repro_multimodule_bare_build.py`.
@@ -61,10 +60,12 @@ What is currently proven:
   generic-specialization runtime gap
 - 44 checked-in `parity/goldens/*.json` fixtures (frame/groupby/io/join/
   window/reshape) are generated from pandas
-- `parity/run_parity.py` validates golden inventory, runs a compile-level
-  probe covering HAMT-backed frame mutation/bool-column concat/describe,
-  executes the window runtime parity lane (`rolling_sum/mean/std/min/max`,
-  `ewm(alpha, adjust=False)`), and checks the negative test suite
+- `parity/run_parity.py` validates golden inventory, runs the
+  pandas-comparison check, executes a 2-fixture window runtime
+  cross-check (`rolling_mean_w3` + `ewm_alpha_0_5` build+link+run), and
+  checks the negative test suite. The remaining rolling fixtures
+  (sum/std/min/max) are pandas-validated via `gen_goldens.py --check`
+  without paying the per-fixture build+link+run cost.
 - negative test suite validates `TypeMismatch` and `UnboundVariable` at
   check time
 - `src/io.ch` supports bool inference on read and bool rendering on

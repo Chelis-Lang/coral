@@ -32,6 +32,18 @@ jobs:
   chelis-tests:
     needs: lint
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test_file:
+          - frame
+          - groupby
+          - internal
+          - io
+          - join
+          - nan
+          - reshape
+          - window
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,12 +88,8 @@ jobs:
       - name: reef build
         run: chelis reef build
 
-      - name: chelis test tests/
-        run: |
-          # Run sequentially to avoid OOM (each test compiles a fresh subprocess).
-          for f in tests/*.ch; do
-            chelis test "$f"
-          done
+      - name: chelis test tests/${{ matrix.test_file }}.ch
+        run: chelis test tests/${{ matrix.test_file }}.ch
 
   pandas-parity:
     needs: lint

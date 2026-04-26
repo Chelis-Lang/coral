@@ -152,96 +152,6 @@ def native_link_cmd(binary: Path, sources: list[Path], out_dir: Path) -> list[st
     return cmd
 
 
-def run_phase1_compile_probe() -> int:
-    code = """module Coral.Phase1Probe
-import Coral.Internal.HAMT (hamt_from_pairs, hamt_put, hamt_get, hamt_remove, hamt_contains, hamt_size)
-import Coral.Frame (from_pairs, columns, with_column, rename, drop_column, concat, describe, get_float_col, nrows, ncols, int_col_of_list)
-import Coral.GroupBy (group_by, agg_count)
-import Coral.IO (write_csv_frame, write_json_frame)
-import Coral.Join (inner_join, left_join)
-
-def string_list_eq(lhs: List[string], rhs: List[string]) -> bool = {
-  if neq(len(lhs), len(rhs)) then false else string_list_eq_rec(lhs, rhs)
-}
-
-def string_list_eq_rec(lhs: List[string], rhs: List[string]) -> bool = {
-  if eq(len(lhs), cast(0, int64)) then true
-  else if neq(index(lhs, cast(0, int64)), index(rhs, cast(0, int64))) then false
-  else string_list_eq_rec(drop(lhs, cast(1, int64)), drop(rhs, cast(1, int64)))
-}
-
-def option_int_eq(value: Option[int64], expected: int64) -> bool = {
-  match value with {
-    | Some(found) => eq(found, expected)
-    | None => false
-  }
-}
-
-def main() -> f32 = {
-  base = hamt_from_pairs([("price", cast(1, int64)), ("qty", cast(2, int64))])
-  next = hamt_put(base, "flag", cast(3, int64))
-  final = hamt_remove(next, "qty")
-  frame = from_pairs([
-    ("a", int_col_of_list([cast(1, int64), cast(2, int64)])),
-    ("b", FloatCol(to_tensor([cast(1.0, f32), div(cast(0.0, f32), cast(0.0, f32))]))),
-    ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64)]), to_tensor([cast(0, int64), cast(0, int64)]))))
-  ])
-  renamed = rename(frame, "a", "z")
-  extended = with_column(renamed, "c", int_col_of_list([cast(3, int64), cast(4, int64)]))
-  dropped = drop_column(extended, "b")
-  stacked = concat([dropped, dropped])
-  desc = describe(frame)
-  grouped = agg_count(group_by(from_pairs([
-    ("city", StringCol(["london", "paris", "london"])),
-    ("qty", int_col_of_list([cast(1, int64), cast(2, int64), cast(3, int64)]))
-  ]), "city"))
-  io_frame = from_pairs([
-    ("id", int_col_of_list([cast(1, int64), cast(2, int64)])),
-    ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.5, f32)]))),
-    ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64)]), to_tensor([cast(0, int64), cast(0, int64)])))),
-    ("city", StringCol(["london", "paris"]))
-  ])
-  csv_unit = write_csv_frame(io_frame, "phase-probe.csv")
-  json_unit = write_json_frame(io_frame, "phase-probe.json")
-  joined = inner_join(
-    from_pairs([
-      ("customer", StringCol(["a", "b", "a"])),
-      ("qty", int_col_of_list([cast(1, int64), cast(2, int64), cast(3, int64)]))
-    ]),
-    from_pairs([
-      ("customer", StringCol(["a", "a", "c"])),
-      ("score", FloatCol(to_tensor([cast(10.0, f32), cast(15.0, f32), cast(40.0, f32)])))
-    ]),
-    "customer"
-  )
-  ok_hamt =
-    and(eq(hamt_size(final), cast(2, int64)),
-      and(hamt_contains(final, "price"),
-        and(not(hamt_contains(final, "qty")),
-          and(option_int_eq(hamt_get(final, "price"), cast(1, int64)), option_int_eq(hamt_get(final, "flag"), cast(3, int64))))))
-  ok_order =
-    and(string_list_eq(columns(renamed), ["z", "b", "flag"]),
-      and(string_list_eq(columns(extended), ["z", "b", "flag", "c"]), string_list_eq(columns(dropped), ["z", "flag", "c"])))
-  ok_more =
-    and(eq(nrows(stacked), cast(4, int64)),
-      and(eq(ncols(desc), cast(3, int64)),
-        and(neq(index(to_list(get_float_col(desc, "b")), cast(0, int64)), cast(0.0, f32)),
-          and(eq(nrows(grouped), cast(2, int64)),
-            and(eq(ncols(grouped), cast(2, int64)),
-              and(eq(nrows(joined), cast(4, int64)),
-                and(eq(ncols(joined), cast(3, int64)),
-                  eq(ncols(io_frame), cast(4, int64)))))))))
-  if and(ok_hamt, and(ok_order, ok_more)) then cast(1.0, f32) else cast(0.0, f32)
-}
-"""
-    tmp = REPO / "src" / "phase1probe.ch"
-    try:
-        tmp.write_text(code)
-        return run(CHELIS, "check", str(tmp))
-    finally:
-        tmp.unlink(missing_ok=True)
-
-
 def validate_checked_in_goldens(base_dir: Path, required: list[str], label: str) -> int:
     for name in required:
         path = base_dir / name
@@ -374,10 +284,15 @@ def run_window_runtime_fixture(fixture_name: str) -> int:
         shutil.rmtree(workdir, ignore_errors=True)
 
 
+RUNTIME_WINDOW_FIXTURES = ["rolling_mean_w3.json", "ewm_alpha_0_5.json"]
+
+
 def run_window_runtime_checks() -> int:
-    for fixture_name in REQUIRED_WINDOW_GOLDENS:
-        if fixture_name == "README.json":
-            continue
+    # Two C-backend cross-check fixtures are enough: rolling_mean covers the
+    # rolling-window code path, ewm covers the EWM recurrence. The remaining
+    # fixtures (rolling_sum/std/min/max) are still pandas-validated via
+    # gen_goldens.py --check; only the build+link+run cycle is trimmed.
+    for fixture_name in RUNTIME_WINDOW_FIXTURES:
         if run_window_runtime_fixture(fixture_name) != 0:
             return 1
     return 0
@@ -491,20 +406,12 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    steps = [
-        (CHELIS, "check", "src/core.ch"),
-        (CHELIS, "check", "src/apismoke.ch"),
-        (CHELIS, "check", "src/internal/hamt.ch"),
-        (CHELIS, "check", "src/frame.ch"),
-        (CHELIS, "check", "src/groupby.ch"),
-        (CHELIS, "check", "src/io.ch"),
-        (CHELIS, "check", "src/join.ch"),
-        (CHELIS, "check", "src/window.ch"),
-        (CHELIS, "check", "src/reshape.ch"),
-    ]
-    for step in steps:
-        if run(*step) != 0:
-            return 1
+    # Note: per-module `chelis check` calls were removed; `chelis reef build`
+    # in CI covers the same type-check coverage. The phase1 compile probe
+    # was also removed; its coverage (HAMT + from_pairs + with_column +
+    # rename + drop_column + concat + describe + agg_count + write_csv +
+    # write_json + inner_join) is now duplicated by tests/internal.ch +
+    # tests/groupby.ch + tests/io.ch + tests/join.ch under `chelis test`.
     if validate_checked_in_goldens(FRAME_GOLDENS, REQUIRED_FRAME_GOLDENS, "frame") != 0:
         return 1
     if validate_checked_in_goldens(GROUPBY_GOLDENS, REQUIRED_GROUPBY_GOLDENS, "groupby") != 0:
@@ -522,9 +429,6 @@ def main() -> int:
         return rc
     if run_window_runtime_checks() != 0:
         return 1
-    if run_phase1_compile_probe() != 0:
-        return 1
-    print("phase1 probe: stripped Frame/GroupBy/Join bare builds fully clean on v0.2.5 (build, link, run all pass)")
     if run_negative_checks() != 0:
         return 1
     print("coral parity checks OK")

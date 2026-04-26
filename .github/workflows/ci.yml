@@ -63,11 +63,11 @@ jobs:
           sed -i "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/chelis-std/reef.toml
           chelis reef publish /tmp/reef-deps/chelis-std
-          gh release download v0.2.2 \
+          gh release download v0.3.0 \
             --repo Chelis-Lang/nautilus \
-            --pattern 'nautilus-0.2.2.tar.zst' \
+            --pattern 'nautilus-0.3.0.tar.zst' \
             --dir /tmp/reef-deps/nautilus-dl
-          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.2.2.tar.zst \
+          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.3.0.tar.zst \
             -C /tmp/reef-deps/nautilus
           sed -i "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/nautilus/reef.toml
@@ -120,11 +120,11 @@ jobs:
           sed -i "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/chelis-std/reef.toml
           chelis reef publish /tmp/reef-deps/chelis-std
-          gh release download v0.2.2 \
+          gh release download v0.3.0 \
             --repo Chelis-Lang/nautilus \
-            --pattern 'nautilus-0.2.2.tar.zst' \
+            --pattern 'nautilus-0.3.0.tar.zst' \
             --dir /tmp/reef-deps/nautilus-dl
-          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.2.2.tar.zst \
+          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.3.0.tar.zst \
             -C /tmp/reef-deps/nautilus
           sed -i "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/nautilus/reef.toml

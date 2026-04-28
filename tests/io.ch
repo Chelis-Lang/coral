@@ -8,12 +8,12 @@ import Coral.Frame (
 )
 import Coral.IO (write_csv_frame, read_csv_frame, write_json_frame, read_json_frame)
 
--- NOTE: chelis v0.2.5 unblocks tensor-tensor eq/neq, so `int_col_of_list`
--- and the IntCol round trip through `infer_csv_column` work in `chelis test`.
--- Bool inference still depends on `to_tensor([bool, ...])` which v0.2.5 has
--- not fixed, so bool round trips remain blocked at the eval level. Float and
--- string round trips have always worked. Int round trips are exercised by
--- the new test_int_round_trip_csv test.
+-- NOTE: tensor-tensor eq/neq work in `chelis test` (since v0.2.5), so
+-- `int_col_of_list` and the IntCol round trip through `infer_csv_column`
+-- run end-to-end. Bool inference still depends on `to_tensor([bool, ...])`
+-- which v0.3.0 has not fixed, so bool round trips remain blocked at the
+-- eval level. Float and string round trips have always worked. Int round
+-- trips are exercised by test_csv_int_roundtrip below.
 
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)

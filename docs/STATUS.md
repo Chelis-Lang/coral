@@ -31,7 +31,7 @@ Known deferred items:
 
 Test harness layout (Phase 3t):
 
-- `tests/*.ch` — Chelis-native tests run via `chelis test tests/`. 62 tests
+- `tests/*.ch` — Chelis-native tests run via `chelis test tests/`. 63 tests
   across frame, window, groupby, join, reshape, io, nan, internal. All
   expected values are mathematical identities, hand-computed from inputs,
   structural assertions, or round-trip identities — never pandas-derived.
@@ -47,7 +47,7 @@ Test harness layout (Phase 3t):
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints
-  typecheck on published `chelis v0.2.5`
+  typecheck on published `chelis v0.3.0`
 - 8 `tests/*.ch` modules cover construction, filter (via mask
   consumers), head/tail/slice, rename/with_column/drop, sort_by
   (string asc/desc, float), concat, describe, single-key aggregations
@@ -79,7 +79,7 @@ What is currently proven:
 
 What is not yet proven:
 
-- chelis v0.2.5 unblocked tensor-tensor `eq`/`neq`/`lt`/`gt` in
+- chelis v0.3.0 unblocked tensor-tensor `eq`/`neq`/`lt`/`gt` in
   `chelis test`, which lets Coral's `is_nan` / `any_nan` / `count_nan`
   tensor exports, IntCol construction, `agg_count`, `value_counts`, and
   the int CSV round-trip run end-to-end via `chelis test`. Still

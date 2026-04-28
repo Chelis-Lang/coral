@@ -3,7 +3,7 @@ import Std.Test (assert_eq_int, assert_close)
 import Coral.Frame (Column, ColumnType, Frame, from_pairs, nrows, ncols, get_float_col, get_int_col)
 import Coral.GroupBy (group_by, agg_sum, agg_mean, agg_min, agg_max, agg_count, value_counts)
 
--- NOTE: chelis v0.2.5 unblocks tensor-tensor eq/neq in `chelis test`, which
+-- NOTE: chelis v0.3.0 unblocks tensor-tensor eq/neq in `chelis test`, which
 -- means IntCol/agg_count/value_counts can be exercised. The FloatCol-only
 -- tests below are retained as-is (they cover sum/mean/min/max via the float
 -- aggregation path, which never depended on the eval gap). The new IntCol

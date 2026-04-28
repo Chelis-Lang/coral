@@ -104,8 +104,8 @@ export (main)
 
 def main() -> f32 = {
   values = to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32), cast(4.0, f32), cast(5.0, f32)])
-  means = rolling_mean(values, cast(3, int64))
-  stds = rolling_std(values, cast(3, int64))
+  means = rolling_mean(copy(values), cast(3, int64))
+  stds = rolling_std(copy(values), cast(3, int64))
   smooth = ewm(values, cast(0.5, f32))
   add(index(to_list(means), cast(4, int64)), add(index(to_list(stds), cast(4, int64)), index(to_list(smooth), cast(4, int64))))
 }
@@ -224,12 +224,12 @@ def main() -> int64 = {
 - String `sort_by` is supported and golden-validated: lexicographic ascending and descending, with runtime parity for the insertion sort and comparison path.
 - `outer_join` row order: left-sequential first, then right-only rows appended.
 - `melt` is column-major: all rows for value_col[0] appear before value_col[1].
-- Parquet is upstream-blocked (`import Std.IO.Parquet` resolves at check time and `chelis build --target c` exits 0 in v0.2.5, but the runtime symbol is missing so link fails; functions not callable).
+- Parquet is upstream-blocked (`import Std.IO.Parquet` resolves at check time and `chelis build --target c` exits 0 in v0.3.0, but the runtime symbol is missing so link fails; functions not callable).
 - `describe` skips NaN for float columns and masked entries for int columns; uses sample std (`ddof=1`).
 - `Coral.Window` and `Coral.Frame` both have an executed runtime parity lane: pandas goldens + runtime build/link/execute lane (in `parity/run_parity.py`). GroupBy, Join, and IO are fixture-backed plus compile-checked.
-- Stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.2.5`.
-- Tests in `tests/*.ch` run via `chelis test tests/` (chelis v0.2.5) and assert mathematical identities, hand-computed values, structural properties, and round-trip identities. Pandas comparison work lives in `parity/`.
-- `chelis test` evaluator gap (v0.2.5): tensor-tensor `eq`/`neq`/`lt`/`gt` are now supported, so IntCol construction, `is_nan`/`any_nan`/`count_nan` tensor exports, `agg_count`, `value_counts`, and the int CSV round-trip all run end-to-end via `chelis test`. Still blocked: `to_tensor([bool, ...])` (BoolCol from a bool list, bool CSV/JSON round trips) and tensor-scalar `gt(tensor, scalar)`.
+- Stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.3.0`.
+- Tests in `tests/*.ch` run via `chelis test tests/` (chelis v0.3.0) and assert mathematical identities, hand-computed values, structural properties, and round-trip identities. Pandas comparison work lives in `parity/`.
+- `chelis test` evaluator gap (v0.3.0): tensor-tensor `eq`/`neq`/`lt`/`gt` are now supported, so IntCol construction, `is_nan`/`any_nan`/`count_nan` tensor exports, `agg_count`, `value_counts`, and the int CSV round-trip all run end-to-end via `chelis test`. Still blocked: `to_tensor([bool, ...])` (BoolCol from a bool list, bool CSV/JSON round trips) and tensor-scalar `gt(tensor, scalar)`.
 
 ## 5. API Surface
 

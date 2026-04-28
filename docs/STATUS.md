@@ -31,7 +31,7 @@ Known deferred items:
 
 Test harness layout (Phase 3t):
 
-- `tests/*.ch` — Chelis-native tests run via `chelis test tests/`. 63 tests
+- `tests/*.ch` — Chelis-native tests run via `chelis test tests/`. 65 tests
   across frame, window, groupby, join, reshape, io, nan, internal. All
   expected values are mathematical identities, hand-computed from inputs,
   structural assertions, or round-trip identities — never pandas-derived.
@@ -47,7 +47,7 @@ Test harness layout (Phase 3t):
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints
-  typecheck on published `chelis v0.3.0`
+  typecheck on published `chelis v0.3.1`
 - 8 `tests/*.ch` modules cover construction, filter (via mask
   consumers), head/tail/slice, rename/with_column/drop, sort_by
   (string asc/desc, float), concat, describe, single-key aggregations
@@ -79,15 +79,14 @@ What is currently proven:
 
 What is not yet proven:
 
-- chelis v0.3.0 unblocked tensor-tensor `eq`/`neq`/`lt`/`gt` in
-  `chelis test`, which lets Coral's `is_nan` / `any_nan` / `count_nan`
-  tensor exports, IntCol construction, `agg_count`, `value_counts`, and
-  the int CSV round-trip run end-to-end via `chelis test`. Still
-  blocked at the eval level: `to_tensor([bool, ...])` (so BoolCol
-  construction from a bool list and bool CSV/JSON round trips remain
-  runtime-unverified at the `chelis test` level) and tensor-scalar
-  `gt(tensor, scalar)`. Window/Frame runtime parity covers the
-  `chelis build`-target path.
+- (resolved in v0.3.1, moved out of "not yet proven") The prior
+  `chelis test` evaluator gap is fully closed: tensor-tensor
+  `eq`/`neq`/`lt`/`gt` (v0.2.5), `to_tensor([bool, ...])`, and
+  tensor-scalar `gt(tensor, scalar)` (v0.3.1) all work. Coral's
+  IntCol, `is_nan`/`count_nan`/`any_nan` tensor exports, `agg_count`,
+  `value_counts`, int CSV round-trip, and bool CSV/JSON round-trips
+  are all exercised under `chelis test`. Window/Frame runtime parity
+  still covers the `chelis build`-target path independently.
 - pandas-equivalent sort semantics for NaN-bearing columns
 - negative-test coverage for the full frame error surface
 - runtime parity for GroupBy, Join, and IO module families against

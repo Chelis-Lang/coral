@@ -64,6 +64,10 @@ Tracked upstream/toolchain issues that affect Coral development.
   Probed v0.2.4: STILL BLOCKED (same lowering error; identical workaround guidance, exit 1).
   Probed v0.2.5: STILL BLOCKED — `chelis check` resolves `grad(f)(x)` at score 1.0 (107 typed nodes, no errors), but `chelis build --target c` rejects with the same "can't lower these defs" error and identical workaround guidance, exit 1.
   Probed v0.3.0: STILL BLOCKED — same lowering error and same workaround guidance, exit 1.
+  Probed v0.3.1: STILL BLOCKED — same error. Upstream commit
+  `docs(spec): record host-lane scalar AD as Phase 5 deferred item`
+  in the v0.3.0→v0.3.1 changelog confirms this is intentionally
+  parked behind Phase 5.
 
 - **Upstream limitation (v0.1.21, still present v0.2.0): C backend ("Phase 0f") rejects int64 tensors** — `chelis
   build --target c` panics with "Phase 0f C backend only supports f32/bool tensors, found
@@ -82,6 +86,7 @@ Tracked upstream/toolchain issues that affect Coral development.
   Probed v0.2.4: STILL RESOLVED — int64 tensor programs build, link, and run cleanly; HAMT-dependent ops also runtime-tested via `chelis test` end-to-end (from_pairs, with_column, describe, value_counts).
   Probed v0.2.5: STILL RESOLVED — int64 tensor `chelis build --target c` exits 0, valid C generated.
   Probed v0.3.0: STILL RESOLVED — `chelis reef build` for the full Coral package (including HAMT-backed Frame ops) exits 0 cleanly.
+  Probed v0.3.1: STILL RESOLVED — `chelis reef build` exits 0 cleanly; full test suite passes via `chelis test tests/`.
 
 - **Upstream blocker (v0.1.21, still present v0.2.0): `Std.IO.Parquet` module is absent** — in v0.1.21
   the module resolved at import-check time (score 1.0 on empty import list) but exported no callable
@@ -100,6 +105,7 @@ Tracked upstream/toolchain issues that affect Coral development.
   Probed v0.2.4: STILL PARTIALLY RESTORED — `chelis check` resolves the import at score 1.0 (unchanged); stubs remain.
   Probed v0.2.5: BUILD-CLEAN, LINK FAILS — `chelis check` resolves at score 1.0 and `chelis build --target c` now exits 0 (the lower.rs panic from v0.2.1+ is gone), but native `gcc` link fails with "implicit declaration of function `pkg__chelis__std__Std__IO__Parquet__read_parquet`" because the runtime library does not implement the symbol. `read_parquet_frame` / `write_parquet_frame` stubs remain in `src/io.ch` until upstream ships the runtime backing.
   Probed v0.3.0: STILL BUILD-CLEAN, LINK FAILS — same status as v0.2.5; runtime symbol still missing.
+  Probed v0.3.1: STILL BUILD-CLEAN, LINK FAILS — same status; runtime symbol `pkg__chelis__std__Std__IO__Parquet__read_parquet` still not implemented in `libchelis_runtime`. Stubs remain in `src/io.ch`.
 
 - `chelis v0.1.18` still requires the `copy(values)` compatibility fix around
   tensor-to-list conversion that Coral already applies in `describe`.

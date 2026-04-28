@@ -3,17 +3,15 @@ import Std.Test (assert_true, assert_eq_int, assert_eq_string, assert_close)
 import Coral.Frame (
   Frame, Column, ColumnType,
   from_pairs, nrows, ncols, columns,
-  get_float_col, get_string_col, get_int_col,
+  get_float_col, get_string_col, get_int_col, get_bool_col,
   int_col_of_list
 )
 import Coral.IO (write_csv_frame, read_csv_frame, write_json_frame, read_json_frame)
 
--- NOTE: tensor-tensor eq/neq work in `chelis test` (since v0.2.5), so
--- `int_col_of_list` and the IntCol round trip through `infer_csv_column`
--- run end-to-end. Bool inference still depends on `to_tensor([bool, ...])`
--- which v0.3.0 has not fixed, so bool round trips remain blocked at the
--- eval level. Float and string round trips have always worked. Int round
--- trips are exercised by test_csv_int_roundtrip below.
+-- NOTE: chelis v0.3.1 fully resolves the eval gap. Tensor-tensor eq/neq
+-- (since v0.2.5), `to_tensor([bool, ...])`, and tensor-scalar
+-- `gt(tensor, scalar)` (since v0.3.1) all work. Float, string, int, and
+-- bool round trips are all now exercisable via `chelis test`.
 
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
@@ -51,21 +49,35 @@ def test_json_write_then_read_roundtrip() -> unit ! { Test, IO } = {
   assert_eq_string(index(cities, one_i64()), "berlin", "city[1] == berlin")
 }
 
--- Bool round-trip is blocked by the runtime (BoolCol re-inflation calls
--- `neq` on int tensors). We instead confirm the writer path handles a
--- multi-column frame end-to-end without panicking, and that the produced
--- file is non-empty by reading back the string column.
-def test_csv_bool_column_roundtrip() -> unit ! { Test, IO } = {
+-- v0.3.1 unblock: bool round-trip exercises infer_csv_column's BoolCol
+-- branch, which calls `bools_to_tensor` → `to_tensor([bool, ...])`.
+-- Previously rejected by the eval interpreter; v0.3.1 accepts bool lists.
+def test_csv_bool_roundtrip() -> unit ! { Test, IO } = {
   df = from_pairs([
-    ("flag_text", StringCol(["yes", "no", "yes"])),
-    ("score", FloatCol(to_tensor([cast(0.5, f32), cast(1.5, f32), cast(2.5, f32)])))
+    ("flag", BoolCol(to_tensor([true, false, true]))),
+    ("name", StringCol(["a", "b", "c"]))
   ])
-  _ = write_csv_frame(df, "test_io_flags.csv");
-  back = read_csv_frame("test_io_flags.csv")
-  flags = get_string_col(back, "flag_text")
-  _ = assert_eq_int(nrows(back), cast(3, int64), "flag csv nrows == 3");
-  _ = assert_eq_string(index(flags, zero_i64()), "yes", "flag_text[0] == yes");
-  assert_eq_string(index(flags, cast(2, int64)), "yes", "flag_text[2] == yes")
+  _ = write_csv_frame(df, "test_io_bool.csv");
+  back = read_csv_frame("test_io_bool.csv")
+  flags = to_list(get_bool_col(back, "flag"))
+  trues = fold(fn (acc: int64, x: bool) -> if x then add(acc, one_i64()) else acc, zero_i64(), flags)
+  _ = assert_eq_int(nrows(back), cast(3, int64), "bool roundtrip nrows == 3");
+  _ = assert_eq_int(trues, cast(2, int64), "bool roundtrip preserves true-count == 2");
+  _ = assert_true(index(flags, zero_i64()), "flag[0] == true");
+  assert_true(index(flags, cast(2, int64)), "flag[2] == true")
+}
+
+def test_json_bool_roundtrip() -> unit ! { Test, IO } = {
+  df = from_pairs([
+    ("flag", BoolCol(to_tensor([true, true, false, true]))),
+    ("score", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32), cast(4.0, f32)])))
+  ])
+  _ = write_json_frame(df, "test_io_bool.json");
+  back = read_json_frame("test_io_bool.json")
+  flags = to_list(get_bool_col(back, "flag"))
+  trues = fold(fn (acc: int64, x: bool) -> if x then add(acc, one_i64()) else acc, zero_i64(), flags)
+  _ = assert_eq_int(nrows(back), cast(4, int64), "json bool roundtrip nrows == 4");
+  assert_eq_int(trues, cast(3, int64), "json bool roundtrip preserves true-count == 3")
 }
 
 -- v0.2.5 unblock: int round-trip exercises infer_csv_column's IntCol

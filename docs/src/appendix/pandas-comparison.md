@@ -20,7 +20,7 @@ Current parity-backed scope:
 
 Documented deltas:
 
-- stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.3.0`:
+- stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.3.1`:
   build, link, and execution all pass; acceptance gate is fixture goldens plus
   the compile-level probe in `parity/run_parity.py`
 - GroupBy, Join, and IO are currently fixture-backed plus compile-checked

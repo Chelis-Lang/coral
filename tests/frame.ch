@@ -3,7 +3,7 @@ import Std.Test (assert_true, assert_eq, assert_eq_int, assert_eq_string, assert
 import Coral.Frame (
   Frame, Column, ColumnType,
   from_pairs, nrows, ncols, columns,
-  head, tail, slice, sort_by,
+  filter, head, tail, slice, sort_by,
   with_column, drop_column, rename,
   concat, describe,
   get_float_col, get_string_col
@@ -94,4 +94,20 @@ def test_describe_returns_8_rows() -> unit ! { Test } = {
   df = from_pairs([("a", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32), cast(4.0, f32), cast(5.0, f32)])))])
   d = describe(df)
   assert_eq_int(nrows(d), cast(8, int64), "describe always has 8 stat rows")
+}
+
+-- v0.3.1 unblock: tensor-scalar `gt(tensor, scalar)` now broadcasts the
+-- scalar across tensor elements at both type-check and eval time, so a
+-- threshold filter is now exercisable directly under `chelis test`.
+-- Inputs [10, 50, 100, 200, 300]; mask = gt(values, 75); kept rows = 3
+-- (the 100, 200, 300 entries).
+def test_filter_via_tensor_scalar_gt() -> unit ! { Test } = {
+  df = from_pairs([
+    ("price", FloatCol(to_tensor([cast(10.0, f32), cast(50.0, f32), cast(100.0, f32), cast(200.0, f32), cast(300.0, f32)])))
+  ])
+  mask = gt(get_float_col(df, "price"), cast(75.0, f32))
+  kept = filter(df, mask)
+  total = fold(fn (acc: f32, v: f32) -> add(acc, v), cast(0.0, f32), to_list(get_float_col(kept, "price")))
+  _ = assert_eq_int(nrows(kept), cast(3, int64), "filter keeps 3 rows above 75");
+  assert_close(total, cast(600.0, f32), cast(1e-3, f32), "kept sum 100+200+300 == 600")
 }

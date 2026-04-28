@@ -9,7 +9,7 @@ import Coral.Frame (
 )
 
 -- These tests exercise internal frame algorithms via the public exports.
--- chelis v0.3.0 broadcasts tensor-tensor eq/neq/lt/gt in the test evaluator,
+-- chelis v0.3.1 broadcasts tensor-tensor eq/neq/lt/gt in the test evaluator,
 -- which unblocks IntCol construction (mask via `neq(int_tensor, int_tensor)`).
 -- BoolCol construction via `to_tensor([bool, ...])` remains blocked. The
 -- internal-frame coverage below focuses on the string-sort path

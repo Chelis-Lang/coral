@@ -6,14 +6,12 @@ import Coral.Frame (
   fill_nan, is_nan, any_nan, count_nan
 )
 
--- NOTE: tensor-tensor `eq`/`neq`/`lt`/`gt` work in the `chelis test`
--- evaluator (since v0.2.5), so `is_nan`, `any_nan`, `count_nan`, and
--- IntCol construction are exercisable directly (see test_*_tensor
--- functions below). The earlier scalar workarounds (`is_nan_scalar`,
--- `any_nan_scalar`, `count_nan_scalar`) are retained as redundant
--- cross-checks. Still blocked at the eval level under v0.3.0:
--- `to_tensor([true, false, ...])` (bool list to tensor) and
--- tensor-scalar `gt(tensor, scalar)`.
+-- NOTE: chelis v0.3.1 fully resolves the eval gap. Tensor-tensor
+-- `eq`/`neq`/`lt`/`gt` (since v0.2.5), `to_tensor([bool, ...])`, and
+-- tensor-scalar `gt(tensor, scalar)` (since v0.3.1) all work in the
+-- `chelis test` evaluator. The earlier scalar workarounds
+-- (`is_nan_scalar`, `any_nan_scalar`, `count_nan_scalar`) are retained
+-- as redundant cross-checks against the tensor-export tests below.
 
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)

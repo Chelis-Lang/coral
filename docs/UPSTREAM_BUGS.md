@@ -42,6 +42,13 @@ Tracked upstream/toolchain issues that affect Coral development.
   still rejected with `type mismatch: tensor[Wildcard, f32] vs f32`. The
   v0.3.0 release was focused on artifact caching (issue #4); the eval
   gap was not touched.
+  Probed v0.3.1: RESOLVED — `to_tensor([true, false, ...])` now accepts
+  bool lists and produces `tensor[N, bool]`; `gt(tensor, scalar)` (and
+  `lt`/`eq`/`neq`/`lte`/`gte`/`cmplt`) now broadcast the scalar across
+  tensor elements at both type-check and eval time, including the
+  symmetric `gt(scalar, tensor)` form. Bool CSV/JSON round trips and
+  `bool_list_to_tensor` are unblocked. The remaining v0.3.0 entries are
+  now resolved; this blocker is closed.
 
 
 - **Upstream blocker (v0.1.21, still present v0.2.0, still present v0.2.1): `grad` type-checks but fails to build** — `grad(f, wrt=x)`

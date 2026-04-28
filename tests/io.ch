@@ -8,7 +8,7 @@ import Coral.Frame (
 )
 import Coral.IO (write_csv_frame, read_csv_frame, write_json_frame, read_json_frame)
 
--- NOTE: chelis v0.3.1 fully resolves the eval gap. Tensor-tensor eq/neq
+-- NOTE: chelis v0.3.2 fully resolves the eval gap. Tensor-tensor eq/neq
 -- (since v0.2.5), `to_tensor([bool, ...])`, and tensor-scalar
 -- `gt(tensor, scalar)` (since v0.3.1) all work. Float, string, int, and
 -- bool round trips are all now exercisable via `chelis test`.

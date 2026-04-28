@@ -3,7 +3,7 @@ import Std.Test (assert_eq_int, assert_close)
 import Coral.Frame (Column, Frame, from_pairs, nrows, ncols, get_float_col, get_string_col)
 import Coral.Reshape (pivot, melt, stack, unstack)
 
--- NOTE: chelis v0.3.1 unblocks tensor-tensor eq/neq in `chelis test`. The
+-- NOTE: chelis v0.3.2 unblocks tensor-tensor eq/neq in `chelis test`. The
 -- FloatCol-based assertions below remain valid; they cover melt/pivot/stack/
 -- unstack independently of the eval gap. Coral.Reshape.melt and pivot only
 -- accept FloatCol value columns (per src/reshape.ch); id/index/columns args

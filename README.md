@@ -44,10 +44,10 @@ scale.
 
 ## Toolchain
 
-Pinned to `chelis v0.3.2` in `reef.toml`:
+Pinned to `chelis v0.4.0` in `reef.toml`:
 
 ```toml
-compiler = "=0.3.2"
+compiler = "=0.4.0"
 ```
 
 ## Build

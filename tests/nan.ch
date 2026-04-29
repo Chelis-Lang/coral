@@ -6,7 +6,7 @@ import Coral.Frame (
   fill_nan, is_nan, any_nan, count_nan
 )
 
--- NOTE: chelis v0.3.2 fully resolves the eval gap. Tensor-tensor
+-- NOTE: chelis v0.4.0 fully resolves the eval gap. Tensor-tensor
 -- `eq`/`neq`/`lt`/`gt` (since v0.2.5), `to_tensor([bool, ...])`, and
 -- tensor-scalar `gt(tensor, scalar)` (since v0.3.1) all work in the
 -- `chelis test` evaluator. The earlier scalar workarounds

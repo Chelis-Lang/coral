@@ -3,7 +3,7 @@ import Std.Test (assert_eq_int, assert_close)
 import Coral.Frame (Column, Frame, from_pairs, nrows, ncols, get_float_col)
 import Coral.Join (inner_join, left_join, outer_join)
 
--- NOTE: chelis v0.3.2 unblocks tensor-tensor eq/neq in `chelis test`. The
+-- NOTE: chelis v0.4.0 unblocks tensor-tensor eq/neq in `chelis test`. The
 -- FloatCol-based assertions below remain valid; they cover the join row-set
 -- and column-set behavior independently of the eval gap. Hand-computed
 -- expected values are derived directly from the inputs.

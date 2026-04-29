@@ -79,6 +79,58 @@ jobs:
       - name: chelis test tests/
         run: chelis test tests/
 
+  mac-smoke:
+    needs: lint
+    runs-on: macos-latest
+    # Proof-of-life: the Coral reef package builds under the Darwin
+    # chelis toolchain. Nothing more. The full test suite runs on
+    # Linux; this job only asserts that "the lib works on Mac" so a
+    # Darwin chelis regression that breaks Coral surfaces here instead
+    # of in an issue from a Mac user weeks later. See docs/RELEASES.md.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download chelis-darwin-arm64 toolchain
+        env:
+          GH_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
+        run: |
+          gh release download v0.4.0 \
+            --repo Chelis-Lang/chelis \
+            --pattern 'chelis-v0.4.0-darwin-arm64.tar.gz' \
+            --dir /tmp/chelis-toolchain
+          tar -xzf /tmp/chelis-toolchain/chelis-v0.4.0-darwin-arm64.tar.gz \
+            -C /tmp/chelis-toolchain
+          echo "/tmp/chelis-toolchain/chelis-v0.4.0-darwin-arm64/bin" >> "$GITHUB_PATH"
+
+      - name: Verify toolchain version
+        run: |
+          chelis --version
+          test "$(chelis --version)" = "chelis 0.4.0"
+
+      - name: Populate reef registry
+        env:
+          GH_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
+        run: |
+          COMPILER_PIN=$(grep '^compiler' reef.toml | sed 's/.*"\(.*\)"/\1/')
+          mkdir -p /tmp/reef-deps/chelis-std /tmp/reef-deps/nautilus
+          tar -xf deps/chelis-std-0.1.0.tar.zst -C /tmp/reef-deps/chelis-std
+          sed -i.bak "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
+            /tmp/reef-deps/chelis-std/reef.toml
+          chelis reef publish /tmp/reef-deps/chelis-std
+          gh release download v0.3.4 \
+            --repo Chelis-Lang/nautilus \
+            --pattern 'nautilus-0.3.4.tar.zst' \
+            --dir /tmp/reef-deps/nautilus-dl
+          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.3.4.tar.zst \
+            -C /tmp/reef-deps/nautilus
+          sed -i.bak "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
+            /tmp/reef-deps/nautilus/reef.toml
+          chelis reef publish /tmp/reef-deps/nautilus
+
+      - name: chelis reef build (proof-of-life)
+        run: chelis reef build
+
   pandas-parity:
     needs: lint
     runs-on: ubuntu-latest

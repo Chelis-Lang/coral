@@ -32,6 +32,10 @@
 
 - [Rolling And EWM](window.md)
 
+# Reshape
+
+- [Reshape](reshape.md)
+
 # Reference
 
 - [Pandas Comparison](appendix/pandas-comparison.md)

@@ -52,11 +52,10 @@ compiler = "=0.5.0"
 
 ## Build
 
-For local development in this workspace, Coral uses a vendored
-`chelis-std` snapshot from the published `v0.1.13` compiler source tag
-and a vendored snapshot of the published Nautilus `v0.1.2` package.
-With the compiler on `PATH`, or `CHELIS_BIN` pointed at the published
-binary:
+A Coral checkout uses `chelis-std 0.1.0` (vendored in `deps/`) and
+`nautilus 0.5.0` (resolved from the local reef registry); both pins
+live in `reef.lock`. With the compiler on `PATH`, or `CHELIS_BIN`
+pointed at the published binary:
 
 ```sh
 chelis check src/frame.ch

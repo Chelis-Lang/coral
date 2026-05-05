@@ -2,10 +2,13 @@
 
 ## Float columns
 
-Float NaN values are handled via IEEE 754 semantics (`x != x` is true iff NaN):
+Float NaN values are handled via IEEE 754 semantics (`x != x` is true iff NaN).
+Note the asymmetry with the integer helpers below: float helpers operate on
+*tensors* (extract the column with `get_float_col` first), while the `_int`
+helpers take a `Frame` plus a column name.
 
 - `is_nan(col)` — returns a bool tensor (true = missing)
-- `fill_nan(df, col_name, fill_val)` — replace NaN with `fill_val`
+- `fill_nan(col, fill_val)` — replace NaN with `fill_val` in a float tensor
 - `drop_nan(df, col_name)` — remove rows where the column is NaN
 - `any_nan(col)` — true if any value is NaN
 - `count_nan(col)` — count of NaN values

@@ -39,7 +39,7 @@ def main() -> int:
         "Coral.Window": SRC / "window.ch",
         "Coral.IO": SRC / "io.ch",
         "Coral.Reshape": SRC / "reshape.ch",
-        "Coral.Internal.HAMT": SRC / "internal" / "hamt.ch",
+        "Coral.Internal.Hamt": SRC / "internal" / "hamt.ch",
     }
     if not smoke.exists():
         failures.append("missing src/apismoke.ch")
@@ -61,7 +61,7 @@ def main() -> int:
     else:
         txt = readme.read_text()
         for mod, path in modules.items():
-            if mod == "Coral.Internal.HAMT":
+            if mod == "Coral.Internal.Hamt":
                 continue
             if mod not in txt:
                 failures.append(f"README.md does not mention {mod}")

@@ -72,7 +72,7 @@ performance optimization.
 
 The implementation plan is:
 
-- add a standalone `Coral.Internal.HAMT` module before the rest of `Coral.Frame`
+- add a standalone `Coral.Internal.Hamt` module before the rest of `Coral.Frame`
 - test HAMT in isolation: insert, lookup, remove, iteration order, and structural
   sharing behavior
 - wire `Frame.columns` to the HAMT root and build the public frame API on top of it

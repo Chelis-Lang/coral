@@ -22,7 +22,7 @@ Hard constraint recorded for alpha:
 - `Frame.columns` uses a persistent HAMT from day one
 - no plain `Dict` fallback for frame column storage
 - reason: AD through multi-op frame pipelines must preserve structural sharing instead of copying the full column map on every frame mutation
-- implementation order: land `Coral.Internal.HAMT` with isolated tests first, then wire `Coral.Frame` onto it
+- implementation order: land `Coral.Internal.Hamt` with isolated tests first, then wire `Coral.Frame` onto it
 
 Known deferred items:
 

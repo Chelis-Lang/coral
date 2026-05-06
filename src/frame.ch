@@ -1,5 +1,5 @@
 module Coral.Frame
-import Coral.Internal.HAMT (Hamt, hamt_from_pairs, hamt_get, hamt_put, hamt_remove)
+import Coral.Internal.Hamt (Hamt, hamt_from_pairs, hamt_get, hamt_put, hamt_remove)
 import Nautilus.Stats (mean_vec, min_vec, max_vec, quantile_vec, std_vec)
 export (
   ColumnType, Column, KeyValue, Frame,

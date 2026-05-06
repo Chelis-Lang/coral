@@ -1,4 +1,4 @@
-module Coral.Internal.HAMT
+module Coral.Internal.Hamt
 export (Hamt, hamt_empty, hamt_singleton, hamt_from_pairs, hamt_get, hamt_contains, hamt_put, hamt_remove, hamt_size, hamt_keys, hamt_entries)
 
 type Hamt[a] =

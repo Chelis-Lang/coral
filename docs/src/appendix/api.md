@@ -15,4 +15,4 @@ Validated first-pass frame slice:
 - `Coral.GroupBy`
 - `Coral.Join`
 - `Coral.Window`
-- `Coral.IO`
+- `Coral.Io`

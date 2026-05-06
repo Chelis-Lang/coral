@@ -37,7 +37,7 @@ def main() -> int:
         "Coral.GroupBy": SRC / "groupby.ch",
         "Coral.Join": SRC / "join.ch",
         "Coral.Window": SRC / "window.ch",
-        "Coral.IO": SRC / "io.ch",
+        "Coral.Io": SRC / "io.ch",
         "Coral.Reshape": SRC / "reshape.ch",
         "Coral.Internal.Hamt": SRC / "internal" / "hamt.ch",
     }

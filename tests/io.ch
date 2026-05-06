@@ -1,4 +1,4 @@
-module Coral.Tests.IO
+module Coral.Tests.Io
 import Std.Test (assert_true, assert_eq_int, assert_eq_string, assert_close)
 import Coral.Frame (
   Frame, Column, ColumnType,
@@ -6,7 +6,7 @@ import Coral.Frame (
   get_float_col, get_string_col, get_int_col, get_bool_col,
   int_col_of_list
 )
-import Coral.IO (write_csv_frame, read_csv_frame, write_json_frame, read_json_frame)
+import Coral.Io (write_csv_frame, read_csv_frame, write_json_frame, read_json_frame)
 
 -- NOTE: chelis v0.4.0 fully resolves the eval gap. Tensor-tensor eq/neq
 -- (since v0.2.5), `to_tensor([bool, ...])`, and tensor-scalar

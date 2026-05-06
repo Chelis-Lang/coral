@@ -16,7 +16,7 @@ import Coral.GroupBy (group_by, agg_sum, agg_mean, agg_count, value_counts)
 import Coral.Join (inner_join, left_join, outer_join)
 import Coral.Reshape (pivot, melt, stack, unstack)
 import Coral.Window (rolling_mean, ewm)
-import Coral.IO (read_csv_frame, write_csv_frame, read_json_frame, write_json_frame)
+import Coral.Io (read_csv_frame, write_csv_frame, read_json_frame, write_json_frame)
 ```
 
 ### Deep
@@ -149,7 +149,7 @@ def main() -> int64 = {
 ```chelis
 module Coral.Pat08
 import Coral.Frame (from_pairs, ncols, int_col_of_list)
-import Coral.IO (write_csv_frame, write_json_frame)
+import Coral.Io (write_csv_frame, write_json_frame)
 export (main)
 
 def main() -> int64 = {
@@ -225,7 +225,7 @@ def main() -> int64 = {
 - String `sort_by` is supported and golden-validated: lexicographic ascending and descending, with runtime parity for the insertion sort and comparison path.
 - `outer_join` row order: left-sequential first, then right-only rows appended.
 - `melt` is column-major: all rows for value_col[0] appear before value_col[1].
-- Parquet is upstream-blocked (`import Std.IO.Parquet` resolves at check time and `chelis build --target c` exits 0 from v0.4.0 onward — confirmed at the current v0.5.0 pin — but the runtime symbol is missing so link fails; functions not callable).
+- Parquet is upstream-blocked (`import Std.Io.Parquet` resolves at check time and `chelis build --target c` exits 0 from v0.4.0 onward — confirmed at the current v0.5.0 pin — but the runtime symbol is missing so link fails; functions not callable).
 - `describe` skips NaN for float columns and masked entries for int columns; uses sample std (`ddof=1`).
 - `Coral.Window` and `Coral.Frame` both have an executed runtime parity lane: pandas goldens + runtime build/link/execute lane (in `parity/run_parity.py`). GroupBy, Join, and IO are fixture-backed plus compile-checked.
 - Stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.5.0`.
@@ -239,4 +239,4 @@ def main() -> int64 = {
 - `Coral.Join`: `inner_join`, `left_join`, `outer_join`
 - `Coral.Reshape`: `pivot`, `melt`, `stack`, `unstack`
 - `Coral.Window`: `rolling_mean`, `rolling_std`, `rolling_max`, `ewm`
-- `Coral.IO`: CSV + JSON read/write; Parquet upstream-blocked
+- `Coral.Io`: CSV + JSON read/write; Parquet upstream-blocked

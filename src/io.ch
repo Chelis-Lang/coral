@@ -1,8 +1,8 @@
-module Coral.IO
+module Coral.Io
 import Coral.Frame (Column, Frame, from_pairs, columns, get_column)
-import Std.IO (write_text)
-import Std.IO.Csv (read_csv)
-import Std.IO.Json (Json, json_array, json_object, load_json)
+import Std.Io (write_text)
+import Std.Io.Csv (read_csv)
+import Std.Io.Json (Json, json_array, json_object, load_json)
 export (read_csv_frame, write_csv_frame, read_json_frame, write_json_frame, read_parquet_frame, write_parquet_frame)
 
 def zero_i64() -> int64 = cast(0, int64)
@@ -163,7 +163,7 @@ def bools_to_tensor[n](values: List[bool]) -> tensor[n, bool] = {
   neq(copy(ints), zeros)
 }
 
--- read_parquet_frame and write_parquet_frame require Std.IO.Parquet,
+-- read_parquet_frame and write_parquet_frame require Std.Io.Parquet,
 -- which is not yet in the chelis runtime. Tracked as upstream blocker.
-def read_parquet_frame[n](path: string) -> Frame[n] = fail("read_parquet_frame requires Std.IO.Parquet (not in current runtime)")
-def write_parquet_frame[n](df: Frame[n], path: string) -> string = fail("write_parquet_frame requires Std.IO.Parquet (not in current runtime)")
+def read_parquet_frame[n](path: string) -> Frame[n] = fail("read_parquet_frame requires Std.Io.Parquet (not in current runtime)")
+def write_parquet_frame[n](df: Frame[n], path: string) -> string = fail("write_parquet_frame requires Std.Io.Parquet (not in current runtime)")

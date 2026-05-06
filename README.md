@@ -39,7 +39,7 @@ scale.
 | `Coral.GroupBy` | single-key grouping plus `sum` / `mean` / `count` / `min` / `max` aggregations |
 | `Coral.Join` | `inner_join` and `left_join` |
 | `Coral.Window` | rolling sum/mean/std/min/max and EWM |
-| `Coral.IO` | CSV and JSON read/write |
+| `Coral.Io` | CSV and JSON read/write |
 | `Coral.Reshape` | `pivot`, `melt`, `stack`, `unstack` |
 
 ## Toolchain

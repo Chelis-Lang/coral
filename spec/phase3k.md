@@ -17,7 +17,7 @@ flows through dataframe operations, enabling sensitivity analysis no existing da
 library supports.
 
 **Prerequisite:** 3h (gather, scatter, argsort for sort-by/group-by), 3d (collections
-for string columns), 3g (Std.IO.Csv/Json for data loading).
+for string columns), 3g (Std.Io.Csv/Json for data loading).
 
 ### Core Design
 
@@ -87,7 +87,7 @@ The implementation plan is:
 | `Coral.Join` | Sort-merge join on typed key columns, left/inner/outer join variants | argsort, gather, concat |
 | `Coral.Reshape` | Pivot (long → wide), melt (wide → long), stack/unstack | Dict manipulation, tensor reshape |
 | `Coral.Window` | Rolling operations over numeric columns: `rolling_mean`, `rolling_sum`, `rolling_std`, `ewm` (exponentially weighted moving average). Expressible via `cumsum` tricks but worth naming. | cumsum, einsum |
-| `Coral.IO` | DataFrame-aware CSV loading (wraps `Std.IO.Csv`, auto-detects column types, returns typed DataFrame), JSON loading, DataFrame → CSV export, **`read_parquet` / `write_parquet` backed by the Rust `parquet2` crate in the runtime** (same integration pattern as `mmap_file` via `memmap2` in 3g). Parquet is the standard columnar format for ML datasets and the largest functional gap vs pandas. | `Std.IO.Csv`, `Std.IO.Json`, runtime `parquet2` FFI |
+| `Coral.Io` | DataFrame-aware CSV loading (wraps `Std.Io.Csv`, auto-detects column types, returns typed DataFrame), JSON loading, DataFrame → CSV export, **`read_parquet` / `write_parquet` backed by the Rust `parquet2` crate in the runtime** (same integration pattern as `mmap_file` via `memmap2` in 3g). Parquet is the standard columnar format for ML datasets and the largest functional gap vs pandas. | `Std.Io.Csv`, `Std.Io.Json`, runtime `parquet2` FFI |
 
 ### AD Through Dataframes
 
@@ -148,7 +148,7 @@ No existing dataframe library supports this.
 - `Coral.Join`: inner join matches pandas.merge on test data, key type enforcement works
 - `Coral.Window`: `rolling_mean` / `rolling_std` / `ewm` match pandas reference within
   tolerance
-- `Coral.IO`: CSV round-trip (load → export → reload) preserves data and column types;
+- `Coral.Io`: CSV round-trip (load → export → reload) preserves data and column types;
   **Parquet round-trip** via `parquet2` preserves schema and typed columns
 - AD: `grad` through filter + aggregate pipeline produces correct gradients
 - GPU: numeric column operations compile to HIP and produce correct results (manual gate)

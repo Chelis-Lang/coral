@@ -59,11 +59,11 @@ jobs:
         run: |
           COMPILER_PIN=$(grep '^compiler' reef.toml | sed 's/.*"\(.*\)"/\1/')
           mkdir -p /tmp/reef-deps/chelis-std /tmp/reef-deps/nautilus
-          tar -xf deps/chelis-std-0.1.0.tar.zst -C /tmp/reef-deps/chelis-std
+          tar -xf deps/chelis-std-0.2.0.tar.zst -C /tmp/reef-deps/chelis-std
           sed -i "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/chelis-std/reef.toml
           chelis reef publish /tmp/reef-deps/chelis-std
-          gh release download v0.6.0 \
+          gh release download v0.6.1 \
             --repo Chelis-Lang/nautilus \
             --pattern 'nautilus-0.6.1.tar.zst' \
             --dir /tmp/reef-deps/nautilus-dl
@@ -114,11 +114,11 @@ jobs:
         run: |
           COMPILER_PIN=$(grep '^compiler' reef.toml | sed 's/.*"\(.*\)"/\1/')
           mkdir -p /tmp/reef-deps/chelis-std /tmp/reef-deps/nautilus
-          tar -xf deps/chelis-std-0.1.0.tar.zst -C /tmp/reef-deps/chelis-std
+          tar -xf deps/chelis-std-0.2.0.tar.zst -C /tmp/reef-deps/chelis-std
           sed -i.bak "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/chelis-std/reef.toml
           chelis reef publish /tmp/reef-deps/chelis-std
-          gh release download v0.6.0 \
+          gh release download v0.6.1 \
             --repo Chelis-Lang/nautilus \
             --pattern 'nautilus-0.6.1.tar.zst' \
             --dir /tmp/reef-deps/nautilus-dl
@@ -164,11 +164,11 @@ jobs:
         run: |
           COMPILER_PIN=$(grep '^compiler' reef.toml | sed 's/.*"\(.*\)"/\1/')
           mkdir -p /tmp/reef-deps/chelis-std /tmp/reef-deps/nautilus
-          tar -xf deps/chelis-std-0.1.0.tar.zst -C /tmp/reef-deps/chelis-std
+          tar -xf deps/chelis-std-0.2.0.tar.zst -C /tmp/reef-deps/chelis-std
           sed -i "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/chelis-std/reef.toml
           chelis reef publish /tmp/reef-deps/chelis-std
-          gh release download v0.6.0 \
+          gh release download v0.6.1 \
             --repo Chelis-Lang/nautilus \
             --pattern 'nautilus-0.6.1.tar.zst' \
             --dir /tmp/reef-deps/nautilus-dl

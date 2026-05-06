@@ -1,6 +1,6 @@
 {
   "fixture": "fill_nan_qty",
-  "operation": "fill_nan_int",
+  "operation": "fill_nan_col",
   "expected_frame": {
     "nrows": 3,
     "ncols": 2,

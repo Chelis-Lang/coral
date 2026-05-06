@@ -217,8 +217,9 @@ def main() -> int64 = {
 
 - Integer columns use a two-field `IntCol(values, bool_mask)` representation; always use
   `int_col_of_list([...])` to construct int columns — never `IntCol(to_tensor([...]))` directly.
-- Integer NaN uses `_int` suffix helpers: `fill_nan_int`, `drop_nan_int`, `is_nan_int`,
-  `any_nan_int`, `count_nan_int`. Float NaN uses the non-suffixed versions.
+- Integer NaN uses `_col` suffix helpers (column-form variants taking a Frame +
+  column name): `fill_nan_col`, `drop_nan_col`, `is_nan_col`, `any_nan_col`,
+  `count_nan_col`. Float NaN uses the non-suffixed versions (operate on tensors).
 - Prefer mask-first filtering over scalar predicate helpers.
 - String grouping and joins use host-path equality logic (not sort-merge).
 - String `sort_by` is supported and golden-validated: lexicographic ascending and descending, with runtime parity for the insertion sort and comparison path.

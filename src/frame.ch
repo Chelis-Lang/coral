@@ -9,7 +9,7 @@ export (
   filter, head, tail, slice, sort_by,
   with_column, mutate, rename, drop_column,
   is_nan, fill_nan, drop_nan, any_nan, count_nan,
-  is_nan_int, fill_nan_int, drop_nan_int, any_nan_int, count_nan_int,
+  is_nan_col, fill_nan_col, drop_nan_col, any_nan_col, count_nan_col,
   concat, describe,
   key_id, key_values, key_values_to_column_like,
   int_col_of_list
@@ -278,30 +278,31 @@ def any_nan[n](col: tensor[n, f32]) -> bool = fold(fn (acc: bool, flag: bool) ->
 
 def count_nan[n](col: tensor[n, f32]) -> int64 = fold(fn (acc: int64, flag: bool) -> if flag then add(acc, one_i64()) else acc, zero_i64(), to_list(is_nan(col)))
 
--- Integer column NaN helpers (operate via the boolean mask, true = missing).
-def is_nan_int[n](df: Frame[n], col_name: string) -> tensor[n, bool] = {
+-- Column-form NaN helpers (operate on Frame plus column name; integer columns
+-- carry an explicit boolean missing-value mask, true = missing).
+def is_nan_col[n](df: Frame[n], col_name: string) -> tensor[n, bool] = {
   match get_column(df, col_name) with {
     | IntCol(ivals, mask) => mask
-    | _ => fail(string_concat("is_nan_int: column is not int: ", col_name))
+    | _ => fail(string_concat("is_nan_col: column is not int: ", col_name))
   }
 }
 
-def any_nan_int[n](df: Frame[n], col_name: string) -> bool = {
-  fold(fn (acc: bool, v: bool) -> or(acc, v), false, to_list(is_nan_int(df, col_name)))
+def any_nan_col[n](df: Frame[n], col_name: string) -> bool = {
+  fold(fn (acc: bool, v: bool) -> or(acc, v), false, to_list(is_nan_col(df, col_name)))
 }
 
-def count_nan_int[n](df: Frame[n], col_name: string) -> int64 = {
-  fold(fn (acc: int64, v: bool) -> if v then add(acc, one_i64()) else acc, zero_i64(), to_list(is_nan_int(df, col_name)))
+def count_nan_col[n](df: Frame[n], col_name: string) -> int64 = {
+  fold(fn (acc: int64, v: bool) -> if v then add(acc, one_i64()) else acc, zero_i64(), to_list(is_nan_col(df, col_name)))
 }
 
-def fill_nan_int[n](df: Frame[n], col_name: string, fill_val: int64) -> Frame[n] = {
+def fill_nan_col[n](df: Frame[n], col_name: string, fill_val: int64) -> Frame[n] = {
   match get_column(df, col_name) with {
     | IntCol(xs, mask) => {
         filled = to_tensor(fill_int_list(to_list(xs), to_list(mask), fill_val, []))
         fm = zeros_bool_n(copy(filled))
         with_column(df, col_name, IntCol(filled, fm))
       }
-    | _ => fail(string_concat("fill_nan_int: column is not int: ", col_name))
+    | _ => fail(string_concat("fill_nan_col: column is not int: ", col_name))
   }
 }
 
@@ -314,13 +315,13 @@ def fill_int_list(values: List[int64], masks: List[bool], fill_val: int64, acc: 
   }
 }
 
-def drop_nan_int[n, k](df: Frame[n], col_name: string) -> Frame[k] = {
+def drop_nan_col[n, k](df: Frame[n], col_name: string) -> Frame[k] = {
   match get_column(df, col_name) with {
     | IntCol(dnvals, mask) => {
         keep = bool_list_to_tensor(map(fn (flag: bool) -> not(flag), to_list(mask)))
         filter(df, keep)
       }
-    | _ => fail(string_concat("drop_nan_int: column is not int: ", col_name))
+    | _ => fail(string_concat("drop_nan_col: column is not int: ", col_name))
   }
 }
 

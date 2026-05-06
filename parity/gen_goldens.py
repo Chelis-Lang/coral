@@ -190,7 +190,7 @@ def generate_fill_nan_qty() -> dict:
     schema = {"city": "string", "qty": "int"}
     return {
         "fixture": "fill_nan_qty",
-        "operation": "fill_nan_int",
+        "operation": "fill_nan_col",
         "expected_frame": frame_payload(filled, schema),
     }
 

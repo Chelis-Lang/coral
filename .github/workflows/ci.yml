@@ -40,18 +40,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
         run: |
-          gh release download v0.5.0 \
+          gh release download v0.6.0 \
             --repo Chelis-Lang/chelis \
-            --pattern 'chelis-v0.5.0-linux-x86_64.tar.gz' \
+            --pattern 'chelis-v0.6.0-linux-x86_64.tar.gz' \
             --dir /tmp/chelis-toolchain
-          tar -xzf /tmp/chelis-toolchain/chelis-v0.5.0-linux-x86_64.tar.gz \
+          tar -xzf /tmp/chelis-toolchain/chelis-v0.6.0-linux-x86_64.tar.gz \
             -C /tmp/chelis-toolchain
-          echo "/tmp/chelis-toolchain/chelis-v0.5.0-linux-x86_64/bin" >> "$GITHUB_PATH"
+          echo "/tmp/chelis-toolchain/chelis-v0.6.0-linux-x86_64/bin" >> "$GITHUB_PATH"
 
       - name: Verify toolchain version
         run: |
           chelis --version
-          test "$(chelis --version)" = "chelis 0.5.0"
+          test "$(chelis --version)" = "chelis 0.6.0"
 
       - name: Populate reef registry
         env:
@@ -63,11 +63,11 @@ jobs:
           sed -i "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/chelis-std/reef.toml
           chelis reef publish /tmp/reef-deps/chelis-std
-          gh release download v0.5.0 \
+          gh release download v0.6.0 \
             --repo Chelis-Lang/nautilus \
-            --pattern 'nautilus-0.5.0.tar.zst' \
+            --pattern 'nautilus-0.6.0.tar.zst' \
             --dir /tmp/reef-deps/nautilus-dl
-          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.5.0.tar.zst \
+          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.6.0.tar.zst \
             -C /tmp/reef-deps/nautilus
           sed -i "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/nautilus/reef.toml
@@ -95,18 +95,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
         run: |
-          gh release download v0.5.0 \
+          gh release download v0.6.0 \
             --repo Chelis-Lang/chelis \
-            --pattern 'chelis-v0.5.0-darwin-arm64.tar.gz' \
+            --pattern 'chelis-v0.6.0-darwin-arm64.tar.gz' \
             --dir /tmp/chelis-toolchain
-          tar -xzf /tmp/chelis-toolchain/chelis-v0.5.0-darwin-arm64.tar.gz \
+          tar -xzf /tmp/chelis-toolchain/chelis-v0.6.0-darwin-arm64.tar.gz \
             -C /tmp/chelis-toolchain
-          echo "/tmp/chelis-toolchain/chelis-v0.5.0-darwin-arm64/bin" >> "$GITHUB_PATH"
+          echo "/tmp/chelis-toolchain/chelis-v0.6.0-darwin-arm64/bin" >> "$GITHUB_PATH"
 
       - name: Verify toolchain version
         run: |
           chelis --version
-          test "$(chelis --version)" = "chelis 0.5.0"
+          test "$(chelis --version)" = "chelis 0.6.0"
 
       - name: Populate reef registry
         env:
@@ -118,11 +118,11 @@ jobs:
           sed -i.bak "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/chelis-std/reef.toml
           chelis reef publish /tmp/reef-deps/chelis-std
-          gh release download v0.5.0 \
+          gh release download v0.6.0 \
             --repo Chelis-Lang/nautilus \
-            --pattern 'nautilus-0.5.0.tar.zst' \
+            --pattern 'nautilus-0.6.0.tar.zst' \
             --dir /tmp/reef-deps/nautilus-dl
-          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.5.0.tar.zst \
+          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.6.0.tar.zst \
             -C /tmp/reef-deps/nautilus
           sed -i.bak "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/nautilus/reef.toml
@@ -145,18 +145,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
         run: |
-          gh release download v0.5.0 \
+          gh release download v0.6.0 \
             --repo Chelis-Lang/chelis \
-            --pattern 'chelis-v0.5.0-linux-x86_64.tar.gz' \
+            --pattern 'chelis-v0.6.0-linux-x86_64.tar.gz' \
             --dir /tmp/chelis-toolchain
-          tar -xzf /tmp/chelis-toolchain/chelis-v0.5.0-linux-x86_64.tar.gz \
+          tar -xzf /tmp/chelis-toolchain/chelis-v0.6.0-linux-x86_64.tar.gz \
             -C /tmp/chelis-toolchain
-          echo "/tmp/chelis-toolchain/chelis-v0.5.0-linux-x86_64/bin" >> "$GITHUB_PATH"
+          echo "/tmp/chelis-toolchain/chelis-v0.6.0-linux-x86_64/bin" >> "$GITHUB_PATH"
 
       - name: Verify toolchain version
         run: |
           chelis --version
-          test "$(chelis --version)" = "chelis 0.5.0"
+          test "$(chelis --version)" = "chelis 0.6.0"
 
       - name: Populate reef registry
         env:
@@ -168,11 +168,11 @@ jobs:
           sed -i "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/chelis-std/reef.toml
           chelis reef publish /tmp/reef-deps/chelis-std
-          gh release download v0.5.0 \
+          gh release download v0.6.0 \
             --repo Chelis-Lang/nautilus \
-            --pattern 'nautilus-0.5.0.tar.zst' \
+            --pattern 'nautilus-0.6.0.tar.zst' \
             --dir /tmp/reef-deps/nautilus-dl
-          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.5.0.tar.zst \
+          tar -xf /tmp/reef-deps/nautilus-dl/nautilus-0.6.0.tar.zst \
             -C /tmp/reef-deps/nautilus
           sed -i "s|compiler = \".*\"|compiler = \"$COMPILER_PIN\"|" \
             /tmp/reef-deps/nautilus/reef.toml

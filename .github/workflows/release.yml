@@ -23,7 +23,7 @@ jobs:
 
       - name: Download chelis toolchain
         env:
-          GH_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh release download "v${CHELIS_VERSION}" \
             --repo Chelis-Lang/chelis \
@@ -38,8 +38,8 @@ jobs:
 
       - name: Build reef assets
         env:
-          GH_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: chelis reef build
 
       - name: Verify release assets

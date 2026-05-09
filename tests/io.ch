@@ -1,115 +1,72 @@
 module Coral.Tests.Io
 import Std.Test (assert_true, assert_eq_int, assert_eq_string, assert_close)
-import Coral.Frame (
-  Frame, Column, ColumnType,
-  from_pairs, nrows, ncols, columns,
-  get_float_col, get_string_col, get_int_col, get_bool_col,
-  int_col_of_list
-)
+import Coral.Frame (Frame, Column, ColumnType, from_pairs, nrows, ncols, columns, get_float_col, get_string_col, get_int_col, get_bool_col, int_col_of_list)
 import Coral.Io (write_csv_frame, read_csv_frame, write_json_frame, read_json_frame)
-
--- NOTE: chelis v0.4.0 fully resolves the eval gap. Tensor-tensor eq/neq
--- (since v0.2.5), `to_tensor([bool, ...])`, and tensor-scalar
--- `gt(tensor, scalar)` (since v0.3.1) all work. Float, string, int, and
--- bool round trips are all now exercisable via `chelis test`.
-
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
-
 def test_csv_write_then_read_roundtrip() -> unit ! { Test, IO } = {
-  df = from_pairs([
-    ("price", FloatCol(to_tensor([cast(10.5, f32), cast(20.25, f32)]))),
-    ("city", StringCol(["paris", "london"]))
-  ])
-  _ = write_csv_frame(df, "test_io_roundtrip.csv");
+  df = from_pairs([("price", FloatCol(to_tensor([cast(10.5, f32), cast(20.25, f32)]))), ("city", StringCol(["paris", "london"]))])
+  _ = write_csv_frame(df, "test_io_roundtrip.csv")
   back = read_csv_frame("test_io_roundtrip.csv")
   prices = to_list(get_float_col(back, "price"))
   cities = get_string_col(back, "city")
-  _ = assert_eq_int(nrows(back), cast(2, int64), "csv roundtrip nrows == 2");
-  _ = assert_eq_int(ncols(back), cast(2, int64), "csv roundtrip ncols == 2");
-  _ = assert_close(index(prices, zero_i64()), cast(10.5, f32), cast(1e-3, f32), "price[0] == 10.5");
-  _ = assert_close(index(prices, one_i64()), cast(20.25, f32), cast(1e-3, f32), "price[1] == 20.25");
-  _ = assert_eq_string(index(cities, zero_i64()), "paris", "city[0] == paris");
+  _ = assert_eq_int(nrows(back), cast(2, int64), "csv roundtrip nrows == 2")
+  _ = assert_eq_int(ncols(back), cast(2, int64), "csv roundtrip ncols == 2")
+  _ = assert_close(index(prices, zero_i64()), cast(10.5, f32), cast(0.001, f32), "price[0] == 10.5")
+  _ = assert_close(index(prices, one_i64()), cast(20.25, f32), cast(0.001, f32), "price[1] == 20.25")
+  _ = assert_eq_string(index(cities, zero_i64()), "paris", "city[0] == paris")
   assert_eq_string(index(cities, one_i64()), "london", "city[1] == london")
 }
-
 def test_json_write_then_read_roundtrip() -> unit ! { Test, IO } = {
-  df = from_pairs([
-    ("price", FloatCol(to_tensor([cast(1.25, f32), cast(2.75, f32)]))),
-    ("city", StringCol(["oslo", "berlin"]))
-  ])
-  _ = write_json_frame(df, "test_io_roundtrip.json");
+  df = from_pairs([("price", FloatCol(to_tensor([cast(1.25, f32), cast(2.75, f32)]))), ("city", StringCol(["oslo", "berlin"]))])
+  _ = write_json_frame(df, "test_io_roundtrip.json")
   back = read_json_frame("test_io_roundtrip.json")
   prices = to_list(get_float_col(back, "price"))
   cities = get_string_col(back, "city")
-  _ = assert_eq_int(nrows(back), cast(2, int64), "json roundtrip nrows == 2");
-  _ = assert_eq_int(ncols(back), cast(2, int64), "json roundtrip ncols == 2");
-  _ = assert_close(index(prices, zero_i64()), cast(1.25, f32), cast(1e-3, f32), "price[0] == 1.25");
-  _ = assert_eq_string(index(cities, zero_i64()), "oslo", "city[0] == oslo");
+  _ = assert_eq_int(nrows(back), cast(2, int64), "json roundtrip nrows == 2")
+  _ = assert_eq_int(ncols(back), cast(2, int64), "json roundtrip ncols == 2")
+  _ = assert_close(index(prices, zero_i64()), cast(1.25, f32), cast(0.001, f32), "price[0] == 1.25")
+  _ = assert_eq_string(index(cities, zero_i64()), "oslo", "city[0] == oslo")
   assert_eq_string(index(cities, one_i64()), "berlin", "city[1] == berlin")
 }
-
--- v0.3.1 unblock: bool round-trip exercises infer_csv_column's BoolCol
--- branch, which calls `bools_to_tensor` → `to_tensor([bool, ...])`.
--- Previously rejected by the eval interpreter; v0.3.1 accepts bool lists.
 def test_csv_bool_roundtrip() -> unit ! { Test, IO } = {
-  df = from_pairs([
-    ("flag", BoolCol(to_tensor([true, false, true]))),
-    ("name", StringCol(["a", "b", "c"]))
-  ])
-  _ = write_csv_frame(df, "test_io_bool.csv");
+  df = from_pairs([("flag", BoolCol(to_tensor([true, false, true]))), ("name", StringCol(["a", "b", "c"]))])
+  _ = write_csv_frame(df, "test_io_bool.csv")
   back = read_csv_frame("test_io_bool.csv")
   flags = to_list(get_bool_col(back, "flag"))
   trues = fold(fn (acc: int64, x: bool) -> if x then add(acc, one_i64()) else acc, zero_i64(), flags)
-  _ = assert_eq_int(nrows(back), cast(3, int64), "bool roundtrip nrows == 3");
-  _ = assert_eq_int(trues, cast(2, int64), "bool roundtrip preserves true-count == 2");
-  _ = assert_true(index(flags, zero_i64()), "flag[0] == true");
+  _ = assert_eq_int(nrows(back), cast(3, int64), "bool roundtrip nrows == 3")
+  _ = assert_eq_int(trues, cast(2, int64), "bool roundtrip preserves true-count == 2")
+  _ = assert_true(index(flags, zero_i64()), "flag[0] == true")
   assert_true(index(flags, cast(2, int64)), "flag[2] == true")
 }
-
 def test_json_bool_roundtrip() -> unit ! { Test, IO } = {
-  df = from_pairs([
-    ("flag", BoolCol(to_tensor([true, true, false, true]))),
-    ("score", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32), cast(4.0, f32)])))
-  ])
-  _ = write_json_frame(df, "test_io_bool.json");
+  df = from_pairs([("flag", BoolCol(to_tensor([true, true, false, true]))), ("score", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32), cast(4.0, f32)])))])
+  _ = write_json_frame(df, "test_io_bool.json")
   back = read_json_frame("test_io_bool.json")
   flags = to_list(get_bool_col(back, "flag"))
   trues = fold(fn (acc: int64, x: bool) -> if x then add(acc, one_i64()) else acc, zero_i64(), flags)
-  _ = assert_eq_int(nrows(back), cast(4, int64), "json bool roundtrip nrows == 4");
+  _ = assert_eq_int(nrows(back), cast(4, int64), "json bool roundtrip nrows == 4")
   assert_eq_int(trues, cast(3, int64), "json bool roundtrip preserves true-count == 3")
 }
-
--- v0.2.5 unblock: int round-trip exercises infer_csv_column's IntCol
--- branch, which builds the missing mask via tensor-tensor neq. Previously
--- this crashed in the eval interpreter.
 def test_csv_int_roundtrip() -> unit ! { Test, IO } = {
-  df = from_pairs([
-    ("qty", int_col_of_list([cast(7, int64), cast(42, int64), cast(99, int64)])),
-    ("name", StringCol(["a", "b", "c"]))
-  ])
-  _ = write_csv_frame(df, "test_io_int.csv");
+  df = from_pairs([("qty", int_col_of_list([cast(7, int64), cast(42, int64), cast(99, int64)])), ("name", StringCol(["a", "b", "c"]))])
+  _ = write_csv_frame(df, "test_io_int.csv")
   back = read_csv_frame("test_io_int.csv")
   qtys = to_list(get_int_col(back, "qty"))
   qsum = fold(fn (acc: int64, v: int64) -> add(acc, v), zero_i64(), qtys)
-  _ = assert_eq_int(nrows(back), cast(3, int64), "int round-trip nrows == 3");
-  _ = assert_eq_int(qsum, cast(148, int64), "int round-trip preserves values: 7+42+99 == 148");
+  _ = assert_eq_int(nrows(back), cast(3, int64), "int round-trip nrows == 3")
+  _ = assert_eq_int(qsum, cast(148, int64), "int round-trip preserves values: 7+42+99 == 148")
   assert_eq_int(index(qtys, one_i64()), cast(42, int64), "qty[1] == 42")
 }
-
--- Multi-column write+read: confirms the writer/reader handle 2 cols and
--- preserve both column values on round-trip.
 def test_csv_two_column_roundtrip() -> unit ! { Test, IO } = {
-  df = from_pairs([
-    ("amount", FloatCol(to_tensor([cast(0.25, f32), cast(0.75, f32)]))),
-    ("label", StringCol(["a", "b"]))
-  ])
-  _ = write_csv_frame(df, "smoke_io.csv");
+  df = from_pairs([("amount", FloatCol(to_tensor([cast(0.25, f32), cast(0.75, f32)]))), ("label", StringCol(["a", "b"]))])
+  _ = write_csv_frame(df, "smoke_io.csv")
   back = read_csv_frame("smoke_io.csv")
   amounts = to_list(get_float_col(back, "amount"))
   labels = get_string_col(back, "label")
-  _ = assert_eq_int(ncols(back), cast(2, int64), "smoke ncols == 2");
-  _ = assert_close(index(amounts, zero_i64()), cast(0.25, f32), cast(1e-3, f32), "amount[0] == 0.25");
-  _ = assert_eq_string(index(labels, one_i64()), "b", "label[1] == b");
+  _ = assert_eq_int(ncols(back), cast(2, int64), "smoke ncols == 2")
+  _ = assert_close(index(amounts, zero_i64()), cast(0.25, f32), cast(0.001, f32), "amount[0] == 0.25")
+  _ = assert_eq_string(index(labels, one_i64()), "b", "label[1] == b")
   assert_eq_string(index(labels, zero_i64()), "a", "label[0] == a")
 }

@@ -29,9 +29,39 @@ jobs:
             exit 1
           fi
 
-  chelis-tests:
+      - name: tests/ contains Chelis-native test files
+        run: |
+          count=$(find tests -maxdepth 1 -name '*.ch' -type f | wc -l)
+          if [ "$count" -eq 0 ]; then
+            echo "Hard-rule violation: tests/*.ch is empty" >&2
+            exit 1
+          fi
+          echo "OK: tests/ contains $count .ch files"
+
+  generate-test-matrix:
     needs: lint
     runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.list.outputs.files }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: list
+        run: |
+          files=$(find tests -maxdepth 1 -name '*.ch' -type f \
+            | sort \
+            | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+          echo "$files" | jq -r '.[]'
+
+  chelis-tests:
+    needs: [lint, generate-test-matrix]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        file: ${{ fromJSON(needs.generate-test-matrix.outputs.files) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -59,8 +89,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
         run: chelis reef install --from-github Chelis-Lang/nautilus@v0.7.3
 
-      - name: chelis test tests/
-        run: chelis test tests/
+      - name: chelis test ${{ matrix.file }}
+        run: chelis test --timeout 600 ${{ matrix.file }}
+
+  chelis-tests-summary:
+    needs: chelis-tests
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate matrix result
+        run: |
+          if [ "${{ needs.chelis-tests.result }}" != "success" ]; then
+            echo "chelis-tests matrix failed (result: ${{ needs.chelis-tests.result }})" >&2
+            exit 1
+          fi
+          echo "All chelis-tests matrix entries passed"
 
   mac-smoke:
     needs: lint

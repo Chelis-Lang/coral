@@ -1,9 +1,9 @@
 [package]
 name = "coral"
-version = "0.7.0"
-compiler = "=0.7.0"
+version = "0.7.3"
+compiler = "=0.7.3"
 module_prefix = "Coral"
 
 [dependencies]
 chelis-std = { version = "0.3.0" }
-nautilus = { version = "0.7.0" }
+nautilus = { version = "0.7.3" }

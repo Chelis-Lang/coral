@@ -9,16 +9,9 @@ and `BoolCol` in concat.
 module Coral.BookConcat
 import Coral.Frame (from_pairs, concat, nrows, int_col_of_list)
 export (main)
-
 def main() -> int64 = {
-  lhs = from_pairs([
-    ("id", int_col_of_list([cast(1, int64), cast(2, int64)])),
-    ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64)]), to_tensor([cast(0, int64), cast(0, int64)]))))
-  ])
-  rhs = from_pairs([
-    ("id", int_col_of_list([cast(3, int64)])),
-    ("flag", BoolCol(neq(to_tensor([cast(1, int64)]), to_tensor([cast(0, int64)]))))
-  ])
+  lhs = from_pairs([("id", int_col_of_list([cast(1, int64), cast(2, int64)])), ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64)]), to_tensor([cast(0, int64), cast(0, int64)]))))])
+  rhs = from_pairs([("id", int_col_of_list([cast(3, int64)])), ("flag", BoolCol(neq(to_tensor([cast(1, int64)]), to_tensor([cast(0, int64)]))))])
   nrows(concat([lhs, rhs]))
 }
 ```

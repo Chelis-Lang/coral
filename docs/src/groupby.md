@@ -20,13 +20,8 @@ module Coral.BookGroupBy
 import Coral.Frame (from_pairs, nrows, int_col_of_list)
 import Coral.GroupBy (group_by, agg)
 export (main)
-
 def main() -> int64 = {
-  frame = from_pairs([
-    ("city", StringCol(["london", "paris", "london"])),
-    ("qty", int_col_of_list([cast(5, int64), cast(6, int64), cast(7, int64)])),
-    ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.0, f32), cast(30.0, f32)])))
-  ])
+  frame = from_pairs([("city", StringCol(["london", "paris", "london"])), ("qty", int_col_of_list([cast(5, int64), cast(6, int64), cast(7, int64)])), ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.0, f32), cast(30.0, f32)])))])
   grouped = group_by(frame, "city")
   totals = agg(grouped, [("qty", AggSum), ("price", AggMean)])
   nrows(totals)

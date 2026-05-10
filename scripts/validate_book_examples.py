@@ -9,7 +9,6 @@ Exit non-zero if any block fails.
 """
 from __future__ import annotations
 
-import json
 import os
 import re
 import subprocess
@@ -34,36 +33,35 @@ def extract_chelis_blocks(text: str) -> list[str]:
     return [b for b in all_blocks if b not in fragments]
 
 
-def validate_block(code: str, source_file: str, index: int) -> bool:
+def block_path(code: str, source_file: str, index: int) -> Path:
     mod_match = re.search(r"^module\s+Coral(?:\.[A-Za-z0-9_]+)+", code, re.M)
-    if mod_match:
-        fname = mod_match.group(0).split(".")[-1].lower()
-    else:
-        fname = f"_book_check_{index}"
-    tmp = SRC / f"{fname}.ch"
+    if not mod_match:
+        raise ValueError(f"{source_file} block {index} is missing a `module Coral.*` declaration")
+    return SRC / f"{mod_match.group(0).split('.')[-1].lower()}.ch"
+
+
+def validate_blocks(blocks: list[tuple[str, int, str]]) -> bool:
+    temp_files: list[Path] = []
     try:
-        tmp.write_text(code)
+        for source_file, index, code in blocks:
+            tmp = block_path(code, source_file, index)
+            if tmp.exists():
+                raise ValueError(f"{source_file} block {index} would overwrite existing {tmp.relative_to(REPO)}")
+            tmp.write_text(code)
+            temp_files.append(tmp)
+
         result = subprocess.run(
-            [CHELIS, "check", str(tmp)],
+            [CHELIS, "reef", "build"],
             capture_output=True, text=True, cwd=str(REPO),
         )
         output = (result.stdout + result.stderr).strip()
-        try:
-            data = json.loads(output)
-        except json.JSONDecodeError:
-            if result.returncode != 0:
-                print(f"  FAIL: {source_file} block {index}: {output[:200]}")
-                return False
-            return True
-        if data.get("score", 0) >= 0.95 and not data.get("errors"):
-            return True
-        print(
-            f"  FAIL: {source_file} block {index} "
-            f"(score={data.get('score')}, errors={data.get('errors', [])})"
-        )
-        return False
+        if result.returncode != 0:
+            print(output)
+            return False
+        return True
     finally:
-        tmp.unlink(missing_ok=True)
+        for tmp in temp_files:
+            tmp.unlink(missing_ok=True)
 
 
 def main() -> int:
@@ -73,19 +71,20 @@ def main() -> int:
 
     failures = 0
     total = 0
+    blocks: list[tuple[str, int, str]] = []
 
     for md_file in sorted(DOCS_SRC.rglob("*.md")):
         text = md_file.read_text()
-        blocks = extract_chelis_blocks(text)
+        file_blocks = extract_chelis_blocks(text)
         rel = md_file.relative_to(DOCS_SRC)
-        for i, block in enumerate(blocks):
+        for i, block in enumerate(file_blocks):
             total += 1
-            if not validate_block(block, str(rel), i):
-                failures += 1
+            blocks.append((str(rel), i, block))
 
     if total == 0:
         print("No compile-checked code blocks found in mdBook.")
         return 1
+    failures = 0 if validate_blocks(blocks) else total
     print(f"{total - failures}/{total} mdBook examples passed.")
     if total < MIN_CHELIS_BLOCKS:
         print(f"FAIL: only {total} full `chelis` example blocks found; need at least {MIN_CHELIS_BLOCKS}.")

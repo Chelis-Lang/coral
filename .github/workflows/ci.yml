@@ -53,11 +53,11 @@ jobs:
           chelis --version
           test "$(chelis --version)" = "chelis 0.7.3"
 
-      - name: Build dependency registry
+      - name: Install dependencies from lockfile
         env:
           GH_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
-        run: chelis reef build
+        run: chelis reef install --from-lockfile --package-root .
 
       - name: chelis test tests/
         run: chelis test tests/
@@ -91,7 +91,7 @@ jobs:
           chelis --version
           test "$(chelis --version)" = "chelis 0.7.3"
 
-      - name: Build dependency registry
+      - name: Build Coral package
         env:
           GH_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
@@ -127,11 +127,11 @@ jobs:
           chelis --version
           test "$(chelis --version)" = "chelis 0.7.3"
 
-      - name: Build dependency registry
+      - name: Install dependencies from lockfile
         env:
           GH_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.CHELIS_RELEASE_TOKEN }}
-        run: chelis reef build
+        run: chelis reef install --from-lockfile --package-root .
 
       - name: static checks
         run: python scripts/run_static_checks.py

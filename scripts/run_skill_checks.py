@@ -2,7 +2,6 @@
 """Validate compile-checked Coral examples in SKILL.md."""
 from __future__ import annotations
 
-import json
 import re
 import subprocess
 import sys
@@ -26,26 +25,31 @@ def extract_blocks(text: str, lang: str) -> list[str]:
     return [c for c in candidates if c not in fragments]
 
 
-def validate_block(code: str, index: int) -> bool:
+def block_path(code: str, source: str, index: int) -> Path:
     mod = re.search(r"^module\s+Coral(?:\.[A-Za-z0-9_]+)+", code, re.M)
-    fname = mod.group(0).split(".")[-1].lower() if mod else f"_skill_{index}"
-    tmp = SRC / f"{fname}.ch"
+    if not mod:
+        raise ValueError(f"{source} block {index} is missing a `module Coral.*` declaration")
+    return SRC / f"{mod.group(0).split('.')[-1].lower()}.ch"
+
+
+def validate_blocks(blocks: list[str]) -> bool:
+    temp_files: list[Path] = []
     try:
-        tmp.write_text(code)
-        proc = subprocess.run([CHELIS, "check", str(tmp)], cwd=str(REPO), capture_output=True, text=True)
-        payload = (proc.stdout + proc.stderr).strip()
-        if not payload:
-            return proc.returncode == 0
-        try:
-            data = json.loads(payload)
-        except json.JSONDecodeError:
-            return proc.returncode == 0
-        if data.get("score", 0) >= 0.95 and not data.get("errors"):
-            return True
-        print(f"  FAIL: block {index} (score={data.get('score')}, errors={data.get('errors', [])})")
-        return False
+        for index, code in enumerate(blocks):
+            tmp = block_path(code, "SKILL.md", index)
+            if tmp.exists():
+                raise ValueError(f"SKILL.md block {index} would overwrite existing {tmp.relative_to(REPO)}")
+            tmp.write_text(code)
+            temp_files.append(tmp)
+
+        proc = subprocess.run([CHELIS, "reef", "build"], cwd=str(REPO), capture_output=True, text=True)
+        if proc.returncode != 0:
+            print((proc.stdout + proc.stderr).strip())
+            return False
+        return True
     finally:
-        tmp.unlink(missing_ok=True)
+        for tmp in temp_files:
+            tmp.unlink(missing_ok=True)
 
 
 def main() -> int:
@@ -54,13 +58,13 @@ def main() -> int:
         print("SKILL.md not found")
         return 0
     text = path.read_text()
-    failures = 0
     blocks = extract_blocks(text, "chelis")
-    for idx, block in enumerate(blocks):
-        if not validate_block(block, idx):
-            failures += 1
-    print(f"{len(blocks) - failures}/{len(blocks)} SKILL examples passed")
-    return 1 if failures else 0
+    if not blocks:
+        print("No compile-checked SKILL examples found.")
+        return 1
+    ok = validate_blocks(blocks)
+    print(f"{len(blocks) if ok else 0}/{len(blocks)} SKILL examples passed")
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

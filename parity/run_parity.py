@@ -252,6 +252,10 @@ def run_window_runtime_fixture(fixture_name: str) -> int:
     try:
         main_ch = workdir / "main.ch"
         main_ch.write_text(code)
+        fmt = subprocess.run([CHELIS, "fmt", "--inplace", str(main_ch)], capture_output=True, text=True)
+        if fmt.returncode != 0:
+            print(f"window runtime fmt failed for {fixture_name}: {(fmt.stdout + fmt.stderr).strip()}")
+            return 1
         out_dir = workdir / "out"
         build = subprocess.run([CHELIS, "build", str(main_ch), "-o", str(out_dir)], capture_output=True, text=True)
         if build.returncode != 0:

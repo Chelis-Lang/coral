@@ -1,0 +1,26 @@
+{
+  "package": "coral",
+  "package_version": "0.7.6",
+  "chelis_tag": "v0.7.6",
+  "chelis_version": "0.7.6",
+  "nautilus_tag": "v0.7.6",
+  "nautilus_version": "0.7.6",
+  "measured_at": "2026-05-11",
+  "native_tests": {
+    "test_count": 65,
+    "auto": {
+      "command": "/usr/bin/time -f 'elapsed_auto=%E' chelis test tests/ --timeout 600 --jobs auto",
+      "result": "65 passed, 0 failed",
+      "elapsed": "0:34.06"
+    },
+    "serial": {
+      "command": "/usr/bin/time -f 'elapsed_serial=%E' chelis test tests/ --timeout 600 --jobs 1",
+      "result": "65 passed, 0 failed",
+      "elapsed": "0:38.72"
+    }
+  },
+  "legacy_ci": {
+    "strategy": "per-file GitHub Actions matrix sharding",
+    "documented_runtime_class": "matrix wall time varied with setup overhead"
+  }
+}

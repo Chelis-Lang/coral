@@ -6,6 +6,18 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.6] — 2026-05-11
+
+Compiler and dependency alignment release. Tracks chelis 0.7.6 and
+nautilus 0.7.6, consumes released Chelis binaries in CI, and cuts the
+native Chelis test lane over from per-file matrix sharding to
+`chelis test tests/ --jobs auto`.
+
+Validation recorded in `docs/testing_cutover_0.7.6.json`:
+
+- `chelis test tests/ --jobs auto`: 65 passed, 0 failed, 0:34.06
+- `chelis test tests/ --jobs 1`: 65 passed, 0 failed, 0:38.72
+
 ## [0.6.1] — 2026-05-06
 
 Compiler-pin alignment release. Tracks chelis 0.6.0 → 0.6.1

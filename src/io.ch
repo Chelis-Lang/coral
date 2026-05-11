@@ -28,12 +28,10 @@ def read_json_frame[n](path: string) -> Frame[n] = {
   }
 }
 def write_json_frame[n](df: Frame[n], path: string) -> unit = write_text(path, render_json(df))
-def column_values(rows: List[Dict[string, string]], name: string) -> List[string] = {
-  map(fn (row: Dict[string, string]) -> match dict_get(row, name) with {
-    | Some(value) => value
-    | None => ""
-  }, rows)
-}
+def column_values(rows: List[Dict[string, string]], name: string) -> List[string] = { map(fn (row: Dict[string, string]) -> match dict_get(row, name) with {
+  | Some(value) => value
+  | None => ""
+}, rows) }
 def infer_csv_column[n](values: List[string]) -> Column[n] = { if all_ints(values) then {
   xs = to_tensor(map(fn (value: string) -> unwrap_int(value), values))
   xs_cpy = copy(xs)
@@ -47,30 +45,22 @@ def infer_csv_column[n](values: List[string]) -> Column[n] = { if all_ints(value
 def all_ints(values: List[string]) -> bool = fold(fn (acc: bool, value: string) -> and(acc, is_some_int(value)), true, values)
 def all_floats(values: List[string]) -> bool = fold(fn (acc: bool, value: string) -> and(acc, is_some_float(value)), true, values)
 def all_bools(values: List[string]) -> bool = fold(fn (acc: bool, value: string) -> and(acc, or(eq(value, "true"), eq(value, "false"))), true, values)
-def is_some_int(value: string) -> bool = {
-  match to_int(value) with {
-    | Some(v) => true
-    | None => false
-  }
-}
-def is_some_float(value: string) -> bool = {
-  match to_float(value) with {
-    | Some(v) => true
-    | None => false
-  }
-}
-def unwrap_int(value: string) -> int64 = {
-  match to_int(value) with {
-    | Some(v) => v
-    | None => cast(0, int64)
-  }
-}
-def unwrap_float(value: string) -> f32 = {
-  match to_float(value) with {
-    | Some(v) => cast(v, f32)
-    | None => cast(0.0, f32)
-  }
-}
+def is_some_int(value: string) -> bool = { match to_int(value) with {
+  | Some(v) => true
+  | None => false
+} }
+def is_some_float(value: string) -> bool = { match to_float(value) with {
+  | Some(v) => true
+  | None => false
+} }
+def unwrap_int(value: string) -> int64 = { match to_int(value) with {
+  | Some(v) => v
+  | None => cast(0, int64)
+} }
+def unwrap_float(value: string) -> f32 = { match to_float(value) with {
+  | Some(v) => cast(v, f32)
+  | None => cast(0.0, f32)
+} }
 def render_csv[n](df: Frame[n]) -> string = {
   names = columns(df)
   header = join_strings(names, ",")

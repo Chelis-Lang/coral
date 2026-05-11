@@ -369,13 +369,14 @@ def run_negative_case(case: dict) -> int:
             text=True,
         )
         output = (proc.stdout + proc.stderr).strip()
+        json_output = proc.stdout.strip()
         # Success means check found an error (negative test expects failure)
         found_error = False
         if proc.returncode != 0:
             found_error = True
         else:
             try:
-                data = json.loads(output)
+                data = json.loads(json_output)
                 if data.get("errors") or data.get("score", 1) < 1:
                     found_error = True
             except json.JSONDecodeError:

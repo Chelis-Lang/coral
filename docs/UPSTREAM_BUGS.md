@@ -22,7 +22,20 @@ v0.3.2.)
 
 - **`grad` C-backend lowering.** `chelis check` accepts `grad(f)(x)` at score 1.0; `chelis build --target c` rejects with "can't lower these defs — their body applies/binds `grad` (or `vmap`) in a position the host lane can't resolve". Upstream recorded this as a Phase 5 deferred item (commit `a3ca2be` in chelis v0.3.1: `docs(spec): record host-lane scalar AD as Phase 5 deferred item`); the design (forward-mode dual numbers) is locked behind a real driver appearing. Coral's `grad` usage stays illustrative in docs. **Re-probe only when chelis ships Phase 5 or when Coral acquires a concrete scalar-AD use case worth pushing for it.** No per-release re-probe.
 
-- **`Std.IO.Parquet` runtime backing.** Missing upstream feature, not a regression. `chelis-std`'s `io/parquet.ch` exports signatures only (`read_parquet`, `write_parquet`) with no callable function bodies; `chelis check` and `chelis build --target c` both succeed, but native `gcc` link fails with `implicit declaration of function pkg__chelis__std__Std__IO__Parquet__read_parquet` because the symbol is not implemented in `libchelis_runtime`. Coral's workaround (`read_parquet_frame` / `write_parquet_frame` as `fail(...)` stubs in `src/io.ch`) holds. Re-probed at chelis v0.4.0 — still missing. **Re-probed at chelis v0.5.0 — still missing**: a fresh `import Std.IO.Parquet (read_parquet)` probe under v0.5.0 returns `chelis check` score 1.0 and `chelis build --target c` exits 0, and direct `nm` on the v0.5.0 `libchelis_runtime.a` shows zero `Parquet` symbols out of ~7.9k total (so link still fails on `pkg__chelis__std__Std__IO__Parquet__read_parquet`). **Re-probe when upstream signals movement** or at the next major coral release, not on patches.
+- **`Std.Io.Parquet` runtime backing.** Missing upstream feature, not a
+  regression. `chelis-std`'s `io/parquet.ch` exports signatures only
+  (`read_parquet`, `write_parquet`) with no callable function bodies, so
+  Coral's workaround (`read_parquet_frame` / `write_parquet_frame` as
+  `fail(...)` stubs in `src/io.ch`) holds. Re-probed at chelis v0.4.0
+  and v0.5.0: still missing; v0.5.0 check scored 1.0 and the C build
+  reached the native-link failure because the runtime symbol was absent.
+  Re-probed during the v0.7.6 rollout: `import Std.Io.Parquet
+  (read_parquet)` still checks at score 1.0, `libchelis_runtime.a` still
+  contains no `Parquet` / `read_parquet` symbol, and the C build now
+  stops earlier with `range start index 2 out of range for slice of
+  length 1`. The user-visible conclusion is unchanged: Parquet remains
+  unavailable. **Re-probe when upstream signals movement** or at the
+  next major coral release, not on patches.
 
 ## Archive (resolved upstream)
 
@@ -30,7 +43,7 @@ v0.3.2.)
 
 - **Eval-interpreter tensor/bool gaps (RESOLVED v0.3.1).** Bool `to_tensor([true, false, ...])` and tensor-scalar comparison broadcast (including the symmetric `gt(scalar, tensor)` form) both work. Combined with the v0.2.5 tensor-tensor `eq`/`neq`/`lt`/`gt` fix, this closed the entire eval gap that previously kept downstream Coral types `IntCol`, `BoolCol`, `is_nan`/`any_nan`/`count_nan`/`drop_nan` tensor exports, `agg_count`, `value_counts`, and tensor-threshold `filter` operations out of `chelis test` coverage. All of those now run end-to-end. Original blocker: chelis v0.2.4. Partial fix (tensor-tensor): v0.2.5. Final fix (bool `to_tensor` + tensor-scalar broadcast): v0.3.1.
 
-- **`chelis test` per-test recompile of the dependency graph (RESOLVED v0.3.0).** Filed as [chelis#4](https://github.com/Chelis-Lang/chelis/issues/4); fixed by the "Compiled Artifact Caching" release. Wall time on this repo dropped from ~15 min (per-file loop or directory mode) to ~3 min via the new `CompiledContext` + disk cache wired into `cmd_test`. Coral reverted its CI matrix workaround back to a single sequential job using `chelis test tests/`.
+- **`chelis test` per-test recompile of the dependency graph (RESOLVED v0.3.0).** Filed as [chelis#4](https://github.com/Chelis-Lang/chelis/issues/4); fixed by the "Compiled Artifact Caching" release. Wall time on this repo dropped from ~15 min (per-file loop or directory mode) to ~3 min via the new `CompiledContext` + disk cache wired into `cmd_test`. Coral later cut over from per-file matrix sharding to a single node-local parallel job using `chelis test tests/ --jobs auto` in the v0.7.6 rollout.
 
 - **int64 C backend (RESOLVED v0.2.1, stable through v0.4.0).** Original blocker: chelis v0.1.21 / v0.2.0 panicked at `emit.rs:415:26` with "Phase 0f C backend only supports f32/bool tensors, found int64 at node 0" for any program whose dependency graph included the HAMT module. Fix shipped in v0.2.1; HAMT-backed Frame ops have built, linked, and run cleanly through every release since. No further action needed.
 

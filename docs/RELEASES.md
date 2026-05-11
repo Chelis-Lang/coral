@@ -12,13 +12,16 @@ Neither is platform-specific.
 
 ## Why the artifacts are platform-agnostic
 
-The `.tar.zst` is the source tree (`reef.toml`, `reef.lock`, the nine
-`.ch` files under `src/`). Identical bytes regardless of build host.
+The `.tar.zst` is the source tree (`reef.toml`, the `.ch` files under
+`src/`, and packaging metadata). The payload is platform-neutral even
+though compressed bytes may differ between builds because archive
+metadata and compression framing are not specified as reproducible.
 
 The `.chb` is a Zstandard-compressed envelope containing
 desugared/type-checked AST + module exports + type signatures +
-effects + dependency list. No ELF, no Mach-O, no `.o`, no `.a`.
-Verified via `strings`: contains UTF-8 names like `"coral"`,
+effects + dependency list. Its bytes are build-output bytes, not a
+cross-build reproducibility promise. No ELF, no Mach-O, no `.o`, no
+`.a`. Verified via `strings`: contains UTF-8 names like `"coral"`,
 `"Coral.Frame"`, type signatures in IR form. Contains zero platform
 references.
 
@@ -39,20 +42,20 @@ End-to-end, with no platform-specific Coral artifact required:
 
 1. Download the chelis toolchain that matches the consumer's OS:
    ```sh
-   gh release download v0.5.0 --repo Chelis-Lang/chelis \
-     --pattern 'chelis-v0.5.0-darwin-arm64.tar.gz'
+   gh release download v0.7.6 --repo Chelis-Lang/chelis \
+     --pattern 'chelis-v0.7.6-darwin-arm64.tar.gz'
    ```
    (or `linux-x86_64` for Linux consumers).
 2. Extract and put `bin/chelis` on PATH.
 3. Publish Coral into the consumer's local reef registry from the
    release artifact:
    ```sh
-   chelis reef publish coral-0.5.0.tar.zst
+   chelis reef publish coral-0.7.6.tar.zst
    ```
 4. In their own Chelis project's `reef.toml`:
    ```toml
    [dependencies]
-   coral = { version = "0.5.0" }
+   coral = { version = "0.7.6" }
    ```
 5. `chelis reef build` resolves the platform-agnostic `.chb` +
    sources; the consumer's chelis compiles the result to whatever
@@ -69,8 +72,9 @@ runs on `macos-latest`) downloads the Darwin chelis toolchain,
 populates the reef registry with chelis-std + nautilus, and runs
 `chelis reef build` against this repo's source. That's enough to
 prove the artifacts work end-to-end under Darwin chelis. The full
-test suite (`chelis test tests/`, `parity/run_parity.py --strict`,
-the documentation validators) runs only on Linux x86_64 — duplicating
+test suite (`chelis test tests/ --jobs auto`,
+`parity/run_parity.py --strict`, the documentation validators) runs
+only on Linux x86_64 — duplicating
 it on macOS would be ~10× the runner cost without producing
 substantively new evidence, since the underlying Coral source is
 identical and the platform boundary is the chelis toolchain.

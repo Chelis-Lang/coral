@@ -21,14 +21,12 @@ def build_join[n, m, k](left: Frame[n], right: Frame[m], on: string, keep_left: 
   pairs = join_pairs(left_keys, right_keys, keep_left, zero_i64(), [])
   assemble_join(left, right, on, pairs)
 }
-def key_display(value: KeyValue) -> string = {
-  match value with {
-    | KeyIntValue(v) => to_string(v)
-    | KeyFloatValue(v) => to_string(v)
-    | KeyStringValue(v) => v
-    | KeyBoolValue(v) => to_string(v)
-  }
-}
+def key_display(value: KeyValue) -> string = { match value with {
+  | KeyIntValue(v) => to_string(v)
+  | KeyFloatValue(v) => to_string(v)
+  | KeyStringValue(v) => v
+  | KeyBoolValue(v) => to_string(v)
+} }
 def build_outer_key_strs(lkeys: List[KeyValue], rkeys: List[KeyValue], left_rows: List[int64], right_rows: List[int64], acc: List[string]) -> List[string] = { if eq(len(left_rows), zero_i64()) then acc else {
   lr = index(left_rows, zero_i64())
   rr = index(right_rows, zero_i64())

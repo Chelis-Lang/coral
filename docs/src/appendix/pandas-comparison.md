@@ -20,10 +20,11 @@ Current parity-backed scope:
 
 Documented deltas:
 
-- stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.5.0`:
+- stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.7.6`:
   build, link, and execution all pass; acceptance gate is fixture goldens plus
   the compile-level probe in `parity/run_parity.py`
 - GroupBy, Join, and IO are currently fixture-backed plus compile-checked
 - Window and Frame both have an executed runtime parity lane; GroupBy, Join, and IO are fixture-backed plus compile-checked
-- Chelis-native correctness lives in `tests/*.ch` (`chelis test tests/`); pandas
-  comparison work and goldens live in `parity/`
+- Chelis-native correctness lives in `tests/*.ch`
+  (`chelis test tests/ --jobs auto`); pandas comparison work and
+  goldens live in `parity/`

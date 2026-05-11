@@ -1,7 +1,8 @@
 # Coral Status
 
-Phase 3t cutover complete: Chelis-native test harness (`chelis test tests/`)
-runs alongside pandas-parity (`parity/run_parity.py`).
+Phase 3t cutover complete: Chelis-native test harness
+(`chelis test tests/ --jobs auto`) runs alongside pandas-parity
+(`parity/run_parity.py`).
 
 Current work focuses on:
 
@@ -31,10 +32,11 @@ Known deferred items:
 
 Test harness layout (Phase 3t):
 
-- `tests/*.ch` — Chelis-native tests run via `chelis test tests/`. 65 tests
-  across frame, window, groupby, join, reshape, io, nan, internal. All
-  expected values are mathematical identities, hand-computed from inputs,
-  structural assertions, or round-trip identities — never pandas-derived.
+- `tests/*.ch` — Chelis-native tests run via
+  `chelis test tests/ --jobs auto`. 65 tests across frame, window,
+  groupby, join, reshape, io, nan, internal. All expected values are
+  mathematical identities, hand-computed from inputs, structural
+  assertions, or round-trip identities — never pandas-derived.
 - `parity/` — pandas-comparison oracle. `parity/run_parity.py` runs the
   golden inventory check, `parity/gen_goldens.py --check` (regenerates
   goldens from pandas and compares), a 2-fixture window runtime parity
@@ -47,7 +49,7 @@ Test harness layout (Phase 3t):
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints
-  typecheck on published `chelis v0.5.0`
+  typecheck on published `chelis v0.7.6`
 - 8 `tests/*.ch` modules cover construction, filter (via mask
   consumers), head/tail/slice, rename/with_column/drop, sort_by
   (string asc/desc, float), concat, describe, single-key aggregations
@@ -76,6 +78,9 @@ What is currently proven:
   Join, IO, Window, and Reshape slices without overstating runtime status
 - CI hard-rule grep guards: no `.py` under `tests/`, no
   `pandas`/`scipy` references in `src/` or `tests/`
+- v0.7.6 testing cutover timing is recorded in
+  `docs/testing_cutover_0.7.6.json`: node-local `--jobs auto` ran
+  65 tests in 0:34.06; serial `--jobs 1` ran the same suite in 0:38.72.
 
 What is not yet proven:
 

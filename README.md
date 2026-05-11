@@ -44,23 +44,23 @@ scale.
 
 ## Toolchain
 
-Pinned to `chelis v0.5.0` in `reef.toml`:
+Pinned to `chelis v0.7.6` in `reef.toml`:
 
 ```toml
-compiler = "=0.5.0"
+compiler = "=0.7.6"
 ```
 
 ## Build
 
-A Coral checkout uses `chelis-std 0.1.0` (vendored in `deps/`) and
-`nautilus 0.5.0` (resolved from the local reef registry); both pins
-live in `reef.lock`. With the compiler on `PATH`, or `CHELIS_BIN`
-pointed at the published binary:
+A Coral checkout uses `chelis-std 0.3.0` and `nautilus 0.7.6`
+resolved from the local reef registry. With the compiler on `PATH`, or
+`CHELIS_BIN` pointed at the published binary:
 
 ```sh
 chelis check src/frame.ch
 chelis reef build
-chelis test tests/                     # internal correctness (Chelis-native)
+chelis test tests/ --jobs auto         # internal correctness (Chelis-native)
+chelis test tests/ --jobs 1            # serial fallback for debugging
 python scripts/run_static_checks.py
 python scripts/run_skill_checks.py
 python scripts/validate_book_examples.py

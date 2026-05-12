@@ -6,6 +6,21 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.7] — 2026-05-12
+
+Compiler-pin alignment release for chelis 0.7.7. Bumps package
+version and `compiler = "=0.7.6"` → `"=0.7.7"`, updates the nautilus
+dep to 0.7.7, and updates CI/release workflow env vars (CHELIS_TAG,
+CHELIS_VERSION, NAUTILUS_TAG, CORAL_VERSION, PACKAGE_VERSION) so the
+release workflow downloads chelis 0.7.7 and produces coral-0.7.7
+assets. Required because chelis 0.7.7's reef validator rejects any
+package whose `package.compiler` is not exactly `=0.7.7`.
+
+No source changes. `chelis lint --check src/` produces 105 advisory
+warnings (all `redundant-linearity-call` and `prefer-pipe-operator`,
+deferred to a separate cleanup pass) and zero error-severity findings
+under 0.7.7. `chelis test tests/` passes 65/65.
+
 ## [0.7.6] — 2026-05-11
 
 Compiler and dependency alignment release. Tracks chelis 0.7.6 and

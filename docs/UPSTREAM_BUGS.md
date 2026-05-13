@@ -16,7 +16,41 @@ v0.3.2.)
 
 ## Tracking (filed upstream, not blocking)
 
-(none)
+- **`numel(to_tensor([]))` returns 1 (chelis v0.7.7).** Probe at
+  `/tmp/probe_numel_test.ch` confirms `numel(to_tensor([])) = 1` while
+  `len(to_list(to_tensor([]))) = 0`. Affected Coral surface (`column_len`,
+  `row_count`, length-checks in `filter` / `from_pairs`) worked around in
+  v0.7.8 by routing through `len(to_list(xs))` — O(n) instead of O(1)
+  but correct. Restore numel-based fast paths when the upstream bug is
+  fixed. Re-probe at chelis v0.7.8.
+
+- **`neq(&tensor, &tensor)` returns `tensor[n, f32]` instead of
+  `tensor[n, bool]` (chelis v0.7.7).** Triggered the lint cleanup
+  rewrite of `is_nan` from the original `neq(copy(col), col)` to a
+  `map(fn x -> neq(x, x))` + `bool_list_to_tensor` form, which is
+  correct but O(n) on the host lane and gives up the tensor-fusion
+  path the spec promises ("filter→mutate→aggregate compiles to a
+  single fused kernel"). Restore the tensor-native `is_nan` when the
+  upstream `neq` overload resolution produces `tensor[n, bool]` for
+  `(&tensor, &tensor)` arg pairs.
+
+- **HAMT native-evaluator overhead (chelis v0.7.7).** `chelis test`
+  on a 100-key HAMT (`/tmp/coral-redteam/03_hamt_collisions.ch`)
+  exceeds the 30s default budget. 60 keys clocks at ~57s of
+  evaluator time. Dominant cost is per-call evaluator overhead in
+  the recursive `entries_h` / `from_pairs_rec` / `popcount_i64`
+  paths, not algorithmic. The C-build path is unaffected because it
+  emits compiled code. Re-probe when chelis ships a faster
+  interpreter or when a Coral consumer hits 100+ columns in
+  evaluator mode (50–100 is the documented design range).
+
+- **`not` is scalar-only in chelis v0.7.7.** `not(tensor[n, bool])`
+  fails with "bool op expects bool arg". Affected Coral surface
+  (`drop_nan` originally did `filter(df, not(is_nan(...)))`) worked
+  around in v0.7.8 by reformulating the keep-mask as
+  `bool_list_to_tensor(map(fn x -> eq(x, x), ...))`. Restore the
+  direct `not(is_nan_mask)` form when chelis ships a bool-tensor
+  `not`.
 
 ## Parked upstream
 

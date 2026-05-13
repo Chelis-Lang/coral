@@ -6,6 +6,78 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.8] — 2026-05-13
+
+Lint-cleanup pass that pays down the 105 advisory warnings deferred
+from 0.7.7, plus correctness fixes for several latent NaN/empty/CSV
+bugs surfaced by an adversarial red-team pass. No compiler pin
+change (chelis 0.7.7 / nautilus 0.7.7 unchanged).
+
+Lint:
+
+- `chelis lint --check src/` and `chelis lint --check tests/` are
+  now both 0 warnings under chelis 0.7.7. Previous state: 105 src/
+  warnings (48 `prefer-pipe-operator`, 57 `redundant-linearity-call`)
+  + 18 tests/ warnings. Mix of `chelis lint --fix` auto-rewrites,
+  let-binding the nested first-arg of `f(g(x), …)` calls, and
+  hand-stripping `copy()` / `_ = drop(x)` lines per the
+  `implicit-linearity` migration.
+- Three pipe-chain auto-fixes in `src/internal/hamt.ch`
+  (`hamt_size` / `add` / `sub` patterns) had to be reverted from
+  `lhs |> f |> rhs |> g |> binop` form back to nested-call form;
+  the lint auto-fix chained both args of the outer binop into the
+  pipe and produced semantically wrong code (calling a value as if
+  it were a function).
+- AGENTS.md / CLAUDE.md toolchain-pin section corrected from
+  "chelis v0.7.6" (stale since 0.7.7 release) to "chelis v0.7.7".
+
+Correctness fixes (red-team surfaced; all pre-existing latent bugs):
+
+- `drop_nan` no longer crashes. Was calling `not(tensor[n, bool])`
+  which chelis 0.7.7's scalar-only `not` rejects. Now constructs
+  the keep-mask directly via `bool_list_to_tensor(map(fn x -> eq(x, x), …))`.
+- `filter` / `head` / `tail` / `slice` no longer crash on zero-row
+  output. Root cause: `numel(to_tensor([]))` returns 1 in chelis
+  0.7.7, breaking the `gather`-based reindex when the index list
+  is empty. Added an `empty_column_like` helper and short-circuit
+  for empty-result paths. Same fix transitively repairs inner-join
+  with disjoint keys.
+- `column_len` / `row_count` now route through `len(to_list(xs))`
+  instead of `numel(xs)` so empty numeric columns report length 0.
+  Workaround for the chelis-0.7.7 `numel` bug; restore once
+  upstream fixes it.
+- `rolling_min` / `rolling_max` now propagate NaN through any
+  window containing a NaN. Previously `lt(NaN, acc)` and
+  `gt(NaN, acc)` returned false under IEEE rules, so non-head NaNs
+  were silently swallowed.
+- CSV writer is now RFC-4180 compliant: string fields containing
+  comma, double-quote, or newline are wrapped in quotes with any
+  internal quotes doubled. CSV round-trip of strings like
+  `"with,comma"` now preserves the value.
+- JSON `null` no longer silently downgrades int/float columns to
+  StringCol. `infer_csv_column` now recognises `""` as a missing
+  cell when the rest of the column is int-or-null (→ IntCol with
+  mask) or float-or-null (→ FloatCol with NaN at null positions).
+
+Known limitations carried forward (see `docs/UPSTREAM_BUGS.md`):
+
+- `is_nan` is currently O(n) host-path: chelis 0.7.7's overload
+  resolution of `neq(&tensor, &tensor)` does not return a bool
+  tensor, so the tensor-native NaN-mask path the spec promises
+  ("filter → mutate → aggregate compiles to a single fused
+  kernel") is unavailable. Restore once upstream `neq` returns
+  `tensor[n, bool]` for ref/ref pairs.
+- HAMT at 100 keys exceeds the default 30s `chelis test` budget
+  under chelis 0.7.7's native evaluator. Cost is per-call evaluator
+  overhead, not algorithmic. Unaffected by the C-build path.
+  Documented design range is 50–100 columns.
+
+Validation: `chelis lint --check src/` and `chelis lint --check tests/`
+report 0 warnings, exit 0. `chelis test tests/` passes 65/65. Twelve
+red-team probes covering NaN / HAMT / sort_by / filter-slice / concat /
+groupby / IO / window / join / reshape / with_column / empty-frame /
+JSON also pass under `chelis test`.
+
 ## [0.7.7] — 2026-05-12
 
 Compiler-pin alignment release for chelis 0.7.7. Bumps package

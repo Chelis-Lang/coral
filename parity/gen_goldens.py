@@ -107,7 +107,7 @@ def frame_contract() -> dict:
             "concat",
             "describe",
             "value_counts",
-            "sort_by (string, int, float, bool columns — ascending and descending)",
+            "sort_by (string, int, float, bool columns - ascending and descending)",
         ],
         "known_deltas": [
             "stripped bare-build runtime for HAMT-dependent operations (from_pairs, value_counts) is blocked by generic specialization in the prefixed-concat context; core algorithm runtime lane (fill_int_list, str_lt+sort, bool_list_to_tensor) runs and passes",

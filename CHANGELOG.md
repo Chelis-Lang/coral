@@ -6,6 +6,31 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.10] — 2026-05-15
+
+Compiler-pin alignment for chelis 0.7.10 (skipping the 0.7.9 pin at
+the consumer level — chelis 0.7.9 shipped a `chelis test` lowering
+blocker that 0.7.10 fixed). `compiler = "=0.7.8"` → `"=0.7.10"`,
+nautilus dep `0.7.9` → `0.7.10` (the matching pin-alignment release),
+package version `0.7.9` → `0.7.10`, CI/release workflow env vars
+updated to track v0.7.10.
+
+No source changes. coral builds clean under chelis 0.7.10 — none of
+its multi-dim functions tripped chelis 0.7.9's `check_declared_dvars_rigid`
+(dims stay independent: input vs output row counts, left vs right
+frame sizes), and no linearity violations surfaced. `chelis test
+tests/` passes 65/65; `chelis lint --check .` reports 0 warnings,
+0 errors.
+
+### Changed — doc renames
+
+Three `docs/` files renamed from SCREAMING_SNAKE_CASE to kebab-case
+to satisfy `doc-filename-convention §8.5` (`RELEASES.md` →
+`releases.md`, `STATUS.md` → `status.md`, `UPSTREAM_BUGS.md` →
+`upstream-bugs.md`); all references updated. Em-dash fixes in
+`parity/gen_goldens.py` and `parity/run_parity.py` for
+`no-em-dash-in-public-strings §8.6`.
+
 ## [0.7.9] — 2026-05-13
 
 Compiler-pin alignment release for chelis 0.7.8. No source changes
@@ -70,7 +95,7 @@ Correctness fixes (red-team surfaced; all pre-existing latent bugs):
   cell when the rest of the column is int-or-null (→ IntCol with
   mask) or float-or-null (→ FloatCol with NaN at null positions).
 
-Known limitations carried forward (see `docs/UPSTREAM_BUGS.md`):
+Known limitations carried forward (see `docs/upstream-bugs.md`):
 
 - `is_nan` is currently O(n) host-path: chelis 0.7.7's overload
   resolution of `neq(&tensor, &tensor)` does not return a bool

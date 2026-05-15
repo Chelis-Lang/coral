@@ -77,7 +77,7 @@ python parity/run_parity.py            # pandas-comparison oracle
 - `sort_by` covers int, float, bool, and string columns
 - `outer_join` is implemented and golden-validated
 - `Coral.Reshape` ships `pivot`, `melt`, `stack`, and `unstack`
-- Parquet I/O is upstream-blocked (see `docs/UPSTREAM_BUGS.md`)
+- Parquet I/O is upstream-blocked (see `docs/upstream-bugs.md`)
 - null semantics are intentionally narrower than pandas in the first pass
 - the prior `chelis test` evaluator gap is fully resolved as of chelis
   v0.3.1: tensor-tensor `eq`/`neq`/`lt`/`gt` (v0.2.5), `to_tensor([bool, ...])`

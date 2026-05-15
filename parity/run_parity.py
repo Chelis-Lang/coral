@@ -387,7 +387,7 @@ def run_negative_case(case: dict) -> int:
         if case["expected_fragment"] not in output:
             print(f"negative test {case['name']}: expected {case['expected_fragment']!r} in check output, got {output[:300]!r}")
             return 1
-        print(f"negative test OK: {case['name']} — found {case['expected_fragment']!r}")
+        print(f"negative test OK: {case['name']} - found {case['expected_fragment']!r}")
         return 0
     finally:
         src_tmp.unlink(missing_ok=True)

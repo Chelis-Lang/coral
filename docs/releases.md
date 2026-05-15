@@ -103,6 +103,6 @@ coral-X.Y.Z.chb.bin && strings coral-X.Y.Z.chb.bin | head`) before
 proposing a change.
 
 The sibling shell `Chelis-Lang/nautilus` follows the same policy in
-its own `docs/RELEASES.md`. If you change Coral's policy here,
+its own `docs/releases.md`. If you change Coral's policy here,
 mirror the change in nautilus or document the divergence with a
 recorded reason (per the "Scaffolding Drift Rule" in `CLAUDE.md`).

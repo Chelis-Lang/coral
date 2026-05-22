@@ -41,16 +41,41 @@ def assemble_outer_join[n, m, k](left: Frame[n], right: Frame[m], on: string, lk
   left_rows = map(fn (pair: (int64, int64)) -> pair.0, pairs)
   right_rows = map(fn (pair: (int64, int64)) -> pair.1, pairs)
   key_strs = build_outer_key_strs(lkeys, rkeys, left_rows, right_rows, [])
-  left_cols = map(fn (name: string) -> if eq(name, on) then (name, StringCol(key_strs)) else (name, build_column(get_column(left, name), left_rows, false)), columns(left))
-  right_cols = map(fn (name: string) -> if eq(name, on) then ("", StringCol([])) else (right_name(columns(left), name), build_column(get_column(right, name), right_rows, true)), columns(right))
+  left_names = columns(left)
+  right_names = columns(right)
+  left_cols = build_outer_left_cols(left, left_names, left_rows, on, key_strs, [])
+  right_cols = build_outer_right_cols(right, right_names, right_rows, on, left_names, [])
   from_pairs(append_named(left_cols, right_cols))
+}
+def build_outer_left_cols[n, k](left: &Frame[n], names: List[string], left_rows: List[int64], on: string, key_strs: List[string], acc: List[(string, Column[k])]) -> List[(string, Column[k])] = {
+  if eq(len(names), zero_i64()) then acc else {
+    name = index(names, zero_i64())
+    pair = if eq(name, on) then (name, StringCol(key_strs)) else (name, build_column(get_column(left, name), left_rows, false))
+    build_outer_left_cols(left, drop(names, one_i64()), left_rows, on, key_strs, append(acc, pair))
+  }
+}
+def build_outer_right_cols[n, k](right: &Frame[n], names: List[string], right_rows: List[int64], on: string, left_names: List[string], acc: List[(string, Column[k])]) -> List[(string, Column[k])] = {
+  if eq(len(names), zero_i64()) then acc else {
+    name = index(names, zero_i64())
+    pair = if eq(name, on) then ("", StringCol([])) else (right_name(left_names, name), build_column(get_column(right, name), right_rows, true))
+    build_outer_right_cols(right, drop(names, one_i64()), right_rows, on, left_names, append(acc, pair))
+  }
 }
 def assemble_join[n, m, k](left: Frame[n], right: Frame[m], on: string, pairs: List[(int64, int64)]) -> Frame[k] = {
   left_rows = map(fn (pair: (int64, int64)) -> pair.0, pairs)
   right_rows = map(fn (pair: (int64, int64)) -> pair.1, pairs)
-  left_cols = map(fn (name: string) -> (name, build_column(get_column(left, name), left_rows, false)), columns(left))
-  right_cols = map(fn (name: string) -> if eq(name, on) then ("", StringCol([])) else (right_name(columns(left), name), build_column(get_column(right, name), right_rows, true)), columns(right))
+  left_names = columns(left)
+  right_names = columns(right)
+  left_cols = build_join_left_cols(left, left_names, left_rows, [])
+  right_cols = build_outer_right_cols(right, right_names, right_rows, on, left_names, [])
   from_pairs(append_named(left_cols, right_cols))
+}
+def build_join_left_cols[n, k](left: &Frame[n], names: List[string], left_rows: List[int64], acc: List[(string, Column[k])]) -> List[(string, Column[k])] = {
+  if eq(len(names), zero_i64()) then acc else {
+    name = index(names, zero_i64())
+    pair = (name, build_column(get_column(left, name), left_rows, false))
+    build_join_left_cols(left, drop(names, one_i64()), left_rows, append(acc, pair))
+  }
 }
 def right_unmatched_pairs(left_keys: List[KeyValue], right_keys: List[KeyValue], idx: int64, acc: List[(int64, int64)]) -> List[(int64, int64)] = {
   if gte(idx, len(right_keys)) then acc else {

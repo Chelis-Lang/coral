@@ -6,6 +6,13 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.11] — 2026-05-22
+
+nautilus dep bump to 0.7.11, which carries the `Nautilus.Roots`
+f32-plateau hardening missed in nautilus 0.7.10. No coral source
+changes; no compiler-pin change (still `=0.7.10`). 65/65 tests, 0
+lint warnings/errors.
+
 ## [0.7.10] — 2026-05-15
 
 Compiler-pin alignment for chelis 0.7.10 (skipping the 0.7.9 pin at

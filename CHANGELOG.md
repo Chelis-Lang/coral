@@ -6,6 +6,20 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.12] — 2026-05-22
+
+nautilus dep bump to 0.7.12, which carries the WS-A warning-regression
+close-out and the WS-B structural plateau-stop hardening for
+`Nautilus.CurveFit`, `Nautilus.Ode`, and `Nautilus.Integrate` (aligned
+with the `Nautilus.Roots` discipline shipped in 0.7.11). No coral
+source changes. No compiler-pin change (still `=0.7.10`). Also adds
+`docs/maintenance-schedule.md` tracking the GitHub Actions Node 20 →
+Node 24 migration deadline (2026-06-02); no CI changes this release.
+
+Verified under chelis 0.7.10 / nautilus 0.7.12: `chelis reef build`
+clean; `chelis test tests/ --jobs auto` → 65 passed, 0 failed;
+`chelis lint --check .` → 0 errors, 0 warnings.
+
 ## [0.7.11] — 2026-05-22
 
 nautilus dep bump to 0.7.11, which carries the `Nautilus.Roots`

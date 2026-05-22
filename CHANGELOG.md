@@ -13,6 +13,20 @@ f32-plateau hardening missed in nautilus 0.7.10. No coral source
 changes; no compiler-pin change (still `=0.7.10`). 65/65 tests, 0
 lint warnings/errors.
 
+This is the second wave of a two-release f32-plateau hardening
+sequence upstream. nautilus 0.7.10 hardened `Nautilus.Optim` and
+`Nautilus.Special` against unit-roundoff stalls that chelis 0.7.10's
+f32-preserving evaluator exposed (golden-section / Brent / Newton
+plateau-stops in `optim.ch`; elliptic AGM plateau-stops in
+`special.ch`); `Nautilus.Roots` was left unhardened in that wave
+and shipped with the same latent NaN-on-sub-ULP-tolerance bug.
+nautilus 0.7.11 applies the structurally-identical fix to
+`bisection_rec` / `newton_rec` / `brent_rec`, completing the
+pattern. coral itself never tripped either failure mode, but the
+dep bump tracks the corrected nautilus release so downstream
+consumers see a single coral version line aligned with the
+post-hardening nautilus.
+
 ## [0.7.10] — 2026-05-15
 
 Compiler-pin alignment for chelis 0.7.10 (skipping the 0.7.9 pin at

@@ -10,7 +10,7 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 FlukeBall support release. Adds `Coral.AsOf` and wires the API smoke
 surface for as-of lookup behavior used by betting and sports history
-pipelines. Retargets Coral to chelis 0.7.16 and Nautilus 0.7.15 so CI,
+pipelines. Retargets Coral to chelis 0.7.16 and Nautilus 0.7.16 so CI,
 release, and Reef metadata agree on the current upstream shell set.
 
 ## [0.7.13] — 2026-05-22

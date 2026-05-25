@@ -13,7 +13,7 @@ def read_csv_frame[n](path: string) -> Frame[n] = {
     from_pairs(map(fn (name: string) -> (name, infer_csv_column(column_values(rows, name))), headers))
   }
 }
-def write_csv_frame[n](df: &Frame[n], path: string) -> unit = write_text(path, render_csv(df))
+def write_csv_frame[n](df: Frame[n], path: string) -> unit = write_text(path, render_csv(df))
 def read_json_frame[n](path: string) -> Frame[n] = {
   root = load_json(path)
   match json_array(Some(root)) with {
@@ -27,7 +27,7 @@ def read_json_frame[n](path: string) -> Frame[n] = {
     | None => fail("read_json_frame: expected top-level array")
   }
 }
-def write_json_frame[n](df: &Frame[n], path: string) -> unit = write_text(path, render_json(df))
+def write_json_frame[n](df: Frame[n], path: string) -> unit = write_text(path, render_json(df))
 def column_values(rows: List[Dict[string, string]], name: string) -> List[string] = {
   map(fn (row: Dict[string, string]) -> match dict_get(row, name) with {
     | Some(value) => value
@@ -92,14 +92,14 @@ def unwrap_float(value: string) -> f32 = {
     | None => cast(0.0, f32)
   }
 }
-def render_csv[n](df: &Frame[n]) -> string = {
+def render_csv[n](df: Frame[n]) -> string = {
   names = columns(df)
   header = join_strings(names, ",")
   body = csv_rows(df, cast(0, int64), [])
   if eq(len(body), zero_i64()) then string_concat(header, "\n") else string_concat(string_concat(header, "\n"), string_concat(join_strings(body, "\n"), "\n"))
 }
-def csv_rows[n](df: &Frame[n], idx: int64, acc: List[string]) -> List[string] = { if gte(idx, row_count(df)) then acc else csv_rows(df, add(idx, one_i64()), append(acc, csv_row(df, columns(df), idx, []))) }
-def csv_row[n](df: &Frame[n], names: List[string], idx: int64, acc: List[string]) -> string = { if eq(len(names), zero_i64()) then join_strings(acc, ",") else csv_row(df, drop(names, one_i64()), idx, append(acc, csv_quote_field(column_value_string(get_column(df, index(names, zero_i64())), idx)))) }
+def csv_rows[n](df: Frame[n], idx: int64, acc: List[string]) -> List[string] = { if gte(idx, row_count(df)) then acc else csv_rows(df, add(idx, one_i64()), append(acc, csv_row(df, columns(df), idx, []))) }
+def csv_row[n](df: Frame[n], names: List[string], idx: int64, acc: List[string]) -> string = { if eq(len(names), zero_i64()) then join_strings(acc, ",") else csv_row(df, drop(names, one_i64()), idx, append(acc, csv_quote_field(column_value_string(get_column(df, index(names, zero_i64())), idx)))) }
 def csv_quote_field(value: string) -> string = {
   if csv_needs_quoting(value) then {
     escaped = csv_escape_quotes(value, zero_i64(), "")
@@ -120,9 +120,9 @@ def csv_escape_quotes(s: string, idx: int64, acc: string) -> string = {
     csv_escape_quotes(s, add(idx, one_i64()), next)
   }
 }
-def render_json[n](df: &Frame[n]) -> string = { string_concat("[", string_concat(join_strings(json_rows_out(df, cast(0, int64), []), ","), "]")) }
-def json_rows_out[n](df: &Frame[n], idx: int64, acc: List[string]) -> List[string] = { if gte(idx, row_count(df)) then acc else json_rows_out(df, add(idx, one_i64()), append(acc, json_row(df, columns(df), idx, []))) }
-def json_row[n](df: &Frame[n], names: List[string], idx: int64, acc: List[string]) -> string = {
+def render_json[n](df: Frame[n]) -> string = { string_concat("[", string_concat(join_strings(json_rows_out(df, cast(0, int64), []), ","), "]")) }
+def json_rows_out[n](df: Frame[n], idx: int64, acc: List[string]) -> List[string] = { if gte(idx, row_count(df)) then acc else json_rows_out(df, add(idx, one_i64()), append(acc, json_row(df, columns(df), idx, []))) }
+def json_row[n](df: Frame[n], names: List[string], idx: int64, acc: List[string]) -> string = {
   if eq(len(names), zero_i64()) then string_concat("{", string_concat(join_strings(acc, ","), "}")) else {
     name = index(names, zero_i64())
     cell = string_concat("\"", string_concat(name, string_concat("\":", json_cell(get_column(df, name), idx))))
@@ -145,7 +145,7 @@ def column_value_string[n](col: Column[n], idx: int64) -> string = {
     | BoolCol(xs) => to_string(index(to_list(xs), idx))
   }
 }
-def row_count[n](df: &Frame[n]) -> int64 = {
+def row_count[n](df: Frame[n]) -> int64 = {
   names = columns(df)
   if eq(len(names), zero_i64()) then zero_i64() else match get_column(df, index(names, zero_i64())) with {
     | IntCol(xs, imask) => len(to_list(xs))
@@ -196,4 +196,4 @@ def bools_to_tensor[n](values: List[bool]) -> tensor[n, bool] = {
   __borrow_migration_out_1
 }
 def read_parquet_frame[n](path: string) -> Frame[n] = fail("read_parquet_frame requires Std.Io.Parquet (not in current runtime)")
-def write_parquet_frame[n](df: &Frame[n], path: string) -> string = fail("write_parquet_frame requires Std.Io.Parquet (not in current runtime)")
+def write_parquet_frame[n](df: Frame[n], path: string) -> string = fail("write_parquet_frame requires Std.Io.Parquet (not in current runtime)")

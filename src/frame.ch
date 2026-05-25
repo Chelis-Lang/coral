@@ -45,7 +45,7 @@ def empty[n](schema: Dict[string, ColumnType]) -> Frame[n] = {
   }, dict_entries(schema))
   Frame { cols: hamt_from_pairs(entries), col_order: map(fn (pair: (string, ColumnType)) -> pair.0, dict_entries(schema)) }
 }
-def get_column[n](df: &Frame[n], name: string) -> Column[n] = {
+def get_column[n](df: Frame[n], name: string) -> Column[n] = {
   match df with {
     | Frame { cols: cols, col_order: order } => match hamt_get(cols, name) with {
     | Some(value) => value
@@ -53,42 +53,42 @@ def get_column[n](df: &Frame[n], name: string) -> Column[n] = {
   }
   }
 }
-def get_float_col[n](df: &Frame[n], name: string) -> tensor[n, f32] = {
+def get_float_col[n](df: Frame[n], name: string) -> tensor[n, f32] = {
   match get_column(df, name) with {
     | FloatCol(col) => col
     | _ => fail(string_concat("column is not float: ", name))
   }
 }
-def get_int_col[n](df: &Frame[n], name: string) -> tensor[n, int64] = {
+def get_int_col[n](df: Frame[n], name: string) -> tensor[n, int64] = {
   match get_column(df, name) with {
     | IntCol(col, imask) => col
     | _ => fail(string_concat("column is not int: ", name))
   }
 }
-def get_int_mask[n](df: &Frame[n], name: string) -> tensor[n, bool] = {
+def get_int_mask[n](df: Frame[n], name: string) -> tensor[n, bool] = {
   match get_column(df, name) with {
     | IntCol(gmvals, mask) => mask
     | _ => fail(string_concat("column is not int: ", name))
   }
 }
-def get_string_col[n](df: &Frame[n], name: string) -> List[string] = {
+def get_string_col[n](df: Frame[n], name: string) -> List[string] = {
   match get_column(df, name) with {
     | StringCol(col) => col
     | _ => fail(string_concat("column is not string: ", name))
   }
 }
-def get_bool_col[n](df: &Frame[n], name: string) -> tensor[n, bool] = {
+def get_bool_col[n](df: Frame[n], name: string) -> tensor[n, bool] = {
   match get_column(df, name) with {
     | BoolCol(col) => col
     | _ => fail(string_concat("column is not bool: ", name))
   }
 }
-def columns[n](df: &Frame[n]) -> List[string] = {
+def columns[n](df: Frame[n]) -> List[string] = {
   match df with {
     | Frame { cols: cols, col_order: order } => order
   }
 }
-def column_type[n](df: &Frame[n], name: string) -> ColumnType = {
+def column_type[n](df: Frame[n], name: string) -> ColumnType = {
   match get_column(df, name) with {
     | IntCol(ival, imask) => IntType
     | FloatCol(_) => FloatType
@@ -96,48 +96,136 @@ def column_type[n](df: &Frame[n], name: string) -> ColumnType = {
     | BoolCol(_) => BoolType
   }
 }
-def nrows[n](df: &Frame[n]) -> int64 = {
+def nrows[n](df: Frame[n]) -> int64 = {
   names = columns(df)
   if eq(len(names), zero_i64()) then zero_i64() else column_len(get_column(df, index(names, zero_i64())))
 }
-def ncols[n](df: &Frame[n]) -> int64 = len(columns(df))
+def ncols[n](df: Frame[n]) -> int64 = len(columns(df))
 def filter[n, k](df: Frame[n], mask: tensor[n, bool]) -> Frame[k] = {
   mask_list = to_list(mask)
-  if neq(len(mask_list), nrows(df)) then fail("filter: mask length mismatch") else {
-    idx_list = mask_to_index_list(enumerate(mask_list), [])
-    names = columns(df)
-    if eq(len(idx_list), zero_i64()) then {
-      empty_df = df
-      from_pairs(map(fn (name: string) -> (name, empty_column_like(get_column(empty_df, name))), names))
-    } else {
+  mask_size = cast(len(mask_list), int64)
+  idx_list = mask_to_index_list(enumerate(mask_list), [])
+  match df with {
+    | Frame { cols: cols, col_order: order } => {
+    pairs = hamt_entries(cols)
+    if eq(len(idx_list), zero_i64()) then from_pairs(reorder_column_pairs(map(fn (pair: (string, Column[n])) -> (pair.0, empty_column_like(pair.1)), pairs), order, [])) else {
       idx = to_tensor(idx_list)
-      reindex_df = df
-      from_pairs(map(fn (name: string) -> (name, reindex_column(get_column(reindex_df, name), idx, idx_list)), names))
+      reindexed = map(fn (pair: (string, Column[n])) -> (pair.0, reindex_column(pair.1, idx, idx_list)), pairs)
+      from_pairs(reorder_column_pairs(reindexed, order, []))
     }
   }
+  }
 }
-def head[n, k](df: Frame[n], count: int64) -> Frame[k] = {
-  upper = int_min(int_max(count, zero_i64()), nrows(df))
-  slice(df, zero_i64(), upper)
-}
+def head[n, k](df: Frame[n], count: int64) -> Frame[k] = slice(df, zero_i64(), int_max(count, zero_i64()))
 def tail[n, k](df: Frame[n], count: int64) -> Frame[k] = {
-  total = nrows(df)
-  kept = int_min(int_max(count, zero_i64()), total)
-  slice(df, sub(total, kept), total)
+  match df with {
+    | Frame { cols: cols, col_order: order } => {
+    pairs = hamt_entries(cols)
+    kept = int_max(count, zero_i64())
+    tailed = map(fn (pair: (string, Column[n])) -> (pair.0, column_tail(pair.1, kept)), pairs)
+    from_pairs(reorder_column_pairs(tailed, order, []))
+  }
+  }
+}
+def reorder_column_pairs[n](pairs: List[(string, Column[n])], order: List[string], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = {
+  if eq(len(order), zero_i64()) then acc else {
+    name = index(order, zero_i64())
+    matched = extract_named_column(pairs, name, [])
+    reorder_column_pairs(matched.1, drop(order, one_i64()), append(acc, (name, matched.0)))
+  }
+}
+def extract_named_column[n](pairs: List[(string, Column[n])], target: string, acc: List[(string, Column[n])]) -> (Column[n], List[(string, Column[n])]) = {
+  if eq(len(pairs), zero_i64()) then fail("extract_named_column: name not found") else {
+    head_pair = index(pairs, zero_i64())
+    if eq(head_pair.0, target) then (head_pair.1, append_pair_list(acc, drop(pairs, one_i64()))) else extract_named_column(drop(pairs, one_i64()), target, append(acc, head_pair))
+  }
+}
+def append_pair_list[n](lhs: List[(string, Column[n])], rhs: List[(string, Column[n])]) -> List[(string, Column[n])] = { if eq(len(rhs), zero_i64()) then lhs else append_pair_list(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64())) }
+def column_tail[n, k](col: Column[n], count: int64) -> Column[k] = {
+  match col with {
+    | IntCol(xs, mask) => {
+    total = numel(xs)
+    kept = int_min(count, total)
+    start = sub(total, kept)
+    idx_list = range(start, total)
+    idx = to_tensor(idx_list)
+    IntCol(gather(xs, idx, zero_i32()), gather(mask, idx, zero_i32()))
+  }
+    | FloatCol(xs) => {
+    total = numel(xs)
+    kept = int_min(count, total)
+    start = sub(total, kept)
+    idx_list = range(start, total)
+    idx = to_tensor(idx_list)
+    FloatCol(gather(xs, idx, zero_i32()))
+  }
+    | StringCol(xs) => {
+    total = len(xs)
+    kept = int_min(count, total)
+    start = sub(total, kept)
+    idx_list = range(start, total)
+    StringCol(list_gather_string(xs, idx_list))
+  }
+    | BoolCol(xs) => {
+    total = numel(xs)
+    kept = int_min(count, total)
+    start = sub(total, kept)
+    idx_list = range(start, total)
+    idx = to_tensor(idx_list)
+    BoolCol(gather(xs, idx, zero_i32()))
+  }
+  }
 }
 def slice[n, k](df: Frame[n], start: int64, finish: int64) -> Frame[k] = {
-  total = nrows(df)
-  lo = int_max(zero_i64(), start)
-  hi = int_min(total, finish)
-  names = columns(df)
-  if lte(hi, lo) then {
-    empty_df = df
-    from_pairs(map(fn (name: string) -> (name, empty_column_like(get_column(empty_df, name))), names))
-  } else {
-    idx_list = range(lo, hi)
-    idx = to_tensor(idx_list)
-    reindex_df = df
-    from_pairs(map(fn (name: string) -> (name, reindex_column(get_column(reindex_df, name), idx, idx_list)), names))
+  match df with {
+    | Frame { cols: cols, col_order: order } => {
+    pairs = hamt_entries(cols)
+    sliced = map(fn (pair: (string, Column[n])) -> (pair.0, slice_column_range(pair.1, start, finish)), pairs)
+    from_pairs(reorder_column_pairs(sliced, order, []))
+  }
+  }
+}
+def slice_column_range[n, k](col: Column[n], start: int64, finish: int64) -> Column[k] = {
+  match col with {
+    | IntCol(xs, mask) => {
+    total = numel(xs)
+    lo = int_max(zero_i64(), start)
+    hi = int_min(total, finish)
+    if lte(hi, lo) then IntCol(to_tensor([]), bool_list_to_tensor([])) else {
+      idx_list = range(lo, hi)
+      idx = to_tensor(idx_list)
+      IntCol(gather(xs, idx, zero_i32()), gather(mask, idx, zero_i32()))
+    }
+  }
+    | FloatCol(xs) => {
+    total = numel(xs)
+    lo = int_max(zero_i64(), start)
+    hi = int_min(total, finish)
+    if lte(hi, lo) then FloatCol(to_tensor([])) else {
+      idx_list = range(lo, hi)
+      idx = to_tensor(idx_list)
+      FloatCol(gather(xs, idx, zero_i32()))
+    }
+  }
+    | StringCol(xs) => {
+    total = len(xs)
+    lo = int_max(zero_i64(), start)
+    hi = int_min(total, finish)
+    if lte(hi, lo) then StringCol([]) else {
+      idx_list = range(lo, hi)
+      StringCol(list_gather_string(xs, idx_list))
+    }
+  }
+    | BoolCol(xs) => {
+    total = numel(xs)
+    lo = int_max(zero_i64(), start)
+    hi = int_min(total, finish)
+    if lte(hi, lo) then BoolCol(bool_list_to_tensor([])) else {
+      idx_list = range(lo, hi)
+      idx = to_tensor(idx_list)
+      BoolCol(gather(xs, idx, zero_i32()))
+    }
+  }
   }
 }
 def str_char_lt(lch: string, rch: string) -> bool = { lt(char_code(lch), char_code(rch)) }
@@ -154,35 +242,82 @@ def enum_pair_insert(xs: List[(int64, string)], pair: (int64, string)) -> List[(
 def enum_insertion_sort(unsorted: List[(int64, string)], acc: List[(int64, string)]) -> List[(int64, string)] = { if eq(len(unsorted), zero_i64()) then acc else enum_insertion_sort(drop(unsorted, one_i64()), enum_pair_insert(acc, index(unsorted, zero_i64()))) }
 def extract_perm_indices(pairs: List[(int64, string)], acc: List[int64]) -> List[int64] = { if eq(len(pairs), zero_i64()) then acc else extract_perm_indices(drop(pairs, one_i64()), append(acc, index(pairs, zero_i64()).0)) }
 def sort_by[n](df: Frame[n], name: string, ascending: bool) -> Frame[n] = {
-  match get_column(df, name) with {
-    | FloatCol(col) => reindex_all(df, orient_perm(sort(col, zero_i32()).1, ascending))
-    | IntCol(col, smask) => reindex_all(df, orient_perm(sort(col, zero_i32()).1, ascending))
-    | BoolCol(col) => reindex_all(df, orient_perm(sort(col, zero_i32()).1, ascending))
-    | StringCol(col) => {
-    sorted_pairs = enum_insertion_sort(enumerate(col), [])
-    perm = to_tensor(extract_perm_indices(sorted_pairs, []))
-    reindex_all(df, orient_perm(perm, ascending))
+  match df with {
+    | Frame { cols: cols, col_order: order } => {
+    pairs = hamt_entries(cols)
+    perm_and_pairs = compute_sort_perm_for(pairs, name, ascending, [])
+    perm = perm_and_pairs.0
+    rebuilt_pairs = perm_and_pairs.1
+    perm_list = to_list(perm)
+    reindexed = map(fn (pair: (string, Column[n])) -> (pair.0, reindex_column(pair.1, perm, perm_list)), rebuilt_pairs)
+    from_pairs(reorder_column_pairs(reindexed, order, []))
   }
   }
 }
-def with_column[n](df: Frame[n], name: string, col: Column[n]) -> Frame[n] = {
-  total = nrows(df)
-  col_n = column_len(col)
-  if and(gt(total, zero_i64()), neq(total, col_n)) then fail("with_column: length mismatch") else match df with {
-    | Frame { cols: cols, col_order: order } => {
-    next_cols = hamt_put(cols, name, col)
-    next_order = if contains_string(order, name) then order else append(order, name)
-    Frame { cols: next_cols, col_order: next_order }
+def compute_sort_perm_for[n](pairs: List[(string, Column[n])], name: string, ascending: bool, acc: List[(string, Column[n])]) -> (tensor[n, int64], List[(string, Column[n])]) = {
+  if eq(len(pairs), zero_i64()) then fail("sort_by: column not found") else {
+    head_pair = index(pairs, zero_i64())
+    if eq(head_pair.0, name) then {
+      key_pair = perm_from_key_column(head_pair.1, ascending)
+      perm = key_pair.0
+      key_col_back = key_pair.1
+      next_pairs = append_pair_list(append(acc, (name, key_col_back)), drop(pairs, one_i64()))
+      (perm, next_pairs)
+    } else compute_sort_perm_for(drop(pairs, one_i64()), name, ascending, append(acc, head_pair))
   }
+}
+def perm_from_key_column[n](col: Column[n], ascending: bool) -> (tensor[n, int64], Column[n]) = {
+  match col with {
+    | FloatCol(xs) => {
+    xs_list = to_list(xs)
+    fresh_tensor = to_tensor(xs_list)
+    perm = orient_perm(sort(fresh_tensor, zero_i32()).1, ascending)
+    (perm, FloatCol(to_tensor(xs_list)))
+  }
+    | IntCol(xs, mask) => {
+    xs_list = to_list(xs)
+    mask_list = to_list(mask)
+    fresh_tensor = to_tensor(xs_list)
+    perm = orient_perm(sort(fresh_tensor, zero_i32()).1, ascending)
+    (perm, IntCol(to_tensor(xs_list), bool_list_to_tensor(mask_list)))
+  }
+    | BoolCol(xs) => {
+    xs_list = to_list(xs)
+    fresh_tensor = to_tensor(map(fn (b: bool) -> if b then one_i64() else zero_i64(), xs_list))
+    perm = orient_perm(sort(fresh_tensor, zero_i32()).1, ascending)
+    (perm, BoolCol(bool_list_to_tensor(xs_list)))
+  }
+    | StringCol(xs) => {
+    sorted_pairs = enum_insertion_sort(enumerate(xs), [])
+    perm = to_tensor(extract_perm_indices(sorted_pairs, []))
+    (orient_perm(perm, ascending), StringCol(xs))
+  }
+  }
+}
+def extract_perm_strings(pairs: List[(int64, string)], acc: List[string]) -> List[string] = { if eq(len(pairs), zero_i64()) then acc else extract_perm_strings(drop(pairs, one_i64()), append(acc, index(pairs, zero_i64()).1)) }
+def with_column[n](df: Frame[n], name: string, col: Column[n]) -> Frame[n] = {
+  match df with {
+    | Frame { cols: cols, col_order: order } => {
+    pairs = hamt_entries(cols)
+    next_pairs = if contains_string(order, name) then replace_named_column(pairs, name, col, []) else append(pairs, (name, col))
+    next_order = if contains_string(order, name) then order else append(order, name)
+    Frame { cols: hamt_from_pairs(next_pairs), col_order: next_order }
+  }
+  }
+}
+def replace_named_column[n](pairs: List[(string, Column[n])], name: string, col: Column[n], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = {
+  if eq(len(pairs), zero_i64()) then acc else {
+    head_pair = index(pairs, zero_i64())
+    if eq(head_pair.0, name) then append_pair_list(append(acc, (name, col)), drop(pairs, one_i64())) else replace_named_column(drop(pairs, one_i64()), name, col, append(acc, head_pair))
   }
 }
 def mutate[n](df: Frame[n], name: string, col: Column[n]) -> Frame[n] = with_column(df, name, col)
 def rename[n](df: Frame[n], old_name: string, new_name: string) -> Frame[n] = {
-  if contains_string(columns(df), new_name) then fail("rename: target column already exists") else {
+  if contains_string(columns(df), new_name) then fail("rename: target column already exists") else match df with {
+    | Frame { cols: cols, col_order: order } => {
     value = get_column(df, old_name)
-    match df with {
-      | Frame { cols: cols, col_order: order } => { Frame { cols: hamt_put(hamt_remove(cols, old_name), new_name, value), col_order: replace_name(order, old_name, new_name, []) } }
-    }
+    Frame { cols: hamt_put(hamt_remove(cols, old_name), new_name, value), col_order: replace_name(order, old_name, new_name, []) }
+  }
   }
 }
 def drop_column[n](df: Frame[n], name: string) -> Frame[n] = {
@@ -237,22 +372,64 @@ def drop_nan_col[n, k](df: Frame[n], col_name: string) -> Frame[k] = {
     | _ => fail(string_concat("drop_nan_col: column is not int: ", col_name))
   }
 }
-def concat[n, k](frames: List[Frame[n]]) -> Frame[k] = {
-  if eq(len(frames), zero_i64()) then Frame { cols: hamt_from_pairs([]), col_order: [] } else {
-    base = index(frames, zero_i64())
+def concat[n, k](frames: List[Frame[n]]) -> Frame[k] = concat_with_order_decision(frames)
+def concat_with_order_decision[n, k](frames: List[Frame[n]]) -> Frame[k] = {
+  base_order_result = first_frame_columns_or_empty(frames)
+  base_order = base_order_result.0
+  frames_back = base_order_result.1
+  if eq(len(base_order), zero_i64()) then Frame { cols: hamt_from_pairs([]), col_order: [] } else from_pairs(map(fn (name: string) -> (name, concat_column(name, frames_back)), base_order))
+}
+def first_frame_columns_or_empty[n](frames: List[Frame[n]]) -> (List[string], List[Frame[n]]) = {
+  if eq(len(frames), zero_i64()) then ([], []) else {
+    head_frame = index(frames, zero_i64())
     rest = drop(frames, one_i64())
-    if not(all_same_schema(rest, base)) then fail("concat: schema mismatch") else from_pairs(concat_column_pairs(columns(base), frames, []))
+    match head_frame with {
+      | Frame { cols: cols, col_order: order } => (order, prepend_frame_to_list(Frame { cols: cols, col_order: order }, rest))
+    }
   }
 }
+def prepend_frame_to_list[n](first: Frame[n], rest: List[Frame[n]]) -> List[Frame[n]] = { prepend_frame_acc(rest, [first]) }
+def prepend_frame_acc[n](src: List[Frame[n]], acc: List[Frame[n]]) -> List[Frame[n]] = { if eq(len(src), zero_i64()) then acc else prepend_frame_acc(drop(src, one_i64()), append(acc, index(src, zero_i64()))) }
 def describe[n, m](df: Frame[n]) -> Frame[m] = {
-  stats = ["count", "mean", "std", "min", "25%", "50%", "75%", "max"]
-  names = columns(df)
-  type_df = df
-  numeric = list_filter_string(fn (name: string) -> is_numeric_type(column_type(type_df, name)), names)
-  stat_col = ("stat", StringCol(stats))
-  value_df = df
-  value_cols = map(fn (name: string) -> (name, describe_column(get_column(value_df, name))), numeric)
-  from_pairs(prepend_pair_column(stat_col, value_cols))
+  match df with {
+    | Frame { cols: cols, col_order: order } => {
+    stats = ["count", "mean", "std", "min", "25%", "50%", "75%", "max"]
+    pairs = hamt_entries(cols)
+    stat_col = ("stat", StringCol(stats))
+    value_cols = build_describe_pairs(pairs, order, [])
+    from_pairs(prepend_pair_column(stat_col, value_cols))
+  }
+  }
+}
+def build_describe_pairs[n, m](pairs: List[(string, Column[n])], order: List[string], acc: List[(string, Column[m])]) -> List[(string, Column[m])] = {
+  if eq(len(order), zero_i64()) then drain_pairs_to_acc(pairs, acc) else {
+    name = index(order, zero_i64())
+    extracted = extract_pair_for_describe(pairs, name, [])
+    next_acc = if is_numeric_column(extracted.0) then append(acc, (name, describe_column(extracted.0))) else discard_describe_column(extracted.0, acc)
+    build_describe_pairs(extracted.1, drop(order, one_i64()), next_acc)
+  }
+}
+def drain_pairs_to_acc[n, m](pairs: List[(string, Column[n])], acc: List[(string, Column[m])]) -> List[(string, Column[m])] = { if eq(len(pairs), zero_i64()) then acc else drain_pairs_to_acc(drop(pairs, one_i64()), acc) }
+def extract_pair_for_describe[n](pairs: List[(string, Column[n])], target: string, acc: List[(string, Column[n])]) -> (Column[n], List[(string, Column[n])]) = {
+  if eq(len(pairs), zero_i64()) then fail("describe: column not found") else {
+    head_pair = index(pairs, zero_i64())
+    if eq(head_pair.0, target) then (head_pair.1, append_pair_list(acc, drop(pairs, one_i64()))) else extract_pair_for_describe(drop(pairs, one_i64()), target, append(acc, head_pair))
+  }
+}
+def is_numeric_column[n](col: Column[n]) -> bool = {
+  match col with {
+    | IntCol(_, _) => true
+    | FloatCol(_) => true
+    | _ => false
+  }
+}
+def discard_describe_column[n, m](col: Column[n], acc: List[(string, Column[m])]) -> List[(string, Column[m])] = {
+  match col with {
+    | IntCol(_, _) => acc
+    | FloatCol(_) => acc
+    | StringCol(_) => acc
+    | BoolCol(_) => acc
+  }
 }
 def key_id(value: KeyValue) -> string = {
   match value with {
@@ -262,7 +439,7 @@ def key_id(value: KeyValue) -> string = {
     | KeyBoolValue(v) => string_concat("b:", to_string(v))
   }
 }
-def key_values[n](df: &Frame[n], name: string) -> List[KeyValue] = column_key_values(get_column(df, name))
+def key_values[n](df: Frame[n], name: string) -> List[KeyValue] = column_key_values(get_column(df, name))
 def key_values_to_column_like[m, n](keys: List[KeyValue], template: Column[n]) -> Column[m] = {
   match template with {
     | IntCol(col, ktmpl) => keys_to_int_col(keys, [], [])
@@ -350,30 +527,27 @@ def reindex_column[n, k](col: Column[n], idx_tensor: tensor[k, int64], idx_list:
 def list_gather_string(xs: List[string], idxs: List[int64]) -> List[string] = { map(fn (i: int64) -> index(xs, i), idxs) }
 def reindex_all[n](df: Frame[n], perm: tensor[n, int64]) -> Frame[n] = {
   perm_list = to_list(perm)
-  names = columns(df)
-  reindex_df = df
-  from_pairs(map(fn (name: string) -> (name, reindex_column(get_column(reindex_df, name), perm, perm_list)), names))
+  match df with {
+    | Frame { cols: cols, col_order: order } => {
+    pairs = hamt_entries(cols)
+    reindexed = map(fn (pair: (string, Column[n])) -> (pair.0, reindex_column(pair.1, perm, perm_list)), pairs)
+    from_pairs(reorder_column_pairs(reindexed, order, []))
+  }
+  }
 }
 def orient_perm[n](perm: tensor[n, int64], ascending: bool) -> tensor[n, int64] = { if ascending then perm else to_tensor(reverse_ints(to_list(perm), [])) }
 def reverse_ints(values: List[int64], acc: List[int64]) -> List[int64] = { if eq(len(values), zero_i64()) then acc else append(reverse_ints(drop(values, one_i64()), acc), index(values, zero_i64())) }
-def all_same_schema[n](frames: List[Frame[n]], base: &Frame[n]) -> bool = {
+def all_same_schema[n](frames: List[Frame[n]], base: Frame[n]) -> bool = {
   if eq(len(frames), zero_i64()) then true else {
     current = index(frames, zero_i64())
     if not(schema_eq(base, current)) then false else all_same_schema(drop(frames, one_i64()), base)
   }
 }
-def schema_eq[n](lhs: &Frame[n], rhs: &Frame[n]) -> bool = { if not(string_list_eq(columns(lhs), columns(rhs))) then false else schema_eq_names(columns(lhs), lhs, rhs) }
-def schema_eq_names[n](names: List[string], lhs: &Frame[n], rhs: &Frame[n]) -> bool = {
+def schema_eq[n](lhs: Frame[n], rhs: Frame[n]) -> bool = { if not(string_list_eq(columns(lhs), columns(rhs))) then false else schema_eq_names(columns(lhs), lhs, rhs) }
+def schema_eq_names[n](names: List[string], lhs: Frame[n], rhs: Frame[n]) -> bool = {
   if eq(len(names), zero_i64()) then true else {
     name = index(names, zero_i64())
     if not(column_type_eq(column_type(lhs, name), column_type(rhs, name))) then false else schema_eq_names(drop(names, one_i64()), lhs, rhs)
-  }
-}
-def concat_column_pairs[n, k](names: List[string], frames: List[Frame[n]], acc: List[(string, Column[k])]) -> List[(string, Column[k])] = {
-  if eq(len(names), zero_i64()) then acc else {
-    name = index(names, zero_i64())
-    col = concat_column(name, frames)
-    concat_column_pairs(drop(names, one_i64()), frames, append(acc, (name, col)))
   }
 }
 def concat_column[n, k](name: string, frames: List[Frame[n]]) -> Column[k] = {

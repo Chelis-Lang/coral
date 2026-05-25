@@ -21,7 +21,7 @@ def group_by[n](df: Frame[n], key_name: string) -> GroupedFrame[n] = {
   grouped = group_keys(key_values(df, key_name), [], [])
   GroupedFrame { frame: df, key_name: key_name, key_template: template, keys: grouped.0, groups: grouped.1 }
 }
-def agg_sum[n, m](gf: &GroupedFrame[n], col: string) -> Frame[m] = {
+def agg_sum[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
   match gf with {
     | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => match get_column(df, col) with {
     | FloatCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_sum"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> sum_f32(select_float_rows(to_list(xs), rows)), groups))))])
@@ -36,7 +36,7 @@ def agg_sum[n, m](gf: &GroupedFrame[n], col: string) -> Frame[m] = {
   }
   }
 }
-def agg_mean[n, m](gf: &GroupedFrame[n], col: string) -> Frame[m] = {
+def agg_mean[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
   match gf with {
     | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => match get_column(df, col) with {
     | FloatCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_mean"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> mean_f32(select_float_rows(to_list(xs), rows)), groups))))])
@@ -49,7 +49,7 @@ def agg_mean[n, m](gf: &GroupedFrame[n], col: string) -> Frame[m] = {
   }
   }
 }
-def agg_count[n, m](gf: &GroupedFrame[n]) -> Frame[m] = {
+def agg_count[n, m](gf: GroupedFrame[n]) -> Frame[m] = {
   match gf with {
     | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => {
     count_vals = to_tensor(map(fn (rows: List[int64]) -> len(rows), groups))
@@ -58,7 +58,7 @@ def agg_count[n, m](gf: &GroupedFrame[n]) -> Frame[m] = {
   }
   }
 }
-def agg_min[n, m](gf: &GroupedFrame[n], col: string) -> Frame[m] = {
+def agg_min[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
   match gf with {
     | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => match get_column(df, col) with {
     | FloatCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_min"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> min_f32(select_float_rows(to_list(xs), rows)), groups))))])
@@ -73,7 +73,7 @@ def agg_min[n, m](gf: &GroupedFrame[n], col: string) -> Frame[m] = {
   }
   }
 }
-def agg_max[n, m](gf: &GroupedFrame[n], col: string) -> Frame[m] = {
+def agg_max[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
   match gf with {
     | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => match get_column(df, col) with {
     | FloatCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_max"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> max_f32(select_float_rows(to_list(xs), rows)), groups))))])
@@ -88,24 +88,88 @@ def agg_max[n, m](gf: &GroupedFrame[n], col: string) -> Frame[m] = {
   }
   }
 }
-def agg[n, m](gf: &GroupedFrame[n], specs: List[(string, AggFn)]) -> Frame[m] = {
+def agg[n, m](gf: GroupedFrame[n], specs: List[(string, AggFn)]) -> Frame[m] = {
   match gf with {
-    | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => apply_specs(from_pairs([(key_name, key_values_to_column_like(keys, key_template))]), gf, specs)
+    | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => {
+    df_pairs = match df with {
+      | Frame { cols: cols, col_order: order } => hamt_entries(cols)
+    }
+    key_col = key_values_to_column_like(keys, key_template)
+    result_pairs = build_spec_pairs(df_pairs, groups, specs, [])
+    from_pairs(prepend_pair_local((key_name, key_col), result_pairs, []))
+  }
   }
 }
-def apply_specs[n, m](base: Frame[m], gf: &GroupedFrame[n], specs: List[(string, AggFn)]) -> Frame[m] = {
-  if eq(len(specs), zero_i64()) then base else {
+def prepend_pair_local[n](first: (string, Column[n]), rest: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = { prepend_pair_local_acc(rest, append(acc, first)) }
+def prepend_pair_local_acc[n](items: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = { if eq(len(items), zero_i64()) then acc else prepend_pair_local_acc(drop(items, one_i64()), append(acc, index(items, zero_i64()))) }
+def build_spec_pairs[n, m](df_pairs: List[(string, Column[n])], groups: List[List[int64]], specs: List[(string, AggFn)], acc: List[(string, Column[m])]) -> List[(string, Column[m])] = {
+  if eq(len(specs), zero_i64()) then acc else {
     spec = index(specs, zero_i64())
-    col = spec.0
+    col_name = spec.0
     fn0 = spec.1
-    next = match fn0 with {
-      | AggSum => merge_agg(base, agg_sum(gf, col), string_concat(col, "_sum"))
-      | AggMean => merge_agg(base, agg_mean(gf, col), string_concat(col, "_mean"))
-      | AggCount => merge_agg(base, agg_count(gf), "count")
-      | AggMin => merge_agg(base, agg_min(gf, col), string_concat(col, "_min"))
-      | AggMax => merge_agg(base, agg_max(gf, col), string_concat(col, "_max"))
+    extraction = extract_pair_by_name(df_pairs, col_name, [])
+    next_pair = match fn0 with {
+      | AggSum => (string_concat(col_name, "_sum"), apply_op_to_col(extraction.0, groups, AggSum))
+      | AggMean => (string_concat(col_name, "_mean"), apply_op_to_col(extraction.0, groups, AggMean))
+      | AggCount => ("count", apply_op_to_col(extraction.0, groups, AggCount))
+      | AggMin => (string_concat(col_name, "_min"), apply_op_to_col(extraction.0, groups, AggMin))
+      | AggMax => (string_concat(col_name, "_max"), apply_op_to_col(extraction.0, groups, AggMax))
     }
-    apply_specs(next, gf, drop(specs, one_i64()))
+    build_spec_pairs(extraction.1, groups, drop(specs, one_i64()), append(acc, next_pair))
+  }
+}
+def extract_pair_by_name[n](pairs: List[(string, Column[n])], target: string, acc: List[(string, Column[n])]) -> (Column[n], List[(string, Column[n])]) = {
+  if eq(len(pairs), zero_i64()) then fail("agg: column not found") else {
+    head_pair = index(pairs, zero_i64())
+    if eq(head_pair.0, target) then (head_pair.1, prepend_pair_local_acc(drop(pairs, one_i64()), acc)) else extract_pair_by_name(drop(pairs, one_i64()), target, append(acc, head_pair))
+  }
+}
+def apply_op_to_col[n, m](col: Column[n], groups: List[List[int64]], op: AggFn) -> Column[m] = {
+  match col with {
+    | FloatCol(xs) => apply_op_float(to_list(xs), groups, op)
+    | IntCol(xs, mask) => apply_op_int(to_list(xs), to_list(mask), groups, op)
+    | _ => fail("agg: only float and int columns are supported")
+  }
+}
+def apply_op_float[n](xs: List[f32], groups: List[List[int64]], op: AggFn) -> Column[n] = {
+  match op with {
+    | AggCount => {
+    counts = to_tensor(map(fn (rows: List[int64]) -> len(rows), groups))
+    IntCol(counts, all_false_mask(counts))
+  }
+    | _ => FloatCol(to_tensor(map(fn (rows: List[int64]) -> float_op_on_rows(xs, rows, op), groups)))
+  }
+}
+def float_op_on_rows(xs: List[f32], rows: List[int64], op: AggFn) -> f32 = {
+  selected = select_float_rows(xs, rows)
+  match op with {
+    | AggSum => sum_f32(selected)
+    | AggMean => mean_f32(selected)
+    | AggMin => min_f32(selected)
+    | AggMax => max_f32(selected)
+    | AggCount => cast(len(rows), f32)
+  }
+}
+def apply_op_int[n](xs: List[int64], mask: List[bool], groups: List[List[int64]], op: AggFn) -> Column[n] = {
+  match op with {
+    | AggCount => {
+    counts = to_tensor(map(fn (rows: List[int64]) -> len(rows), groups))
+    IntCol(counts, all_false_mask(counts))
+  }
+    | AggMean => FloatCol(to_tensor(map(fn (rows: List[int64]) -> mean_i64(select_int_rows(xs, filter_unmasked_rows(mask, rows))), groups)))
+    | _ => {
+    vals = to_tensor(map(fn (rows: List[int64]) -> int_op_on_rows(xs, mask, rows, op), groups))
+    IntCol(vals, all_false_mask(vals))
+  }
+  }
+}
+def int_op_on_rows(xs: List[int64], mask: List[bool], rows: List[int64], op: AggFn) -> int64 = {
+  selected = select_int_rows(xs, filter_unmasked_rows(mask, rows))
+  match op with {
+    | AggSum => sum_i64(selected)
+    | AggMin => min_i64(selected)
+    | AggMax => max_i64(selected)
+    | _ => fail("int_op_on_rows: unsupported")
   }
 }
 def value_counts[n, m](df: Frame[n], col_name: string) -> Frame[m] = {

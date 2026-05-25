@@ -16,3 +16,4 @@ Validated first-pass frame slice:
 - `Coral.Join`
 - `Coral.Window`
 - `Coral.Io`
+- `Coral.AsOf`

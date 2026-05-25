@@ -45,7 +45,7 @@ def empty[n](schema: Dict[string, ColumnType]) -> Frame[n] = {
   }, dict_entries(schema))
   Frame { cols: hamt_from_pairs(entries), col_order: map(fn (pair: (string, ColumnType)) -> pair.0, dict_entries(schema)) }
 }
-def get_column[n](df: Frame[n], name: string) -> Column[n] = {
+def get_column[n](df: &Frame[n], name: string) -> Column[n] = {
   match df with {
     | Frame { cols: cols, col_order: order } => match hamt_get(cols, name) with {
     | Some(value) => value
@@ -53,42 +53,42 @@ def get_column[n](df: Frame[n], name: string) -> Column[n] = {
   }
   }
 }
-def get_float_col[n](df: Frame[n], name: string) -> tensor[n, f32] = {
+def get_float_col[n](df: &Frame[n], name: string) -> tensor[n, f32] = {
   match get_column(df, name) with {
     | FloatCol(col) => col
     | _ => fail(string_concat("column is not float: ", name))
   }
 }
-def get_int_col[n](df: Frame[n], name: string) -> tensor[n, int64] = {
+def get_int_col[n](df: &Frame[n], name: string) -> tensor[n, int64] = {
   match get_column(df, name) with {
     | IntCol(col, imask) => col
     | _ => fail(string_concat("column is not int: ", name))
   }
 }
-def get_int_mask[n](df: Frame[n], name: string) -> tensor[n, bool] = {
+def get_int_mask[n](df: &Frame[n], name: string) -> tensor[n, bool] = {
   match get_column(df, name) with {
     | IntCol(gmvals, mask) => mask
     | _ => fail(string_concat("column is not int: ", name))
   }
 }
-def get_string_col[n](df: Frame[n], name: string) -> List[string] = {
+def get_string_col[n](df: &Frame[n], name: string) -> List[string] = {
   match get_column(df, name) with {
     | StringCol(col) => col
     | _ => fail(string_concat("column is not string: ", name))
   }
 }
-def get_bool_col[n](df: Frame[n], name: string) -> tensor[n, bool] = {
+def get_bool_col[n](df: &Frame[n], name: string) -> tensor[n, bool] = {
   match get_column(df, name) with {
     | BoolCol(col) => col
     | _ => fail(string_concat("column is not bool: ", name))
   }
 }
-def columns[n](df: Frame[n]) -> List[string] = {
+def columns[n](df: &Frame[n]) -> List[string] = {
   match df with {
     | Frame { cols: cols, col_order: order } => order
   }
 }
-def column_type[n](df: Frame[n], name: string) -> ColumnType = {
+def column_type[n](df: &Frame[n], name: string) -> ColumnType = {
   match get_column(df, name) with {
     | IntCol(ival, imask) => IntType
     | FloatCol(_) => FloatType
@@ -96,18 +96,23 @@ def column_type[n](df: Frame[n], name: string) -> ColumnType = {
     | BoolCol(_) => BoolType
   }
 }
-def nrows[n](df: Frame[n]) -> int64 = {
+def nrows[n](df: &Frame[n]) -> int64 = {
   names = columns(df)
   if eq(len(names), zero_i64()) then zero_i64() else column_len(get_column(df, index(names, zero_i64())))
 }
-def ncols[n](df: Frame[n]) -> int64 = len(columns(df))
+def ncols[n](df: &Frame[n]) -> int64 = len(columns(df))
 def filter[n, k](df: Frame[n], mask: tensor[n, bool]) -> Frame[k] = {
   mask_list = to_list(mask)
   if neq(len(mask_list), nrows(df)) then fail("filter: mask length mismatch") else {
     idx_list = mask_to_index_list(enumerate(mask_list), [])
-    if eq(len(idx_list), zero_i64()) then from_pairs(map(fn (name: string) -> (name, empty_column_like(get_column(df, name))), columns(df))) else {
+    names = columns(df)
+    if eq(len(idx_list), zero_i64()) then {
+      empty_df = df
+      from_pairs(map(fn (name: string) -> (name, empty_column_like(get_column(empty_df, name))), names))
+    } else {
       idx = to_tensor(idx_list)
-      from_pairs(map(fn (name: string) -> (name, reindex_column(get_column(df, name), idx, idx_list)), columns(df)))
+      reindex_df = df
+      from_pairs(map(fn (name: string) -> (name, reindex_column(get_column(reindex_df, name), idx, idx_list)), names))
     }
   }
 }
@@ -124,10 +129,15 @@ def slice[n, k](df: Frame[n], start: int64, finish: int64) -> Frame[k] = {
   total = nrows(df)
   lo = int_max(zero_i64(), start)
   hi = int_min(total, finish)
-  if lte(hi, lo) then from_pairs(map(fn (name: string) -> (name, empty_column_like(get_column(df, name))), columns(df))) else {
+  names = columns(df)
+  if lte(hi, lo) then {
+    empty_df = df
+    from_pairs(map(fn (name: string) -> (name, empty_column_like(get_column(empty_df, name))), names))
+  } else {
     idx_list = range(lo, hi)
     idx = to_tensor(idx_list)
-    from_pairs(map(fn (name: string) -> (name, reindex_column(get_column(df, name), idx, idx_list)), columns(df)))
+    reindex_df = df
+    from_pairs(map(fn (name: string) -> (name, reindex_column(get_column(reindex_df, name), idx, idx_list)), names))
   }
 }
 def str_char_lt(lch: string, rch: string) -> bool = { lt(char_code(lch), char_code(rch)) }
@@ -168,11 +178,11 @@ def with_column[n](df: Frame[n], name: string, col: Column[n]) -> Frame[n] = {
 }
 def mutate[n](df: Frame[n], name: string, col: Column[n]) -> Frame[n] = with_column(df, name, col)
 def rename[n](df: Frame[n], old_name: string, new_name: string) -> Frame[n] = {
-  if contains_string(columns(df), new_name) then fail("rename: target column already exists") else match df with {
-    | Frame { cols: cols, col_order: order } => {
+  if contains_string(columns(df), new_name) then fail("rename: target column already exists") else {
     value = get_column(df, old_name)
-    Frame { cols: hamt_put(hamt_remove(cols, old_name), new_name, value), col_order: replace_name(order, old_name, new_name, []) }
-  }
+    match df with {
+      | Frame { cols: cols, col_order: order } => { Frame { cols: hamt_put(hamt_remove(cols, old_name), new_name, value), col_order: replace_name(order, old_name, new_name, []) } }
+    }
   }
 }
 def drop_column[n](df: Frame[n], name: string) -> Frame[n] = {
@@ -231,14 +241,17 @@ def concat[n, k](frames: List[Frame[n]]) -> Frame[k] = {
   if eq(len(frames), zero_i64()) then Frame { cols: hamt_from_pairs([]), col_order: [] } else {
     base = index(frames, zero_i64())
     rest = drop(frames, one_i64())
-    if not(all_same_schema(rest, base)) then fail("concat: schema mismatch") else from_pairs(map(fn (name: string) -> (name, concat_column(name, frames)), columns(base)))
+    if not(all_same_schema(rest, base)) then fail("concat: schema mismatch") else from_pairs(concat_column_pairs(columns(base), frames, []))
   }
 }
 def describe[n, m](df: Frame[n]) -> Frame[m] = {
   stats = ["count", "mean", "std", "min", "25%", "50%", "75%", "max"]
-  numeric = list_filter_string(fn (name: string) -> is_numeric_type(column_type(df, name)), columns(df))
+  names = columns(df)
+  type_df = df
+  numeric = list_filter_string(fn (name: string) -> is_numeric_type(column_type(type_df, name)), names)
   stat_col = ("stat", StringCol(stats))
-  value_cols = map(fn (name: string) -> (name, describe_column(get_column(df, name))), numeric)
+  value_df = df
+  value_cols = map(fn (name: string) -> (name, describe_column(get_column(value_df, name))), numeric)
   from_pairs(prepend_pair_column(stat_col, value_cols))
 }
 def key_id(value: KeyValue) -> string = {
@@ -249,7 +262,7 @@ def key_id(value: KeyValue) -> string = {
     | KeyBoolValue(v) => string_concat("b:", to_string(v))
   }
 }
-def key_values[n](df: Frame[n], name: string) -> List[KeyValue] = column_key_values(get_column(df, name))
+def key_values[n](df: &Frame[n], name: string) -> List[KeyValue] = column_key_values(get_column(df, name))
 def key_values_to_column_like[m, n](keys: List[KeyValue], template: Column[n]) -> Column[m] = {
   match template with {
     | IntCol(col, ktmpl) => keys_to_int_col(keys, [], [])
@@ -337,21 +350,30 @@ def reindex_column[n, k](col: Column[n], idx_tensor: tensor[k, int64], idx_list:
 def list_gather_string(xs: List[string], idxs: List[int64]) -> List[string] = { map(fn (i: int64) -> index(xs, i), idxs) }
 def reindex_all[n](df: Frame[n], perm: tensor[n, int64]) -> Frame[n] = {
   perm_list = to_list(perm)
-  from_pairs(map(fn (name: string) -> (name, reindex_column(get_column(df, name), perm, perm_list)), columns(df)))
+  names = columns(df)
+  reindex_df = df
+  from_pairs(map(fn (name: string) -> (name, reindex_column(get_column(reindex_df, name), perm, perm_list)), names))
 }
 def orient_perm[n](perm: tensor[n, int64], ascending: bool) -> tensor[n, int64] = { if ascending then perm else to_tensor(reverse_ints(to_list(perm), [])) }
 def reverse_ints(values: List[int64], acc: List[int64]) -> List[int64] = { if eq(len(values), zero_i64()) then acc else append(reverse_ints(drop(values, one_i64()), acc), index(values, zero_i64())) }
-def all_same_schema[n](frames: List[Frame[n]], base: Frame[n]) -> bool = {
+def all_same_schema[n](frames: List[Frame[n]], base: &Frame[n]) -> bool = {
   if eq(len(frames), zero_i64()) then true else {
     current = index(frames, zero_i64())
     if not(schema_eq(base, current)) then false else all_same_schema(drop(frames, one_i64()), base)
   }
 }
-def schema_eq[n](lhs: Frame[n], rhs: Frame[n]) -> bool = { if not(string_list_eq(columns(lhs), columns(rhs))) then false else schema_eq_names(columns(lhs), lhs, rhs) }
-def schema_eq_names[n](names: List[string], lhs: Frame[n], rhs: Frame[n]) -> bool = {
+def schema_eq[n](lhs: &Frame[n], rhs: &Frame[n]) -> bool = { if not(string_list_eq(columns(lhs), columns(rhs))) then false else schema_eq_names(columns(lhs), lhs, rhs) }
+def schema_eq_names[n](names: List[string], lhs: &Frame[n], rhs: &Frame[n]) -> bool = {
   if eq(len(names), zero_i64()) then true else {
     name = index(names, zero_i64())
     if not(column_type_eq(column_type(lhs, name), column_type(rhs, name))) then false else schema_eq_names(drop(names, one_i64()), lhs, rhs)
+  }
+}
+def concat_column_pairs[n, k](names: List[string], frames: List[Frame[n]], acc: List[(string, Column[k])]) -> List[(string, Column[k])] = {
+  if eq(len(names), zero_i64()) then acc else {
+    name = index(names, zero_i64())
+    col = concat_column(name, frames)
+    concat_column_pairs(drop(names, one_i64()), frames, append(acc, (name, col)))
   }
 }
 def concat_column[n, k](name: string, frames: List[Frame[n]]) -> Column[k] = {

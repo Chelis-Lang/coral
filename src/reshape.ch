@@ -29,7 +29,7 @@ def pivot_add_columns[m](out: Frame[m], col_keys: List[string], index_keys: List
     pivot_add_columns(next, drop(col_keys, one_i64()), index_keys, col_vals, value_vals, index_vals, row_count)
   }
 }
-def pivot[n, m](df: Frame[n], index_col: string, columns_col: string, values_col: string) -> Frame[m] = {
+def pivot[n, m](df: &Frame[n], index_col: string, columns_col: string, values_col: string) -> Frame[m] = {
   match get_column(df, values_col) with {
     | FloatCol(value_tensor) => {
     row_count = nrows(df)
@@ -44,7 +44,7 @@ def pivot[n, m](df: Frame[n], index_col: string, columns_col: string, values_col
     | _ => fail("pivot: values_col must be float")
   }
 }
-def melt_one_col[n](df: Frame[n], col_name: string, num_rows: int64, row: int64, var_acc: List[string], val_acc: List[f32]) -> (List[string], List[f32]) = {
+def melt_one_col[n](df: &Frame[n], col_name: string, num_rows: int64, row: int64, var_acc: List[string], val_acc: List[f32]) -> (List[string], List[f32]) = {
   if gte(row, num_rows) then (var_acc, val_acc) else {
     cell = match get_column(df, col_name) with {
       | FloatCol(xs) => index(to_list(xs), row)
@@ -53,7 +53,7 @@ def melt_one_col[n](df: Frame[n], col_name: string, num_rows: int64, row: int64,
     melt_one_col(df, col_name, num_rows, add(row, one_i64()), append(var_acc, col_name), append(val_acc, cell))
   }
 }
-def melt_var_val_cols[n](df: Frame[n], value_cols: List[string], num_rows: int64, var_acc: List[string], val_acc: List[f32]) -> (List[string], List[f32]) = {
+def melt_var_val_cols[n](df: &Frame[n], value_cols: List[string], num_rows: int64, var_acc: List[string], val_acc: List[f32]) -> (List[string], List[f32]) = {
   if eq(len(value_cols), zero_i64()) then (var_acc, val_acc) else {
     pair = melt_one_col(df, index(value_cols, zero_i64()), num_rows, zero_i64(), var_acc, val_acc)
     melt_var_val_cols(df, drop(value_cols, one_i64()), num_rows, pair.0, pair.1)
@@ -61,7 +61,7 @@ def melt_var_val_cols[n](df: Frame[n], value_cols: List[string], num_rows: int64
 }
 def melt_append_col_pass(id_vals: List[string], num_rows: int64, row: int64, acc: List[string]) -> List[string] = { if gte(row, num_rows) then acc else melt_append_col_pass(id_vals, num_rows, add(row, one_i64()), append(acc, index(id_vals, row))) }
 def melt_repeat_col(id_vals: List[string], num_rows: int64, reps: int64, acc: List[string]) -> List[string] = { if lte(reps, zero_i64()) then acc else melt_repeat_col(id_vals, num_rows, sub(reps, one_i64()), melt_append_col_pass(id_vals, num_rows, zero_i64(), acc)) }
-def melt_build_id_cols[n, m](id_cols: List[string], df: Frame[n], value_cols_count: int64, num_rows: int64, base: Frame[m]) -> Frame[m] = {
+def melt_build_id_cols[n, m](id_cols: List[string], df: &Frame[n], value_cols_count: int64, num_rows: int64, base: Frame[m]) -> Frame[m] = {
   if eq(len(id_cols), zero_i64()) then base else {
     name = index(id_cols, zero_i64())
     col_data = melt_repeat_col(get_string_col(df, name), num_rows, value_cols_count, [])
@@ -69,7 +69,7 @@ def melt_build_id_cols[n, m](id_cols: List[string], df: Frame[n], value_cols_cou
     melt_build_id_cols(drop(id_cols, one_i64()), df, value_cols_count, num_rows, next)
   }
 }
-def melt[n, m](df: Frame[n], id_cols: List[string], value_cols: List[string]) -> Frame[m] = {
+def melt[n, m](df: &Frame[n], id_cols: List[string], value_cols: List[string]) -> Frame[m] = {
   num_rows = nrows(df)
   var_val = melt_var_val_cols(df, value_cols, num_rows, [], [])
   var_col = StringCol(var_val.0)
@@ -77,5 +77,5 @@ def melt[n, m](df: Frame[n], id_cols: List[string], value_cols: List[string]) ->
   base = from_pairs([("variable", var_col), ("value", val_col)])
   melt_build_id_cols(id_cols, df, len(value_cols), num_rows, base)
 }
-def stack[n, m](df: Frame[n]) -> Frame[m] = melt(df, [], columns(df))
-def unstack[n, m](df: Frame[n], index_col: string) -> Frame[m] = pivot(df, index_col, "variable", "value")
+def stack[n, m](df: &Frame[n]) -> Frame[m] = melt(df, [], columns(df))
+def unstack[n, m](df: &Frame[n], index_col: string) -> Frame[m] = pivot(df, index_col, "variable", "value")

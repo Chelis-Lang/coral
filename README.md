@@ -41,6 +41,7 @@ scale.
 | `Coral.Window` | rolling sum/mean/std/min/max and EWM |
 | `Coral.Io` | CSV and JSON read/write |
 | `Coral.Reshape` | `pivot`, `melt`, `stack`, `unstack` |
+| `Coral.AsOf` | sorted as-of lookup and join helpers over `int64` keys with `f32` values |
 
 ## Toolchain
 

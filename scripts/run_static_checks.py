@@ -39,6 +39,7 @@ def main() -> int:
         "Coral.Window": SRC / "window.ch",
         "Coral.Io": SRC / "io.ch",
         "Coral.Reshape": SRC / "reshape.ch",
+        "Coral.AsOf": SRC / "asof.ch",
         "Coral.Internal.Hamt": SRC / "internal" / "hamt.ch",
     }
     if not smoke.exists():

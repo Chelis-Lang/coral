@@ -5,9 +5,9 @@ def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
 def neg_one_i64() -> int64 = cast(-1, int64)
 def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))
-def inner_join[n, m, k](left: Frame[n], right: Frame[m], on: string) -> Frame[k] = build_join(left, right, on, false)
-def left_join[n, m, k](left: Frame[n], right: Frame[m], on: string) -> Frame[k] = build_join(left, right, on, true)
-def outer_join[n, m, k](left: Frame[n], right: Frame[m], on: string) -> Frame[k] = {
+def inner_join[n, m, k](left: &Frame[n], right: &Frame[m], on: string) -> Frame[k] = build_join(left, right, on, false)
+def left_join[n, m, k](left: &Frame[n], right: &Frame[m], on: string) -> Frame[k] = build_join(left, right, on, true)
+def outer_join[n, m, k](left: &Frame[n], right: &Frame[m], on: string) -> Frame[k] = {
   lkeys = key_values(left, on)
   rkeys = key_values(right, on)
   left_pairs = join_pairs(lkeys, rkeys, true, zero_i64(), [])
@@ -15,7 +15,7 @@ def outer_join[n, m, k](left: Frame[n], right: Frame[m], on: string) -> Frame[k]
   all_pairs = append_pairs(left_pairs, right_extra)
   assemble_outer_join(left, right, on, lkeys, rkeys, all_pairs)
 }
-def build_join[n, m, k](left: Frame[n], right: Frame[m], on: string, keep_left: bool) -> Frame[k] = {
+def build_join[n, m, k](left: &Frame[n], right: &Frame[m], on: string, keep_left: bool) -> Frame[k] = {
   left_keys = key_values(left, on)
   right_keys = key_values(right, on)
   pairs = join_pairs(left_keys, right_keys, keep_left, zero_i64(), [])
@@ -37,19 +37,21 @@ def build_outer_key_strs(lkeys: List[KeyValue], rkeys: List[KeyValue], left_rows
     build_outer_key_strs(lkeys, rkeys, drop(left_rows, one_i64()), drop(right_rows, one_i64()), append(acc, v))
   }
 }
-def assemble_outer_join[n, m, k](left: Frame[n], right: Frame[m], on: string, lkeys: List[KeyValue], rkeys: List[KeyValue], pairs: List[(int64, int64)]) -> Frame[k] = {
+def assemble_outer_join[n, m, k](left: &Frame[n], right: &Frame[m], on: string, lkeys: List[KeyValue], rkeys: List[KeyValue], pairs: List[(int64, int64)]) -> Frame[k] = {
   left_rows = map(fn (pair: (int64, int64)) -> pair.0, pairs)
   right_rows = map(fn (pair: (int64, int64)) -> pair.1, pairs)
   key_strs = build_outer_key_strs(lkeys, rkeys, left_rows, right_rows, [])
-  left_cols = map(fn (name: string) -> if eq(name, on) then (name, StringCol(key_strs)) else (name, build_column(get_column(left, name), left_rows, false)), columns(left))
-  right_cols = map(fn (name: string) -> if eq(name, on) then ("", StringCol([])) else (right_name(columns(left), name), build_column(get_column(right, name), right_rows, true)), columns(right))
+  left_names = columns(left)
+  left_cols = outer_left_columns(left_names, left, on, key_strs, left_rows, [])
+  right_cols = right_join_columns(columns(right), left_names, right, on, right_rows, [])
   from_pairs(append_named(left_cols, right_cols))
 }
-def assemble_join[n, m, k](left: Frame[n], right: Frame[m], on: string, pairs: List[(int64, int64)]) -> Frame[k] = {
+def assemble_join[n, m, k](left: &Frame[n], right: &Frame[m], on: string, pairs: List[(int64, int64)]) -> Frame[k] = {
   left_rows = map(fn (pair: (int64, int64)) -> pair.0, pairs)
   right_rows = map(fn (pair: (int64, int64)) -> pair.1, pairs)
-  left_cols = map(fn (name: string) -> (name, build_column(get_column(left, name), left_rows, false)), columns(left))
-  right_cols = map(fn (name: string) -> if eq(name, on) then ("", StringCol([])) else (right_name(columns(left), name), build_column(get_column(right, name), right_rows, true)), columns(right))
+  left_names = columns(left)
+  left_cols = left_join_columns(left_names, left, left_rows, [])
+  right_cols = right_join_columns(columns(right), left_names, right, on, right_rows, [])
   from_pairs(append_named(left_cols, right_cols))
 }
 def right_unmatched_pairs(left_keys: List[KeyValue], right_keys: List[KeyValue], idx: int64, acc: List[(int64, int64)]) -> List[(int64, int64)] = {
@@ -74,6 +76,27 @@ def matching_rows(keys: List[KeyValue], key: string, idx: int64, acc: List[int64
   }
 }
 def left_pairs(left_row: int64, right_rows: List[int64]) -> List[(int64, int64)] = map(fn (right_row: int64) -> (left_row, right_row), right_rows)
+def outer_left_columns[n, k](names: List[string], left: &Frame[n], on: string, key_strs: List[string], left_rows: List[int64], acc: List[(string, Column[k])]) -> List[(string, Column[k])] = {
+  if eq(len(names), zero_i64()) then acc else {
+    name = index(names, zero_i64())
+    col = if eq(name, on) then StringCol(key_strs) else build_column(get_column(left, name), left_rows, false)
+    outer_left_columns(drop(names, one_i64()), left, on, key_strs, left_rows, append(acc, (name, col)))
+  }
+}
+def left_join_columns[n, k](names: List[string], left: &Frame[n], left_rows: List[int64], acc: List[(string, Column[k])]) -> List[(string, Column[k])] = {
+  if eq(len(names), zero_i64()) then acc else {
+    name = index(names, zero_i64())
+    col = build_column(get_column(left, name), left_rows, false)
+    left_join_columns(drop(names, one_i64()), left, left_rows, append(acc, (name, col)))
+  }
+}
+def right_join_columns[m, k](names: List[string], left_names: List[string], right: &Frame[m], on: string, right_rows: List[int64], acc: List[(string, Column[k])]) -> List[(string, Column[k])] = {
+  if eq(len(names), zero_i64()) then acc else {
+    name = index(names, zero_i64())
+    next = if eq(name, on) then acc else append(acc, (right_name(left_names, name), build_column(get_column(right, name), right_rows, true)))
+    right_join_columns(drop(names, one_i64()), left_names, right, on, right_rows, next)
+  }
+}
 def append_pairs(lhs: List[(int64, int64)], rhs: List[(int64, int64)]) -> List[(int64, int64)] = { if eq(len(rhs), zero_i64()) then lhs else append_pairs(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64())) }
 def append_named(lhs: List[(string, Column[n])], rhs: List[(string, Column[n])]) -> List[(string, Column[n])] = {
   if eq(len(rhs), zero_i64()) then lhs else {

@@ -14,7 +14,7 @@ env:
   CHELIS_TAG: v0.7.16
   NAUTILUS_TAG: v0.7.16
   PACKAGE_NAME: coral
-  PACKAGE_VERSION: 0.7.14
+  PACKAGE_VERSION: 0.7.15
 
 jobs:
   build-reef-assets:

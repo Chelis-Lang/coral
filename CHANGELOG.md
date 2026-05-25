@@ -6,6 +6,12 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.15] - 2026-05-25
+
+Parity-golden follow-up for the 0.7.14 AsOf release. Regenerates the
+frame golden metadata under the current pandas generator so main CI and
+release assets agree on the checked-in parity corpus.
+
 ## [0.7.14] - 2026-05-25
 
 FlukeBall support release. Adds `Coral.AsOf` and wires the API smoke

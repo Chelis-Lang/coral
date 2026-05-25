@@ -6,6 +6,20 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.16] - 2026-05-25
+
+Retargets Coral to chelis 0.7.18 + nautilus 0.7.17. Closes the chelis #237
+audit by restructuring 13 owned-linear `Frame[n]` / `GroupedFrame[n]`
+reuse-after-consume sites across `src/frame.ch` (head, tail, slice,
+filter, with_column, concat, describe, sort_by, reindex_all),
+`src/reshape.ch` (pivot, melt), `src/groupby.ch` (agg),
+`src/join.ch` (assemble_outer_join, assemble_join), and the matching
+`&Frame` → owned-Frame accessor signature updates in `src/io.ch` and
+`src/apismoke.ch`. Public Frame[n] / GroupedFrame[n] annotations
+preserved; internal helpers added (compute_sort_perm_for,
+build_describe_pairs, extract_named_pair_local, etc.). Parity-golden
+metadata + gen_goldens.py em-dash aligned.
+
 ## [0.7.15] - 2026-05-25
 
 Parity-golden follow-up for the 0.7.14 AsOf release. Regenerates the

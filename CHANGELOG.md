@@ -6,6 +6,66 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.14] - 2026-05-25
+
+FlukeBall support release. Adds `Coral.AsOf` and wires the API smoke
+surface for as-of lookup behavior used by betting and sports history
+pipelines. Retargets Coral to chelis 0.7.16 and Nautilus 0.7.15 so CI,
+release, and Reef metadata agree on the current upstream shell set.
+
+## [0.7.13] — 2026-05-22
+
+Compiler-pin bump to chelis 0.7.11, which carries a stricter linearity
+analysis for tensor-carrying ADTs (per `spec/04-type-system.md` §8.4 and
+`spec/design/implicit_linearity.md`). Coral's `Frame[n]` is
+tensor-carrying via `Hamt[Column[n]]`, so 19 latent `UseAfterConsume`
+violations surfaced on the bump. All 19 are real source bugs that the
+0.7.10 checker did not flag; they are fixed in this release. Nautilus
+dep bumped from 0.7.12 to 0.7.13 (matching pin-alignment release of
+nautilus). Package version `0.7.12` → `0.7.13`; CI/release workflow
+env vars updated for v0.7.11 / v0.7.13.
+
+### Fixed — linearity of `Frame` across accessor calls
+
+The root cause: read-only accessors (`nrows`, `ncols`, `columns`,
+`get_column`, `get_float_col`, `get_int_col`, `get_string_col`,
+`get_bool_col`, `get_int_mask`, `column_type`, `key_values`) were
+declared as taking owned `Frame[n]`, which consumed the frame on every
+call. Patterns like `if neq(len(mask_list), nrows(df)) then ... else
+... get_column(df, name) ...` then tripped use-after-consume when the
+later `get_column` (often inside a `map(fn (name) -> ..., columns(df))`
+closure) saw `df` already consumed.
+
+Fix, in three patterns:
+
+- **Accessor signatures changed to borrow** (`&Frame[n]` parameter).
+  Auto-borrow at call sites keeps the existing API for callers passing
+  owned `Frame[n]`; return types unchanged. Same change applied to
+  `Coral.Io` rendering helpers (`render_csv`, `render_json`, `csv_rows`,
+  `csv_row`, `json_rows_out`, `json_row`, `row_count`, `write_csv_frame`,
+  `write_json_frame`) and to `Coral.Reshape.melt_one_col`,
+  `melt_var_val_cols`, `melt_build_id_cols`.
+- **Closure-capture fan-out replaced with recursive helpers.** Where a
+  function had two `map(fn (...) -> ... df ..., ...)` calls both
+  capturing `df` (closure capture is a non-fan-out consume and is not
+  auto-copied), the second is rewritten as a recursive helper taking
+  `df: &Frame[n]`. Applies to `Coral.Frame.describe`
+  (`numeric_column_names`), `Coral.Frame.concat` (`concat_build_pairs`),
+  and the two join assemblers in `Coral.Join` (`build_outer_left_cols`,
+  `build_outer_right_cols`, `build_join_left_cols`).
+- **`GroupedFrame` accessor signatures changed to borrow.**
+  `Coral.GroupBy.{agg_sum, agg_mean, agg_count, agg_min, agg_max}` now
+  take `gf: &GroupedFrame[n]`. `Coral.GroupBy.agg` extracts its initial
+  base via a new `initial_agg_base(gf: &GroupedFrame[n])` helper so the
+  match-on-`gf` does not consume the scrutinee before the recursive
+  `apply_specs(_, gf, _)` tail call.
+
+Behavior preserved end-to-end: `chelis test tests/ --jobs auto` →
+65 passed, 0 failed under chelis 0.7.11. `chelis check src/*.ch` →
+score 1, errors []. No public surface change beyond `&Frame[n]` /
+`&GroupedFrame[n]` borrow signatures, which are call-site backward
+compatible (owned `Frame[n]` auto-borrows).
+
 ## [0.7.12] — 2026-05-22
 
 nautilus dep bump to 0.7.12, which carries the WS-A warning-regression

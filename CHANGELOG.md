@@ -6,6 +6,20 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.17] - 2026-05-26
+
+Retargets Coral to chelis 0.7.19 (no source changes; bug-fix-only
+toolchain bump). Chelis 0.7.19 ships six bug fixes: doc-filename-convention
+lint rule path-based opt-in (#190), backend-c emits f32/f64 constants via
+bit pattern instead of a lossy format string (#189), `grad` is routed
+through `grad_dag_checked` and Floor/Ceil/Argmax/Argmin emit
+AdError::NotSupported (#197), `chelis check` exits non-zero when errors
+are present (#207), GitHub Actions bumped to Node-24-compatible versions
+(#188), and runtime shape semantics documented in spec §4.7 (#208), plus
+the red-team follow-up bundle that closed 4 M1/M2/L1/L2 findings from
+the #207 review. Nautilus stays at v0.7.17 (its chelis 0.7.19 alignment
+release has not been tagged at the time of this Coral release).
+
 ## [0.7.16] - 2026-05-25
 
 Retargets Coral to chelis 0.7.18 + nautilus 0.7.17. Closes the chelis #237

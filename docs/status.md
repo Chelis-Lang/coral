@@ -33,11 +33,11 @@ Known deferred items:
 Test harness layout (Phase 3t):
 
 - `tests/*.ch` — Chelis-native tests run via
-  `chelis test tests/ --jobs auto`. 65 tests across frame, window,
+  `chelis test tests/ --jobs auto`. 70 tests across frame, window,
   groupby, join, reshape, io, nan, internal. All expected values are
   mathematical identities, hand-computed from inputs, structural
   assertions, or round-trip identities — never pandas-derived.
-- `parity/` — pandas-comparison oracle. `parity/run_parity.py` runs the
+- `parity/` — pandas comparison oracle. `parity/run_parity.py` runs the
   golden inventory check, `parity/gen_goldens.py --check` (regenerates
   goldens from pandas and compares), a 2-fixture window runtime parity
   cross-check (rolling_mean + ewm), and the negative test suite.
@@ -49,7 +49,7 @@ Test harness layout (Phase 3t):
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints
-  typecheck on published `chelis v0.7.6`
+  typecheck on published `chelis v0.7.20`
 - 8 `tests/*.ch` modules cover construction, filter (via mask
   consumers), head/tail/slice, rename/with_column/drop, sort_by
   (string asc/desc, float), concat, describe, single-key aggregations
@@ -63,7 +63,7 @@ What is currently proven:
 - 44 checked-in `parity/goldens/*.json` fixtures (frame/groupby/io/join/
   window/reshape) are generated from pandas
 - `parity/run_parity.py` validates golden inventory, runs the
-  pandas-comparison check, executes a 2-fixture window runtime
+  pandas comparison check, executes a 2-fixture window runtime
   cross-check (`rolling_mean_w3` + `ewm_alpha_0_5` build+link+run), and
   checks the negative test suite. The remaining rolling fixtures
   (sum/std/min/max) are pandas-validated via `gen_goldens.py --check`

@@ -6,6 +6,13 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.18] - 2026-05-29
+
+Retargets Coral to chelis 0.7.20 and Nautilus 0.7.19. No Coral API
+surface change; this is a toolchain/dependency alignment release for
+the chelis 0.7.20 default `chelis test` batching behavior and the
+matching Nautilus package release.
+
 ## [0.7.17] - 2026-05-26
 
 Retargets Coral to chelis 0.7.19 (no source changes; bug-fix-only
@@ -107,7 +114,7 @@ close-out and the WS-B structural plateau-stop hardening for
 `Nautilus.CurveFit`, `Nautilus.Ode`, and `Nautilus.Integrate` (aligned
 with the `Nautilus.Roots` discipline shipped in 0.7.11). No coral
 source changes. No compiler-pin change (still `=0.7.10`). Also adds
-`docs/maintenance-schedule.md` tracking the GitHub Actions Node 20 →
+`docs/maintenance_schedule.md` tracking the GitHub Actions Node 20 →
 Node 24 migration deadline (2026-06-02); no CI changes this release.
 
 Verified under chelis 0.7.10 / nautilus 0.7.12: `chelis reef build`
@@ -156,7 +163,7 @@ tests/` passes 65/65; `chelis lint --check .` reports 0 warnings,
 Three `docs/` files renamed from SCREAMING_SNAKE_CASE to kebab-case
 to satisfy `doc-filename-convention §8.5` (`RELEASES.md` →
 `releases.md`, `STATUS.md` → `status.md`, `UPSTREAM_BUGS.md` →
-`upstream-bugs.md`); all references updated. Em-dash fixes in
+`upstream_bugs.md`); all references updated. Em-dash fixes in
 `parity/gen_goldens.py` and `parity/run_parity.py` for
 `no-em-dash-in-public-strings §8.6`.
 
@@ -224,7 +231,7 @@ Correctness fixes (red-team surfaced; all pre-existing latent bugs):
   cell when the rest of the column is int-or-null (→ IntCol with
   mask) or float-or-null (→ FloatCol with NaN at null positions).
 
-Known limitations carried forward (see `docs/upstream-bugs.md`):
+Known limitations carried forward (see `docs/upstream_bugs.md`):
 
 - `is_nan` is currently O(n) host-path: chelis 0.7.7's overload
   resolution of `neq(&tensor, &tensor)` does not return a bool

@@ -5,14 +5,14 @@
 # Getting Started
 
 - [Installation](getting-started/installation.md)
-- [First Dataframe](getting-started/first-dataframe.md)
+- [First Dataframe](getting-started/first_dataframe.md)
 
 # Frame
 
 - [Construction](frame/construction.md)
 - [Filtering](frame/filtering.md)
 - [Mutation](frame/mutation.md)
-- [NaN Handling](frame/nan-handling.md)
+- [NaN Handling](frame/nan_handling.md)
 - [Concatenation](frame/concatenation.md)
 - [Describe](frame/describe.md)
 
@@ -38,7 +38,7 @@
 
 # Reference
 
-- [Pandas Comparison](appendix/pandas-comparison.md)
+- [Pandas Comparison](appendix/pandas_comparison.md)
 
 # Appendix
 

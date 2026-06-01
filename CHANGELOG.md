@@ -6,6 +6,16 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.19] - 2026-06-01
+
+Compiler-pin alignment for chelis 0.7.21. `compiler = "=0.7.20"` to
+`"=0.7.21"`; the `nautilus` dependency 0.7.19 to 0.7.20 (the 0.7.21-pinning
+release); CI / release workflow env vars (`CHELIS_TAG`, `CHELIS_VERSION`,
+`NAUTILUS_TAG`, `PACKAGE_VERSION`) updated to track v0.7.21 / nautilus
+v0.7.20. Package version bumped 0.7.18 to 0.7.19. No Coral API changes
+(70 `chelis test` cases pass unchanged). Part of the coordinated chelis
+0.7.21 release cascade.
+
 ## [0.7.18] - 2026-05-29
 
 Retargets Coral to chelis 0.7.20 and Nautilus 0.7.19. No Coral API

@@ -17,6 +17,7 @@ import Coral.Join (inner_join, left_join, outer_join)
 import Coral.Reshape (pivot, melt, stack, unstack)
 import Coral.Window (rolling_mean, ewm)
 import Coral.Io (read_csv_frame, write_csv_frame, read_json_frame, write_json_frame)
+import Coral.PlayerData (team_starting_strength_fixture)
 ```
 
 ### Deep
@@ -196,3 +197,6 @@ def main() -> int64 = {
 - `Coral.Reshape`: `pivot`, `melt`, `stack`, `unstack`
 - `Coral.Window`: `rolling_mean`, `rolling_std`, `rolling_max`, `ewm`
 - `Coral.Io`: CSV + JSON read/write; Parquet upstream-blocked
+- `Coral.PlayerData`: deterministic placeholder `match_lineup`, `recent_form`,
+  `team_starting_strength`, `team_starting_strength_fixture`, and
+  `position_distribution` accessors for football-specific probes

@@ -6,6 +6,11 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `Coral.PlayerData` placeholder accessors for deterministic lineup,
+  recent-form, starting-strength, and position-distribution probes.
+
 ## [0.7.18] - 2026-05-29
 
 Retargets Coral to chelis 0.7.20 and Nautilus 0.7.19. No Coral API

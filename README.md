@@ -42,6 +42,7 @@ scale.
 | `Coral.Io` | CSV and JSON read/write |
 | `Coral.Reshape` | `pivot`, `melt`, `stack`, `unstack` |
 | `Coral.AsOf` | sorted as-of lookup and join helpers over `int64` keys with `f32` values |
+| `Coral.PlayerData` | deterministic football player-data placeholder accessors for package-local probes |
 
 ## Toolchain
 
@@ -78,6 +79,8 @@ python parity/run_parity.py            # pandas comparison oracle
 - `sort_by` covers int, float, bool, and string columns
 - `outer_join` is implemented and golden-validated
 - `Coral.Reshape` ships `pivot`, `melt`, `stack`, and `unstack`
+- `Coral.PlayerData` exposes deterministic placeholder lineup, form, strength, and
+  position-distribution accessors while real football data plumbing remains external
 - Parquet I/O is upstream-blocked (see `docs/upstream_bugs.md`)
 - null semantics are intentionally narrower than pandas in the first pass
 - the prior `chelis test` evaluator gap is fully resolved as of chelis

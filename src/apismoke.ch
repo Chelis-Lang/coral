@@ -5,8 +5,10 @@ import Coral.GroupBy (AggFn, value_counts)
 import Coral.Window (rolling_mean)
 import Coral.Join (inner_join, left_join, outer_join)
 import Coral.Reshape (pivot, melt, stack, unstack)
+import Coral.PlayerData (match_lineup, recent_form, team_starting_strength, team_starting_strength_fixture, position_distribution)
 export (smoke)
 def smoke[n](col: tensor[n, f32]) -> tensor[n, f32] = {
   _ = version()
+  _ = team_starting_strength_fixture(cast(1, int64), cast(0, int64))
   rolling_mean(col, cast(2, int64))
 }

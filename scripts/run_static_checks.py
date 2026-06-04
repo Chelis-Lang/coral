@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Static consistency checks for Coral."""
+
 from __future__ import annotations
 
 import re
@@ -40,6 +41,7 @@ def main() -> int:
         "Coral.Io": SRC / "io.ch",
         "Coral.Reshape": SRC / "reshape.ch",
         "Coral.AsOf": SRC / "asof.ch",
+        "Coral.PlayerData": SRC / "playerdata.ch",
         "Coral.Internal.Hamt": SRC / "internal" / "hamt.ch",
     }
     if not smoke.exists():
@@ -67,7 +69,9 @@ def main() -> int:
             if mod not in txt:
                 failures.append(f"README.md does not mention {mod}")
             if not parse_exports(path):
-                failures.append(f"{path.relative_to(REPO)} has an empty or missing export() clause")
+                failures.append(
+                    f"{path.relative_to(REPO)} has an empty or missing export() clause"
+                )
     if failures:
         print("STATIC CHECK FAILURES:")
         for item in failures:

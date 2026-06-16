@@ -1,6 +1,6 @@
 module Coral.Tests.Frame
 import Std.Test (assert_true, assert_eq, assert_eq_int, assert_eq_string, assert_close)
-import Coral.Frame (Frame, Column, ColumnType, from_pairs, nrows, ncols, columns, filter, head, tail, slice, sort_by, with_column, drop_column, rename, concat, describe, get_float_col, get_string_col)
+import Coral.Frame (Frame, Column, FloatCol, StringCol, ColumnType, from_pairs, nrows, ncols, columns, filter, head, tail, slice, sort_by, with_column, drop_column, rename, concat, describe, get_float_col, get_string_col)
 def test_construction_nrows_ncols() -> unit ! { Test } = {
   df = from_pairs([("a", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)])))])
   _ = assert_eq_int(nrows(df), cast(3, int64), "nrows == 3")

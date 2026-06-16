@@ -32,7 +32,7 @@ import Coral.Io (read_csv_frame, write_csv_frame, read_json_frame, write_json_fr
 
 ```chelis
 module Coral.Pat01
-import Coral.Frame (from_pairs, nrows, ncols)
+import Coral.Frame (FloatCol, StringCol, BoolCol, from_pairs, nrows, ncols)
 export (main)
 def main() -> int64 = {
   prices = from_pairs([("price", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)]))), ("name", StringCol(["a", "b", "c"])), ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64), cast(1, int64)]), to_tensor([cast(0, int64), cast(0, int64), cast(0, int64)]))))])
@@ -42,7 +42,7 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat02
-import Coral.Frame (from_pairs, filter, nrows, int_col_of_list)
+import Coral.Frame (BoolCol, from_pairs, filter, nrows, int_col_of_list)
 export (main)
 def main() -> int64 = {
   frame = from_pairs([("qty", int_col_of_list([cast(5, int64), cast(6, int64), cast(7, int64)])), ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64), cast(1, int64)]), to_tensor([cast(0, int64), cast(0, int64), cast(0, int64)]))))])
@@ -53,7 +53,7 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat03
-import Coral.Frame (from_pairs, rename, with_column, drop_column, columns, ncols, int_col_of_list)
+import Coral.Frame (FloatCol, from_pairs, rename, with_column, drop_column, columns, ncols, int_col_of_list)
 export (main)
 def main() -> int64 = {
   frame = from_pairs([("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.0, f32)]))), ("qty", int_col_of_list([cast(2, int64), cast(3, int64)]))])
@@ -66,7 +66,7 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat04
-import Coral.Frame (from_pairs, fill_nan, drop_nan, concat, describe, nrows, get_float_col, int_col_of_list)
+import Coral.Frame (FloatCol, from_pairs, fill_nan, drop_nan, concat, describe, nrows, get_float_col, int_col_of_list)
 export (main)
 def main() -> f32 = {
   base = from_pairs([("price", FloatCol(to_tensor([cast(10.0, f32), div(cast(0.0, f32), cast(0.0, f32)), cast(30.0, f32)]))), ("qty", int_col_of_list([cast(1, int64), cast(2, int64), cast(3, int64)]))])
@@ -98,7 +98,7 @@ def main() -> f32 = {
 
 ```chelis
 module Coral.Pat06
-import Coral.Frame (from_pairs, nrows, int_col_of_list)
+import Coral.Frame (StringCol, from_pairs, nrows, int_col_of_list)
 import Coral.GroupBy (group_by, agg_sum)
 export (main)
 def main() -> int64 = {
@@ -110,7 +110,7 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat07
-import Coral.Frame (from_pairs, nrows, int_col_of_list)
+import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, int_col_of_list)
 import Coral.Join (left_join)
 export (main)
 def main() -> int64 = {
@@ -122,7 +122,7 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat08
-import Coral.Frame (from_pairs, ncols, int_col_of_list)
+import Coral.Frame (FloatCol, StringCol, BoolCol, from_pairs, ncols, int_col_of_list)
 import Coral.Io (write_csv_frame, write_json_frame)
 export (main)
 def main() -> int64 = {
@@ -135,7 +135,7 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat09
-import Coral.Frame (from_pairs, nrows)
+import Coral.Frame (StringCol, from_pairs, nrows)
 import Coral.GroupBy (value_counts)
 export (main)
 def main() -> int64 = {
@@ -147,7 +147,7 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat10
-import Coral.Frame (from_pairs, nrows, int_col_of_list)
+import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, int_col_of_list)
 import Coral.Join (outer_join)
 export (main)
 def main() -> int64 = {
@@ -159,7 +159,7 @@ def main() -> int64 = {
 
 ```chelis
 module Coral.Pat11
-import Coral.Frame (from_pairs, nrows)
+import Coral.Frame (FloatCol, StringCol, from_pairs, nrows)
 import Coral.Reshape (melt)
 export (main)
 def main() -> int64 = {

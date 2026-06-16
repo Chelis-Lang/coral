@@ -20,7 +20,7 @@ v0.1 constraints:
 
 ```chelis
 module Coral.BookReshape
-import Coral.Frame (from_pairs, nrows, ncols)
+import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols)
 import Coral.Reshape (melt)
 export (main)
 def main() -> int64 = {

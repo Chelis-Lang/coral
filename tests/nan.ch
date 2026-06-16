@@ -1,6 +1,6 @@
 module Coral.Tests.Nan
 import Std.Test (assert_true, assert_false, assert_eq_int, assert_eq_bool, assert_close)
-import Coral.Frame (Frame, Column, from_pairs, nrows, ncols, get_float_col, fill_nan, is_nan, any_nan, count_nan)
+import Coral.Frame (Frame, Column, FloatCol, from_pairs, nrows, ncols, get_float_col, fill_nan, is_nan, any_nan, count_nan)
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
 def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))

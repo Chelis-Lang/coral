@@ -45,15 +45,15 @@ scale.
 
 ## Toolchain
 
-Pinned to `chelis v0.7.20` in `reef.toml`:
+Pinned to `chelis v0.7.26` in `reef.toml`:
 
 ```toml
-compiler = "=0.7.20"
+compiler = "=0.7.26"
 ```
 
 ## Build
 
-A Coral checkout uses `chelis-std 0.3.0` and `nautilus 0.7.19`
+A Coral checkout uses `chelis-std 0.4.0` and `nautilus 0.7.25`
 resolved from the local reef registry. With the compiler on `PATH`, or
 `CHELIS_BIN` pointed at the published binary:
 

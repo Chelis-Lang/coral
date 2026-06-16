@@ -49,7 +49,7 @@ Test harness layout (Phase 3t):
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints
-  typecheck on published `chelis v0.7.20`
+  typecheck on published `chelis v0.7.26`
 - 8 `tests/*.ch` modules cover construction, filter (via mask
   consumers), head/tail/slice, rename/with_column/drop, sort_by
   (string asc/desc, float), concat, describe, single-key aggregations

@@ -5,7 +5,7 @@ covers int, float, bool, and string columns.
 
 ```chelis
 module Coral.BookIo
-import Coral.Frame (from_pairs, ncols, int_col_of_list)
+import Coral.Frame (FloatCol, StringCol, BoolCol, from_pairs, ncols, int_col_of_list)
 import Coral.Io (write_csv_frame, write_json_frame)
 export (main)
 def main() -> int64 = {

@@ -1,6 +1,6 @@
 module Coral.Tests.Internal
 import Std.Test (assert_true, assert_eq, assert_eq_int, assert_eq_string, assert_close)
-import Coral.Frame (Frame, Column, ColumnType, from_pairs, nrows, ncols, columns, sort_by, slice, head, tail, get_float_col, get_string_col, describe)
+import Coral.Frame (Frame, Column, FloatCol, StringCol, ColumnType, from_pairs, nrows, ncols, columns, sort_by, slice, head, tail, get_float_col, get_string_col, describe)
 def test_string_sort_lexicographic() -> unit ! { Test } = {
   df = from_pairs([("city", StringCol(["paris", "berlin", "oslo"]))])
   sorted = sort_by(df, "city", true)

@@ -9,7 +9,7 @@ The standard deviation follows pandas and uses sample `ddof=1`.
 
 ```chelis
 module Coral.BookDescribe
-import Coral.Frame (from_pairs, describe, nrows, get_float_col, int_col_of_list)
+import Coral.Frame (FloatCol, from_pairs, describe, nrows, get_float_col, int_col_of_list)
 export (main)
 def main() -> f32 = {
   frame = from_pairs([("price", FloatCol(to_tensor([cast(10.0, f32), div(cast(0.0, f32), cast(0.0, f32)), cast(40.0, f32)]))), ("qty", int_col_of_list([cast(1, int64), cast(2, int64), cast(3, int64)]))])

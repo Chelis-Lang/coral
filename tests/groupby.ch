@@ -1,6 +1,6 @@
 module Coral.Tests.GroupBy
 import Std.Test (assert_eq_int, assert_close)
-import Coral.Frame (Column, ColumnType, Frame, from_pairs, nrows, ncols, get_float_col, get_int_col)
+import Coral.Frame (Column, FloatCol, StringCol, ColumnType, Frame, from_pairs, nrows, ncols, get_float_col, get_int_col)
 import Coral.GroupBy (group_by, agg_sum, agg_mean, agg_min, agg_max, agg_count, value_counts)
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)

@@ -8,10 +8,10 @@ on:
   workflow_dispatch:
 
 env:
-  CHELIS_TAG: v0.7.21
-  CHELIS_VERSION: 0.7.21
-  NAUTILUS_TAG: v0.7.20
-  CORAL_VERSION: 0.7.18
+  CHELIS_TAG: v0.7.26
+  CHELIS_VERSION: 0.7.26
+  NAUTILUS_TAG: v0.7.25
+  CORAL_VERSION: 0.7.24
 
 jobs:
   lint:

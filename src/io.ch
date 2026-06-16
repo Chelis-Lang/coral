@@ -1,8 +1,8 @@
 module Coral.Io
-import Coral.Frame (Column, Frame, from_pairs, columns, get_column)
+import Coral.Frame (Column, IntCol, FloatCol, StringCol, BoolCol, Frame, from_pairs, columns, get_column)
 import Std.Io (write_text)
 import Std.Io.Csv (read_csv)
-import Std.Io.Json (Json, json_array, json_object, load_json)
+import Std.Io.Json (Json, JsonString, JsonInt, JsonFloat, JsonBool, JsonNull, json_array, json_object, load_json)
 export (read_csv_frame, write_csv_frame, read_json_frame, write_json_frame, read_parquet_frame, write_parquet_frame)
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)

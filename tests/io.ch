@@ -1,6 +1,6 @@
 module Coral.Tests.Io
 import Std.Test (assert_true, assert_eq_int, assert_eq_string, assert_close)
-import Coral.Frame (Frame, Column, ColumnType, from_pairs, nrows, ncols, columns, get_float_col, get_string_col, get_int_col, get_bool_col, int_col_of_list)
+import Coral.Frame (Frame, Column, FloatCol, StringCol, BoolCol, ColumnType, from_pairs, nrows, ncols, columns, get_float_col, get_string_col, get_int_col, get_bool_col, int_col_of_list)
 import Coral.Io (write_csv_frame, read_csv_frame, write_json_frame, read_json_frame)
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)

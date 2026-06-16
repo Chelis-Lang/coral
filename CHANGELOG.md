@@ -6,6 +6,47 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.24] - 2026-06-16
+
+Compiler-pin alignment for chelis 0.7.26. `compiler = "=0.7.21"` to
+`"=0.7.26"`; `chelis-std` 0.3.0 to 0.4.0; the `nautilus` dependency
+0.7.20 to 0.7.25 (its chelis-0.7.26-pinning release); CI / release
+workflow env vars (`CHELIS_TAG`, `CHELIS_VERSION`, `NAUTILUS_TAG`,
+`CORAL_VERSION`, `PACKAGE_VERSION`) updated to track v0.7.26 / nautilus
+v0.7.25 / coral 0.7.24. Package version bumped 0.7.19 to 0.7.24
+(keeping the +2 chelis-pin cadence: coral 0.7.24 pins chelis 0.7.26).
+
+Source migration for chelis #317/#327 (explicit cross-module
+constructor imports, landed chelis 0.7.24): referencing another
+module's ADT data constructor without naming it in the importing
+module is now a hard `UnknownConstructor` error. Crossing from the
+0.7.21 pin to 0.7.26 crosses that boundary, so every cross-module
+`import Mod (Type, ...)` now also names the constructors that file
+uses. Touched `src/io.ch` (Column `IntCol`/`FloatCol`/`StringCol`/
+`BoolCol`, `Std.Io.Json` `JsonString`/`JsonInt`/`JsonFloat`/`JsonBool`/
+`JsonNull`), `src/join.ch` (Column + `KeyValue`
+`KeyIntValue`/`KeyFloatValue`/`KeyStringValue`/`KeyBoolValue`),
+`src/groupby.ch` (`IntCol`/`FloatCol`), `src/reshape.ch`
+(`FloatCol`/`StringCol`), the matching `tests/*.ch` imports, and the
+compile-checked `SKILL.md` + `docs/src/**/*.md` examples (incl. the
+`Coral.GroupBy` `AggSum`/`AggMean` aggregation specs). Construction is
+unchanged; this is an import-list expansion only. No glob/`..` form
+exists and re-export does not lift the requirement, so naming is
+per-importing-module.
+
+Documentation reconciliation: the README Toolchain section
+(`compiler = "=0.7.20"`, nautilus 0.7.19) and the `ci.yml`
+`CORAL_VERSION` / mac-smoke `dist/coral-<v>.chb` path (0.7.18) were
+stale against the prior package version; all version-stamped surfaces
+(README, `AGENTS.md`, `docs/status.md`, `docs/releases.md`, both
+workflows) now agree on chelis 0.7.26 / nautilus 0.7.25 / coral 0.7.24.
+
+No Coral API surface change (70 `chelis test` cases pass unchanged).
+chelis-std is compiler-bundled as of 0.7.26 (the binary embeds
+chelis-std 0.4.0); the upstream ML move out of chelis-std is
+transparent to Coral, which uses only the core surface (Std.Io / Csv /
+Json / Test). Part of the coordinated chelis 0.7.26 release cascade.
+
 ## [0.7.19] - 2026-06-01
 
 Compiler-pin alignment for chelis 0.7.21. `compiler = "=0.7.20"` to

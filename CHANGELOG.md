@@ -6,6 +6,29 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.25] - 2026-06-17
+
+Compiler-pin alignment for chelis 0.7.27. `compiler = "=0.7.26"` to
+`"=0.7.27"`; the `nautilus` dependency 0.7.25 to 0.7.26 (its
+chelis-0.7.27-pinning release); `chelis-std` stays 0.4.0. CI / release
+workflow env vars (`CHELIS_TAG`, `CHELIS_VERSION`, `NAUTILUS_TAG`,
+`CORAL_VERSION`, `PACKAGE_VERSION`) updated to track v0.7.27 / nautilus
+v0.7.26 / coral 0.7.25. Package version bumped 0.7.24 to 0.7.25
+(keeping the +2 chelis-pin cadence: coral 0.7.25 pins chelis 0.7.27).
+
+chelis 0.7.27 is chelis 0.7.26 plus the single chelis #399
+eval-demangle fix; there are no breaking changes between 0.7.26 and
+0.7.27. Coral uses only the core chelis-std surface (Std.Io / Csv /
+Json / Test), no `prove`, no cross-module ADT evaluation, so the #399
+fix does not affect it. No Coral API surface change (70 `chelis test`
+cases pass unchanged). Mechanical bump only. Part of the coordinated
+chelis 0.7.27 release cascade.
+
+Documentation reconciliation: the README Toolchain section, `AGENTS.md`
+toolchain pin, `docs/status.md` typecheck pin, and `docs/releases.md`
+download / publish / consumer-dependency examples now agree on chelis
+0.7.27 / nautilus 0.7.26 / coral 0.7.25.
+
 ## [0.7.24] - 2026-06-16
 
 Compiler-pin alignment for chelis 0.7.26. `compiler = "=0.7.21"` to

@@ -42,20 +42,20 @@ End-to-end, with no platform-specific Coral artifact required:
 
 1. Download the chelis toolchain that matches the consumer's OS:
    ```sh
-   gh release download v0.7.26 --repo Chelis-Lang/chelis \
-     --pattern 'chelis-v0.7.26-darwin-arm64.tar.gz'
+   gh release download v0.7.27 --repo Chelis-Lang/chelis \
+     --pattern 'chelis-v0.7.27-darwin-arm64.tar.gz'
    ```
    (or `linux-x86_64` for Linux consumers).
 2. Extract and put `bin/chelis` on PATH.
 3. Publish Coral into the consumer's local reef registry from the
    release artifact:
    ```sh
-   chelis reef publish coral-0.7.24.tar.zst
+   chelis reef publish coral-0.7.25.tar.zst
    ```
 4. In their own Chelis project's `reef.toml`:
    ```toml
    [dependencies]
-   coral = { version = "0.7.24" }
+   coral = { version = "0.7.25" }
    ```
 5. `chelis reef build` resolves the platform-agnostic `.chb` +
    sources; the consumer's chelis compiles the result to whatever

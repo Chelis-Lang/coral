@@ -6,6 +6,27 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.26] - 2026-06-19
+
+Compiler-pin alignment for chelis 0.8.0. `compiler = "=0.7.27"` to
+`"=0.8.0"`; the `nautilus` dependency 0.7.26 to 0.7.27 (its
+chelis-0.8.0-pinning release); `chelis-std` stays 0.4.0. CI / release
+workflow env vars (`CHELIS_TAG`, `CHELIS_VERSION`, `NAUTILUS_TAG`,
+`CORAL_VERSION`, `PACKAGE_VERSION`) updated to track v0.8.0 / nautilus
+v0.7.27 / coral 0.7.26. Package version bumped 0.7.25 to 0.7.26.
+
+Documentation reconciliation: the README Toolchain section, `AGENTS.md`
+toolchain pin, `docs/status.md` typecheck pin, `docs/releases.md`
+download / publish / consumer-dependency examples, mdBook current-gate
+claims, and `SKILL.md` examples now agree on chelis 0.8.0 / nautilus
+0.7.27 / coral 0.7.26.
+
+No Coral API surface change. Validation under chelis 0.8.0: hard-rule
+guard, `chelis lint --check .`, `chelis reef build`, `chelis test
+tests/ --timeout 600 --jobs auto` (70 passed, 0 failed),
+`parity/run_parity.py --strict`, static checks, SKILL examples, and
+mdBook examples all pass.
+
 ## [0.7.25] - 2026-06-17
 
 Compiler-pin alignment for chelis 0.7.27. `compiler = "=0.7.26"` to

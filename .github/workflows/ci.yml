@@ -7,6 +7,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CHELIS_TAG: v0.7.27
   CHELIS_VERSION: 0.7.27
@@ -78,6 +82,11 @@ jobs:
   mac-smoke:
     needs: lint
     runs-on: macos-latest
+    # Spend: macOS minutes bill ~10x Linux. Run on push-to-main and
+    # workflow_dispatch, not on every PR iteration (the Linux jobs
+    # already gate the PR). A Darwin chelis regression still surfaces
+    # on the push-to-main run before a release.
+    if: ${{ github.event_name != 'pull_request' }}
     # Proof-of-life: the Coral reef package builds under the Darwin
     # chelis toolchain. Nothing more. The full test suite runs on
     # Linux; this job only asserts that "the lib works on Mac" so a

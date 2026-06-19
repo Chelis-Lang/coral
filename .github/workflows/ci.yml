@@ -12,10 +12,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CHELIS_TAG: v0.7.27
-  CHELIS_VERSION: 0.7.27
-  NAUTILUS_TAG: v0.7.26
-  CORAL_VERSION: 0.7.25
+  CHELIS_TAG: v0.8.0
+  CHELIS_VERSION: 0.8.0
+  NAUTILUS_TAG: v0.7.27
+  CORAL_VERSION: 0.7.26
 
 jobs:
   lint:

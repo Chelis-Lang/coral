@@ -6,6 +6,39 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.27] - 2026-06-23
+
+Compiler-pin alignment for chelis 0.9.0. `compiler = "=0.8.0"` to
+`"=0.9.0"`; the `nautilus` dependency 0.7.27 to 0.7.28 (its
+chelis-0.9.0-pinning release); `chelis-std` stays 0.4.0. CI / release
+workflow env vars (`CHELIS_TAG`, `CHELIS_VERSION`, `NAUTILUS_TAG`,
+`CORAL_VERSION`, `PACKAGE_VERSION`) and the `install-chelis` action's
+example version strings updated to track v0.9.0 / nautilus v0.7.28 /
+coral 0.7.27. Package version bumped 0.7.26 to 0.7.27. `reef.lock`
+regenerated against chelis 0.9.0 (resolves nautilus 0.7.28 +
+chelis-std 0.4.0, both compiler-pinned `=0.9.0`).
+
+Documentation reconciliation: the README Toolchain and Build sections,
+`AGENTS.md` toolchain pin, `docs/status.md` typecheck pin,
+`docs/releases.md` download / publish / consumer-dependency examples,
+mdBook current-gate claims, and `SKILL.md` examples now agree on chelis
+0.9.0 / nautilus 0.7.28 / coral 0.7.27.
+
+Parity and triage harness fix for the chelis 0.9.0 C backend: the
+generated entry point for an `f32`-returning `main` is now a C `float
+main__main`, so `parity/run_parity.py` and
+`scripts/repro_multimodule_bare_build.py` rename `float main` (was
+`double main`) and declare the driver prototype as `float`. The
+bare-build triage helper also now runs `chelis fmt --inplace` on its
+synthesized module before `chelis build`, since the built-in style gate
+blocks unformatted input.
+
+No Coral API surface change. Validation under chelis 0.9.0: hard-rule
+guard, `chelis lint --check .`, `chelis reef build`, `chelis test
+tests/ --timeout 600 --jobs auto` (70 passed, 0 failed),
+`parity/run_parity.py --strict`, static checks, SKILL examples, and
+mdBook examples all pass.
+
 ## [0.7.26] - 2026-06-19
 
 Compiler-pin alignment for chelis 0.8.0. `compiler = "=0.7.27"` to

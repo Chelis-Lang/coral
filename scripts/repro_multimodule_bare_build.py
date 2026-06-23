@@ -144,6 +144,11 @@ def main() -> int:
     try:
         main_ch = workdir / "main.ch"
         main_ch.write_text(body)
+        fmt = subprocess.run([CHELIS, "fmt", "--inplace", str(main_ch)], capture_output=True, text=True)
+        if fmt.returncode != 0:
+            print((fmt.stdout + fmt.stderr).strip())
+            print("unexpected: `chelis fmt --inplace` failed on the synthesized module")
+            return 1
         out_dir = workdir / "out"
         build = subprocess.run([CHELIS, "build", str(main_ch), "-o", str(out_dir)], capture_output=True, text=True)
         print((build.stdout + build.stderr).strip())
@@ -159,15 +164,17 @@ def main() -> int:
 
         c_file = out_dir / "main.c"
         h_file = out_dir / "main.h"
-        c_file.write_text(c_file.read_text().replace("double main", "double chelis_entry"))
+        # The `main` entry returns f32, which chelis emits as a C `float`
+        # `main__main`. Rename it out of the way of the driver's own `main`.
+        c_file.write_text(c_file.read_text().replace("float main", "float chelis_entry"))
         if h_file.exists():
-            h_file.write_text(h_file.read_text().replace("double main", "double chelis_entry"))
+            h_file.write_text(h_file.read_text().replace("float main", "float chelis_entry"))
 
         driver = workdir / "driver.c"
         driver.write_text(
             "#include <stdio.h>\n"
-            "double chelis_entry__main(void);\n"
-            "int main(){ printf(\"%.6f\\n\", chelis_entry__main()); return 0; }\n"
+            "float chelis_entry__main(void);\n"
+            "int main(){ printf(\"%.6f\\n\", (double)chelis_entry__main()); return 0; }\n"
         )
 
         link = subprocess.run(

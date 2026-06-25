@@ -6,6 +6,10 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.28] - 2026-06-25
+
+Cascade to chelis v0.10.1, nautilus v0.7.30.
+
 ## [0.7.27] - 2026-06-23
 
 Compiler-pin alignment for chelis 0.9.0. `compiler = "=0.8.0"` to

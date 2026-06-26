@@ -1,6 +1,6 @@
 [package]
 name = "coral"
-version = "0.7.28"
+version = "0.7.29"
 compiler = "=0.11.1"
 module_prefix = "Coral"
 

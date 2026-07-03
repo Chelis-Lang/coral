@@ -99,7 +99,12 @@ def render_csv[n](df: Frame[n]) -> string = {
   if eq(len(body), zero_i64()) then string_concat(header, "\n") else string_concat(string_concat(header, "\n"), string_concat(join_strings(body, "\n"), "\n"))
 }
 def csv_rows[n](df: Frame[n], idx: int64, acc: List[string]) -> List[string] = { if gte(idx, row_count(df)) then acc else csv_rows(df, add(idx, one_i64()), append(acc, csv_row(df, columns(df), idx, []))) }
-def csv_row[n](df: Frame[n], names: List[string], idx: int64, acc: List[string]) -> string = { if eq(len(names), zero_i64()) then join_strings(acc, ",") else csv_row(df, drop(names, one_i64()), idx, append(acc, csv_quote_field(column_value_string(get_column(df, index(names, zero_i64())), idx)))) }
+def csv_row[n](df: Frame[n], names: List[string], idx: int64, acc: List[string]) -> string = {
+  if eq(len(names), zero_i64()) then join_strings(acc, ",") else {
+    hd = index(names, zero_i64())
+    csv_row(df, drop(names, one_i64()), idx, append(acc, csv_quote_field(column_value_string(get_column(df, hd), idx))))
+  }
+}
 def csv_quote_field(value: string) -> string = {
   if csv_needs_quoting(value) then {
     escaped = csv_escape_quotes(value, zero_i64(), "")

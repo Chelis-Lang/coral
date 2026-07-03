@@ -46,7 +46,12 @@ def extract_named_pair_local[n](pairs: List[(string, Column[n])], target: string
     if eq(head_pair.0, target) then (head_pair.1, drain_pair_list(drop(pairs, one_i64()), acc)) else extract_named_pair_local(drop(pairs, one_i64()), target, append(acc, head_pair))
   }
 }
-def drain_pair_list[n](src: List[(string, Column[n])], dst: List[(string, Column[n])]) -> List[(string, Column[n])] = { if eq(len(src), zero_i64()) then dst else drain_pair_list(drop(src, one_i64()), append(dst, index(src, zero_i64()))) }
+def drain_pair_list[n](src: List[(string, Column[n])], dst: List[(string, Column[n])]) -> List[(string, Column[n])] = {
+  if eq(len(src), zero_i64()) then dst else {
+    hd = index(src, zero_i64())
+    drain_pair_list(drop(src, one_i64()), append(dst, hd))
+  }
+}
 def pivot_columns_inner[n, m](values_col_data: Column[n], index_col_data: Column[n], columns_col_data: Column[n], index_col_name: string, columns_col_name: string) -> Frame[m] = {
   match values_col_data with {
     | FloatCol(value_tensor) => {

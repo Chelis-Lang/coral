@@ -239,8 +239,18 @@ def str_lt_pos(lhs: string, rhs: string, pos: int64, llen: int64, rlen: int64) -
 }
 def append_all_enum_pairs(lhs: List[(int64, string)], rhs: List[(int64, string)]) -> List[(int64, string)] = { if eq(len(rhs), zero_i64()) then lhs else append_all_enum_pairs(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64())) }
 def enum_pair_insert(xs: List[(int64, string)], pair: (int64, string)) -> List[(int64, string)] = { if eq(len(xs), zero_i64()) then [pair] else if str_lt(pair.1, index(xs, zero_i64()).1) then append_all_enum_pairs([pair], xs) else append_all_enum_pairs([index(xs, zero_i64())], enum_pair_insert(drop(xs, one_i64()), pair)) }
-def enum_insertion_sort(unsorted: List[(int64, string)], acc: List[(int64, string)]) -> List[(int64, string)] = { if eq(len(unsorted), zero_i64()) then acc else enum_insertion_sort(drop(unsorted, one_i64()), enum_pair_insert(acc, index(unsorted, zero_i64()))) }
-def extract_perm_indices(pairs: List[(int64, string)], acc: List[int64]) -> List[int64] = { if eq(len(pairs), zero_i64()) then acc else extract_perm_indices(drop(pairs, one_i64()), append(acc, index(pairs, zero_i64()).0)) }
+def enum_insertion_sort(unsorted: List[(int64, string)], acc: List[(int64, string)]) -> List[(int64, string)] = {
+  if eq(len(unsorted), zero_i64()) then acc else {
+    hd = index(unsorted, zero_i64())
+    enum_insertion_sort(drop(unsorted, one_i64()), enum_pair_insert(acc, hd))
+  }
+}
+def extract_perm_indices(pairs: List[(int64, string)], acc: List[int64]) -> List[int64] = {
+  if eq(len(pairs), zero_i64()) then acc else {
+    hd = index(pairs, zero_i64())
+    extract_perm_indices(drop(pairs, one_i64()), append(acc, hd.0))
+  }
+}
 def sort_by[n](df: Frame[n], name: string, ascending: bool) -> Frame[n] = {
   match df with {
     | Frame { cols: cols, col_order: order } => {
@@ -294,7 +304,12 @@ def perm_from_key_column[n](col: Column[n], ascending: bool) -> (tensor[n, int64
   }
   }
 }
-def extract_perm_strings(pairs: List[(int64, string)], acc: List[string]) -> List[string] = { if eq(len(pairs), zero_i64()) then acc else extract_perm_strings(drop(pairs, one_i64()), append(acc, index(pairs, zero_i64()).1)) }
+def extract_perm_strings(pairs: List[(int64, string)], acc: List[string]) -> List[string] = {
+  if eq(len(pairs), zero_i64()) then acc else {
+    hd = index(pairs, zero_i64())
+    extract_perm_strings(drop(pairs, one_i64()), append(acc, hd.1))
+  }
+}
 def with_column[n](df: Frame[n], name: string, col: Column[n]) -> Frame[n] = {
   match df with {
     | Frame { cols: cols, col_order: order } => {
@@ -389,7 +404,12 @@ def first_frame_columns_or_empty[n](frames: List[Frame[n]]) -> (List[string], Li
   }
 }
 def prepend_frame_to_list[n](first: Frame[n], rest: List[Frame[n]]) -> List[Frame[n]] = { prepend_frame_acc(rest, [first]) }
-def prepend_frame_acc[n](src: List[Frame[n]], acc: List[Frame[n]]) -> List[Frame[n]] = { if eq(len(src), zero_i64()) then acc else prepend_frame_acc(drop(src, one_i64()), append(acc, index(src, zero_i64()))) }
+def prepend_frame_acc[n](src: List[Frame[n]], acc: List[Frame[n]]) -> List[Frame[n]] = {
+  if eq(len(src), zero_i64()) then acc else {
+    hd = index(src, zero_i64())
+    prepend_frame_acc(drop(src, one_i64()), append(acc, hd))
+  }
+}
 def describe[n, m](df: Frame[n]) -> Frame[m] = {
   match df with {
     | Frame { cols: cols, col_order: order } => {
@@ -536,7 +556,12 @@ def reindex_all[n](df: Frame[n], perm: tensor[n, int64]) -> Frame[n] = {
   }
 }
 def orient_perm[n](perm: tensor[n, int64], ascending: bool) -> tensor[n, int64] = { if ascending then perm else to_tensor(reverse_ints(to_list(perm), [])) }
-def reverse_ints(values: List[int64], acc: List[int64]) -> List[int64] = { if eq(len(values), zero_i64()) then acc else append(reverse_ints(drop(values, one_i64()), acc), index(values, zero_i64())) }
+def reverse_ints(values: List[int64], acc: List[int64]) -> List[int64] = {
+  if eq(len(values), zero_i64()) then acc else {
+    hd = index(values, zero_i64())
+    append(reverse_ints(drop(values, one_i64()), acc), hd)
+  }
+}
 def all_same_schema[n](frames: List[Frame[n]], base: Frame[n]) -> bool = {
   if eq(len(frames), zero_i64()) then true else {
     current = index(frames, zero_i64())
@@ -569,9 +594,19 @@ def concat_column[n, k](name: string, frames: List[Frame[n]]) -> Column[k] = {
   }
   }
 }
-def concat_bool_lists(parts: List[List[bool]], acc: List[bool]) -> List[bool] = { if eq(len(parts), zero_i64()) then acc else concat_bool_lists(drop(parts, one_i64()), append_all_bools(acc, index(parts, zero_i64()))) }
+def concat_bool_lists(parts: List[List[bool]], acc: List[bool]) -> List[bool] = {
+  if eq(len(parts), zero_i64()) then acc else {
+    hd = index(parts, zero_i64())
+    concat_bool_lists(drop(parts, one_i64()), append_all_bools(acc, hd))
+  }
+}
 def append_all_bools(lhs: List[bool], rhs: List[bool]) -> List[bool] = { if eq(len(rhs), zero_i64()) then lhs else append_all_bools(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64())) }
-def concat_strings(parts: List[List[string]], acc: List[string]) -> List[string] = { if eq(len(parts), zero_i64()) then acc else concat_strings(drop(parts, one_i64()), append_all_strings(acc, index(parts, zero_i64()))) }
+def concat_strings(parts: List[List[string]], acc: List[string]) -> List[string] = {
+  if eq(len(parts), zero_i64()) then acc else {
+    hd = index(parts, zero_i64())
+    concat_strings(drop(parts, one_i64()), append_all_strings(acc, hd))
+  }
+}
 def is_numeric_type(ty: ColumnType) -> bool = {
   match ty with {
     | IntType => true
@@ -680,8 +715,23 @@ def column_type_eq(lhs: ColumnType, rhs: ColumnType) -> bool = {
   }
 }
 def append_all_strings(lhs: List[string], rhs: List[string]) -> List[string] = { if eq(len(rhs), zero_i64()) then lhs else append_all_strings(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64())) }
-def prepend_pair_column_acc[n](items: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = { if eq(len(items), zero_i64()) then acc else prepend_pair_column_acc(drop(items, one_i64()), append(acc, index(items, zero_i64()))) }
-def concat_int_lists(parts: List[List[int64]], acc: List[int64]) -> List[int64] = { if eq(len(parts), zero_i64()) then acc else concat_int_lists(drop(parts, one_i64()), append_all_ints(acc, index(parts, zero_i64()))) }
+def prepend_pair_column_acc[n](items: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = {
+  if eq(len(items), zero_i64()) then acc else {
+    hd = index(items, zero_i64())
+    prepend_pair_column_acc(drop(items, one_i64()), append(acc, hd))
+  }
+}
+def concat_int_lists(parts: List[List[int64]], acc: List[int64]) -> List[int64] = {
+  if eq(len(parts), zero_i64()) then acc else {
+    hd = index(parts, zero_i64())
+    concat_int_lists(drop(parts, one_i64()), append_all_ints(acc, hd))
+  }
+}
 def append_all_ints(lhs: List[int64], rhs: List[int64]) -> List[int64] = { if eq(len(rhs), zero_i64()) then lhs else append_all_ints(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64())) }
-def concat_float_lists(parts: List[List[f32]], acc: List[f32]) -> List[f32] = { if eq(len(parts), zero_i64()) then acc else concat_float_lists(drop(parts, one_i64()), append_all_floats(acc, index(parts, zero_i64()))) }
+def concat_float_lists(parts: List[List[f32]], acc: List[f32]) -> List[f32] = {
+  if eq(len(parts), zero_i64()) then acc else {
+    hd = index(parts, zero_i64())
+    concat_float_lists(drop(parts, one_i64()), append_all_floats(acc, hd))
+  }
+}
 def append_all_floats(lhs: List[f32], rhs: List[f32]) -> List[f32] = { if eq(len(rhs), zero_i64()) then lhs else append_all_floats(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64())) }

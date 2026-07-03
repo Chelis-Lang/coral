@@ -101,7 +101,12 @@ def agg[n, m](gf: GroupedFrame[n], specs: List[(string, AggFn)]) -> Frame[m] = {
   }
 }
 def prepend_pair_local[n](first: (string, Column[n]), rest: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = { prepend_pair_local_acc(rest, append(acc, first)) }
-def prepend_pair_local_acc[n](items: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = { if eq(len(items), zero_i64()) then acc else prepend_pair_local_acc(drop(items, one_i64()), append(acc, index(items, zero_i64()))) }
+def prepend_pair_local_acc[n](items: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = {
+  if eq(len(items), zero_i64()) then acc else {
+    hd = index(items, zero_i64())
+    prepend_pair_local_acc(drop(items, one_i64()), append(acc, hd))
+  }
+}
 def build_spec_pairs[n, m](df_pairs: List[(string, Column[n])], groups: List[List[int64]], specs: List[(string, AggFn)], acc: List[(string, Column[m])]) -> List[(string, Column[m])] = {
   if eq(len(specs), zero_i64()) then acc else {
     spec = index(specs, zero_i64())

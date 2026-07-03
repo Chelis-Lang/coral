@@ -76,8 +76,18 @@ def extract_pair_local[n](pairs: List[(string, Column[n])], target: string, acc:
     if eq(head_pair.0, target) then (head_pair.1, drain_pairs_local(drop(pairs, one_i64()), acc)) else extract_pair_local(drop(pairs, one_i64()), target, append(acc, head_pair))
   }
 }
-def drain_pairs_local[n](src: List[(string, Column[n])], dst: List[(string, Column[n])]) -> List[(string, Column[n])] = { if eq(len(src), zero_i64()) then dst else drain_pairs_local(drop(src, one_i64()), append(dst, index(src, zero_i64()))) }
-def pairs_to_names[n](pairs: List[(string, Column[n])], acc: List[string]) -> List[string] = { if eq(len(pairs), zero_i64()) then acc else pairs_to_names(drop(pairs, one_i64()), append(acc, index(pairs, zero_i64()).0)) }
+def drain_pairs_local[n](src: List[(string, Column[n])], dst: List[(string, Column[n])]) -> List[(string, Column[n])] = {
+  if eq(len(src), zero_i64()) then dst else {
+    hd = index(src, zero_i64())
+    drain_pairs_local(drop(src, one_i64()), append(dst, hd))
+  }
+}
+def pairs_to_names[n](pairs: List[(string, Column[n])], acc: List[string]) -> List[string] = {
+  if eq(len(pairs), zero_i64()) then acc else {
+    hd = index(pairs, zero_i64())
+    pairs_to_names(drop(pairs, one_i64()), append(acc, hd.0))
+  }
+}
 def build_outer_left_cols[n, k](pairs: List[(string, Column[n])], left_order: List[string], on: string, key_strs: List[string], rows: List[int64], acc: List[(string, Column[k])]) -> List[(string, Column[k])] = {
   if eq(len(pairs), zero_i64()) then acc else {
     head_pair = index(pairs, zero_i64())

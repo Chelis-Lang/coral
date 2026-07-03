@@ -169,7 +169,12 @@ def entries_h[a](node: Hamt[a], acc: List[(string, a)]) -> List[(string, a)] = {
     | BitmapNode { bitmap: bitmap, children: children, count: count } => entries_children(children, acc)
   }
 }
-def entries_children[a](children: List[Hamt[a]], acc: List[(string, a)]) -> List[(string, a)] = { if children |> len |> eq(zero_i64()) then acc else entries_children(drop(children, one_i64()), entries_h(index(children, zero_i64()), acc)) }
+def entries_children[a](children: List[Hamt[a]], acc: List[(string, a)]) -> List[(string, a)] = {
+  if children |> len |> eq(zero_i64()) then acc else {
+    hd = index(children, zero_i64())
+    entries_children(drop(children, one_i64()), entries_h(hd, acc))
+  }
+}
 def from_pairs_rec[a](pairs: List[(string, a)], acc: Hamt[a]) -> Hamt[a] = {
   if pairs |> len |> eq(zero_i64()) then acc else {
     head = index(pairs, zero_i64())
@@ -184,10 +189,30 @@ def has_value[a](value: Option[a]) -> bool = {
   }
 }
 def prepend_node[a](value: Hamt[a], items: List[Hamt[a]]) -> List[Hamt[a]] = prepend_node_acc(items, [value])
-def prepend_node_acc[a](items: List[Hamt[a]], acc: List[Hamt[a]]) -> List[Hamt[a]] = { if items |> len |> eq(zero_i64()) then acc else prepend_node_acc(drop(items, one_i64()), append(acc, index(items, zero_i64()))) }
+def prepend_node_acc[a](items: List[Hamt[a]], acc: List[Hamt[a]]) -> List[Hamt[a]] = {
+  if items |> len |> eq(zero_i64()) then acc else {
+    hd = index(items, zero_i64())
+    prepend_node_acc(drop(items, one_i64()), append(acc, hd))
+  }
+}
 def prepend_entry[a](value: (string, a), items: List[(string, a)]) -> List[(string, a)] = prepend_entry_acc(items, [value])
-def prepend_entry_acc[a](items: List[(string, a)], acc: List[(string, a)]) -> List[(string, a)] = { if items |> len |> eq(zero_i64()) then acc else prepend_entry_acc(drop(items, one_i64()), append(acc, index(items, zero_i64()))) }
+def prepend_entry_acc[a](items: List[(string, a)], acc: List[(string, a)]) -> List[(string, a)] = {
+  if items |> len |> eq(zero_i64()) then acc else {
+    hd = index(items, zero_i64())
+    prepend_entry_acc(drop(items, one_i64()), append(acc, hd))
+  }
+}
 def append_all_entries[a](lhs: List[(string, a)], rhs: List[(string, a)]) -> List[(string, a)] = { if rhs |> len |> eq(zero_i64()) then lhs else append_all_entries(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64())) }
 def list_insert_node[a](items: List[Hamt[a]], idx: int64, value: Hamt[a]) -> List[Hamt[a]] = { if lte(idx, zero_i64()) then prepend_node(value, items) else if items |> len |> eq(zero_i64()) then [value] else prepend_node(index(items, zero_i64()), list_insert_node(drop(items, one_i64()), sub(idx, one_i64()), value)) }
-def list_replace_node[a](items: List[Hamt[a]], idx: int64, value: Hamt[a]) -> List[Hamt[a]] = { if items |> len |> eq(zero_i64()) then [] else if eq(idx, zero_i64()) then prepend_node(value, drop(items, one_i64())) else prepend_node(index(items, zero_i64()), list_replace_node(drop(items, one_i64()), sub(idx, one_i64()), value)) }
-def list_remove_node[a](items: List[Hamt[a]], idx: int64) -> List[Hamt[a]] = { if items |> len |> eq(zero_i64()) then [] else if eq(idx, zero_i64()) then drop(items, one_i64()) else prepend_node(index(items, zero_i64()), list_remove_node(drop(items, one_i64()), sub(idx, one_i64()))) }
+def list_replace_node[a](items: List[Hamt[a]], idx: int64, value: Hamt[a]) -> List[Hamt[a]] = {
+  if items |> len |> eq(zero_i64()) then [] else if eq(idx, zero_i64()) then prepend_node(value, drop(items, one_i64())) else {
+    hd = index(items, zero_i64())
+    prepend_node(hd, list_replace_node(drop(items, one_i64()), sub(idx, one_i64()), value))
+  }
+}
+def list_remove_node[a](items: List[Hamt[a]], idx: int64) -> List[Hamt[a]] = {
+  if items |> len |> eq(zero_i64()) then [] else if eq(idx, zero_i64()) then drop(items, one_i64()) else {
+    hd = index(items, zero_i64())
+    prepend_node(hd, list_remove_node(drop(items, one_i64()), sub(idx, one_i64())))
+  }
+}

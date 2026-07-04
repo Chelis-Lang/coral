@@ -12,12 +12,40 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # AUTO-SYNC: must match reef.toml. The pin-consistency-guard job
+  # below fails immediately if these drift from reef.toml.
   CHELIS_TAG: v0.14.0
   CHELIS_VERSION: 0.14.0
-  NAUTILUS_TAG: v0.7.31
-  CORAL_VERSION: 0.7.28
+  NAUTILUS_TAG: v0.7.33
+  CORAL_VERSION: 0.7.30
 
 jobs:
+  pin-consistency-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert CI chelis pin matches reef.toml
+        run: |
+          set -euo pipefail
+          REEF_CHELIS=$(grep -oP '^compiler\s*=\s*"=\K[0-9]+\.[0-9]+\.[0-9]+' reef.toml)
+          REEF_VERSION=$(grep -oP '^version\s*=\s*"\K[0-9]+\.[0-9]+\.[0-9]+' reef.toml | head -1)
+          REEF_NAUTILUS=$(grep -A0 '^nautilus' reef.toml | grep -oP 'version\s*=\s*"\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          DRIFT=0
+          if [ "v${REEF_CHELIS}" != "${{ env.CHELIS_TAG }}" ]; then
+            echo "::error::CI pin drift: CHELIS_TAG=${{ env.CHELIS_TAG }} but reef.toml has =${REEF_CHELIS}"
+            DRIFT=1
+          fi
+          if [ "${REEF_VERSION}" != "${{ env.CORAL_VERSION }}" ]; then
+            echo "::error::CI pin drift: CORAL_VERSION=${{ env.CORAL_VERSION }} but reef.toml has ${REEF_VERSION}"
+            DRIFT=1
+          fi
+          if [ "v${REEF_NAUTILUS}" != "${{ env.NAUTILUS_TAG }}" ]; then
+            echo "::error::CI pin drift: NAUTILUS_TAG=${{ env.NAUTILUS_TAG }} but reef.toml has nautilus ${REEF_NAUTILUS}"
+            DRIFT=1
+          fi
+          [ "$DRIFT" -eq 0 ] && echo "✓ All CI pins match reef.toml"
+          exit $DRIFT
+
   lint:
     runs-on: ubuntu-latest
     steps:

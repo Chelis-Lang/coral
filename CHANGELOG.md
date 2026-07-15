@@ -6,22 +6,51 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Compiler-pin bump to chelis 0.16.1 (prep). `compiler = "=0.14.0"` to
+Compiler-pin bump to chelis 0.16.1. `compiler = "=0.14.0"` to
 `"=0.16.1"`; package version 0.7.30 to 0.7.31; CI env vars
 (`CHELIS_TAG`, `CHELIS_VERSION`, `CORAL_VERSION`) updated to match.
-README, `AGENTS.md`, and `docs/releases.md` pin strings reconciled
-(they had been stale at 0.10.1 since the 0.12.0 bump).
 
-**Blocked on nautilus:** reef requires dependencies to carry the same
-compiler pin, and the latest nautilus release (0.7.33) pins
-`=0.14.0`, so `chelis reef build` / `chelis check` / `chelis test`
-cannot run under 0.16.1 until a 0.16.1-pinned nautilus release exists.
-Validated so far under chelis 0.16.1: `chelis lint --check .` (clean,
-exit 0). The nautilus dependency stays 0.7.33 in `reef.toml` /
-`NAUTILUS_TAG` until its successor release is cut, at which point the
-dep bump, full test gate, and the stale-doc behavioral claims
-(`SKILL.md`, `docs/status.md`, mdBook bare-build claims — still citing
-v0.10.1) land here before merge.
+Bare-build lane fix for a pre-existing lowering limitation: `chelis
+build` (bare, single-file) rejects `gather` / `sort` axis arguments
+passed through a zero-arg helper — verified identical on 0.12.1 /
+0.14.0 / 0.16.1 — so `src/frame.ch` inlines `cast(0, int32)` at all 14
+axis sites and drops the `zero_i32` helper (tracked in
+`docs/upstream_bugs.md` §Tracking). No behavior change; package and
+test lanes were never affected.
+
+`scripts/repro_multimodule_bare_build.py` repairs — the probe had been
+dark since nautilus `stats.ch` began importing from
+`Nautilus.Distributions`: the concat now pulls the transitive nautilus
+modules (`special.ch`, `distributions.ch`) ahead of `stats.ch`;
+zstd package tarballs fall back to the `zstd` binary on Python < 3.14;
+`apply_name_map` renames whole words so pipe-position (`x |> f`) and
+first-class references are prefixed (the old lookahead form silently
+missed them — see the unnarrowed checker note in
+`docs/upstream_bugs.md`); `-fopenmp` is dropped when the local `gcc`
+(macOS clang) rejects it. All three targets (frame / groupby / join)
+build, link, and run clean on 0.16.1.
+
+Documentation reconciliation: README Toolchain/Build, `AGENTS.md`
+toolchain pin, `docs/releases.md` download examples, `docs/status.md`
+typecheck pin, `SKILL.md` claims (bare builds, test lane, Parquet
+re-probe), and mdBook current-gate claims (groupby, reshape, pandas
+comparison) now agree on chelis 0.16.1 — they had been stale at 0.10.1
+since the 0.12.0 bump. The Parquet parked entry records the 0.16.1
+re-probe (still checks clean, still no runtime symbol).
+
+Validation under chelis 0.16.1 with a locally-built nautilus 0.7.34
+(pinned `=0.16.1`): `chelis reef build`, `chelis test tests/ --timeout
+600 --jobs auto` (70 passed, 0 failed), `parity/run_parity.py
+--strict`, `scripts/run_static_checks.py`, `scripts/run_skill_checks.py`
+(11/11), `scripts/validate_book_examples.py` (8/8),
+`scripts/repro_multimodule_bare_build.py` (all targets), `chelis lint
+--check .`, and per-file `chelis fmt --check` all pass. Note: 0.16.1
+`fmt` no longer accepts directory arguments (per-file only).
+
+**Release gate:** merge once the successor nautilus release (pinned
+`=0.16.1`) is published and `reef.toml` / `NAUTILUS_TAG` are flipped to
+its version (they stay 0.7.33 on this branch until then), with CI
+re-run green.
 
 ## [0.7.28] - 2026-06-25
 

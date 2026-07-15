@@ -181,11 +181,11 @@ def main() -> int64 = {
 - String `sort_by` is supported and golden-validated: lexicographic ascending and descending, with runtime parity for the insertion sort and comparison path.
 - `outer_join` row order: left-sequential first, then right-only rows appended.
 - `melt` is column-major: all rows for value_col[0] appear before value_col[1].
-- Parquet is upstream-blocked (`import Std.Io.Parquet` resolves at check time on v0.10.1, but the runtime path is still not callable; functions intentionally fail).
+- Parquet is upstream-blocked (`import Std.Io.Parquet` resolves at check time on v0.16.1, but the runtime path is still not callable; functions intentionally fail).
 - `describe` skips NaN for float columns and masked entries for int columns; uses sample std (`ddof=1`).
 - `Coral.Window` and `Coral.Frame` both have an executed runtime parity lane: pandas goldens + runtime build/link/execute lane (in `parity/run_parity.py`). GroupBy, Join, and IO are fixture-backed plus compile-checked.
-- Stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.10.1`.
-- Tests in `tests/*.ch` run via `chelis test tests/ --jobs auto` (chelis v0.10.1) and assert mathematical identities, hand-computed values, structural properties, and round-trip identities. Pandas comparison work lives in `parity/`.
+- Stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.16.1`.
+- Tests in `tests/*.ch` run via `chelis test tests/ --jobs auto` (chelis v0.16.1) and assert mathematical identities, hand-computed values, structural properties, and round-trip identities. Pandas comparison work lives in `parity/`.
 - `chelis test` evaluator gap is fully resolved as of v0.3.1: tensor-tensor `eq`/`neq`/`lt`/`gt` (since v0.2.5), `to_tensor([bool, ...])`, and tensor-scalar `gt(tensor, scalar)` (since v0.3.1) all work. IntCol construction, `is_nan`/`any_nan`/`count_nan` tensor exports, `agg_count`, `value_counts`, int CSV round-trip, and bool CSV/JSON round-trips all run end-to-end via `chelis test`.
 
 ## 5. API Surface

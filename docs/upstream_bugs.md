@@ -52,6 +52,35 @@ v0.3.2.)
   direct `not(is_nan_mask)` form when chelis ships a bool-tensor
   `not`.
 
+- **Bare-lane tensor-op axis must be syntactic (chelis ≤ 0.16.1).**
+  `chelis build` (bare, single-file) rejects `gather` / `sort` axis
+  arguments passed through a zero-arg helper (`zero_i32()` defined as
+  `cast(0, int32)`) with "`gather` axis is not a compile-time integer
+  constant: rank monomorphization cannot resolve it to a fixed axis"; the
+  diagnostic's admitted forms are a literal or an inline
+  `cast(<int>, int32)`. Verified identical on 0.12.1, 0.14.0, and 0.16.1
+  — pre-existing, surfaced when `scripts/repro_multimodule_bare_build.py`
+  regained coverage at the 0.16.1 pin bump (it had been dark; see the
+  probe's History note). The package lane (`chelis reef build`) and the
+  `chelis test` lane are unaffected. Worked around in `src/frame.ch` by
+  inlining `cast(0, int32)` at all 14 axis sites and dropping the
+  `zero_i32` helper. Restore a named helper if upstream ever resolves
+  helper-call axes in rank monomorphization. Re-probe:
+  `python3 scripts/repro_multimodule_bare_build.py` (all three targets).
+
+- **Unbound `|>` pipe targets accepted in large bare builds (chelis
+  0.16.1, unnarrowed — do not file until narrowed).** While the probe's
+  prefixer still missed pipe-position references, `chelis build` accepted
+  a multi-thousand-line concat containing ~13 unbound function references
+  in `x |> name` position and emitted C that calls them as undeclared
+  functions (native compile then failed with implicit-declaration
+  errors). Minimal repros — a single unbound pipe target in `main` or in
+  a nested `if` branch — are correctly rejected with `UnboundVariable`,
+  so the admission is scale- or context-dependent. Repro: check out
+  `scripts/repro_multimodule_bare_build.py` from before the whole-word
+  `apply_name_map` fix in the 0.16.1 bump change set and run
+  `--target groupby`. Narrow to a minimal case before filing upstream.
+
 ## Parked upstream
 
 - **`grad` C-backend lowering.** `chelis check` accepts `grad(f)(x)` at score 1.0; `chelis build --target c` rejects with "can't lower these defs — their body applies/binds `grad` (or `vmap`) in a position the host lane can't resolve". Upstream recorded this as a Phase 5 deferred item (commit `a3ca2be` in chelis v0.3.1: `docs(spec): record host-lane scalar AD as Phase 5 deferred item`); the design (forward-mode dual numbers) is locked behind a real driver appearing. Coral's `grad` usage stays illustrative in docs. **Re-probe only when chelis ships Phase 5 or when Coral acquires a concrete scalar-AD use case worth pushing for it.** No per-release re-probe.
@@ -68,8 +97,11 @@ v0.3.2.)
   contains no `Parquet` / `read_parquet` symbol, and the C build now
   stops earlier with `range start index 2 out of range for slice of
   length 1`. The user-visible conclusion is unchanged: Parquet remains
-  unavailable. **Re-probe when upstream signals movement** or at the
-  next major coral release, not on patches.
+  unavailable. Re-probed at the chelis 0.16.1 pin bump: `import
+  Std.Io.Parquet (read_parquet)` still checks clean and
+  `libchelis_runtime.a` still contains no parquet symbol. **Re-probe when
+  upstream signals movement** or at the next major coral release, not on
+  patches.
 
 ## Archive (resolved upstream)
 

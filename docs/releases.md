@@ -42,8 +42,8 @@ End-to-end, with no platform-specific Coral artifact required:
 
 1. Download the chelis toolchain that matches the consumer's OS:
    ```sh
-   gh release download v0.10.1 --repo Chelis-Lang/chelis \
-     --pattern 'chelis-v0.10.1-darwin-arm64.tar.gz'
+   gh release download v0.16.1 --repo Chelis-Lang/chelis \
+     --pattern 'chelis-v0.16.1-darwin-arm64.tar.gz'
    ```
    (or `linux-x86_64` for Linux consumers).
 2. Extract and put `bin/chelis` on PATH.

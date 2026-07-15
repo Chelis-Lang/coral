@@ -6,6 +6,23 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+Compiler-pin bump to chelis 0.16.1 (prep). `compiler = "=0.14.0"` to
+`"=0.16.1"`; package version 0.7.30 to 0.7.31; CI env vars
+(`CHELIS_TAG`, `CHELIS_VERSION`, `CORAL_VERSION`) updated to match.
+README, `AGENTS.md`, and `docs/releases.md` pin strings reconciled
+(they had been stale at 0.10.1 since the 0.12.0 bump).
+
+**Blocked on nautilus:** reef requires dependencies to carry the same
+compiler pin, and the latest nautilus release (0.7.33) pins
+`=0.14.0`, so `chelis reef build` / `chelis check` / `chelis test`
+cannot run under 0.16.1 until a 0.16.1-pinned nautilus release exists.
+Validated so far under chelis 0.16.1: `chelis lint --check .` (clean,
+exit 0). The nautilus dependency stays 0.7.33 in `reef.toml` /
+`NAUTILUS_TAG` until its successor release is cut, at which point the
+dep bump, full test gate, and the stale-doc behavioral claims
+(`SKILL.md`, `docs/status.md`, mdBook bare-build claims — still citing
+v0.10.1) land here before merge.
+
 ## [0.7.28] - 2026-06-25
 
 Cascade to chelis v0.10.1, nautilus v0.7.30.

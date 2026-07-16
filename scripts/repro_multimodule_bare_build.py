@@ -17,6 +17,11 @@ History:
 - v0.1.15–v0.1.17: invalid-C type-collapse caused link failure
 - v0.1.18: invalid-C fixed; Phase 0e RISC DAG panic remained (non-fatal, rc=0)
 - v0.1.19: Phase 0e panic fixed; build, link, and run are now fully clean
+- chelis v0.16.1 / nautilus 0.7.33+: nautilus `stats.ch` imports
+  `chi_squared_cdf` from `Nautilus.Distributions`, so the concat now pulls
+  the transitive nautilus modules (`special.ch`, `distributions.ch`) ahead
+  of `stats.ch`; zstd tarballs fall back to the `zstd` binary on
+  Python < 3.14 (stdlib `tarfile` gained zstd in 3.14)
 
 Exit codes:
 - 0: build, link, and run all succeeded cleanly
@@ -43,8 +48,7 @@ from scripts.chelis_toolchain import resolve_chelis_bin
 CHELIS = resolve_chelis_bin()
 
 
-def _nautilus_stats_src() -> str:
-    """Extract stats.ch from the Nautilus package in the local reef registry."""
+def _nautilus_tarball() -> Path:
     reef_toml = REPO / "reef.toml"
     with open(reef_toml, "rb") as f:
         deps = tomllib.load(f).get("dependencies", {})
@@ -54,26 +58,60 @@ def _nautilus_stats_src() -> str:
     tarball = Path.home() / ".chelis" / "reef" / "packages" / "nautilus" / nautilus_version / f"nautilus-{nautilus_version}.tar.zst"
     if not tarball.exists():
         raise RuntimeError(f"nautilus {nautilus_version} not found in local reef registry: {tarball}")
-    with tarfile.open(tarball, "r:*") as tf:
-        member = tf.getmember("src/stats.ch")
+    return tarball
+
+
+def _nautilus_src(member_path: str) -> str:
+    """Extract one source file from the Nautilus package in the local reef registry."""
+    import io
+
+    tarball = _nautilus_tarball()
+    try:
+        tf = tarfile.open(tarball, "r:*")
+    except tarfile.ReadError:
+        # stdlib tarfile reads zstd only on Python >= 3.14; fall back to the
+        # zstd binary (the script already shells out to gcc, so an external
+        # tool is fair game).
+        zstd = shutil.which("zstd")
+        if zstd is None:
+            raise RuntimeError(
+                f"cannot read {tarball}: need Python >= 3.14 (tarfile zstd) or a `zstd` binary on PATH"
+            )
+        try:
+            raw = subprocess.run([zstd, "-dc", str(tarball)], check=True, capture_output=True).stdout
+        except subprocess.CalledProcessError as exc:
+            reason = exc.stderr.decode(errors="replace").strip()
+            raise RuntimeError(f"zstd failed to decompress {tarball}: {reason}") from exc
+        tf = tarfile.open(fileobj=io.BytesIO(raw), mode="r:")
+    with tf:
+        member = tf.getmember(member_path)
         return tf.extractfile(member).read().decode()
 
+
+# `nautilus:`-prefixed entries resolve from the reef registry at runtime, in
+# dependency order: stats.ch imports chi_squared_cdf from Distributions,
+# which imports erf/erfinv/log_gamma from Special.
+_NAUTILUS_STATS_CHAIN = [
+    ("nautilus:src/special.ch", "special__"),
+    ("nautilus:src/distributions.ch", "dist__"),
+    ("nautilus:src/stats.ch", "stats__"),
+]
 
 MODULE_PRESETS = {
     "frame": [
         ("src/internal/hamt.ch", "hamt__"),
-        (None, "stats__"),  # resolved from reef registry at runtime
+        *_NAUTILUS_STATS_CHAIN,
         ("src/frame.ch", "frame__"),
     ],
     "groupby": [
         ("src/internal/hamt.ch", "hamt__"),
-        (None, "stats__"),
+        *_NAUTILUS_STATS_CHAIN,
         ("src/frame.ch", "frame__"),
         ("src/groupby.ch", "groupby__"),
     ],
     "join": [
         ("src/internal/hamt.ch", "hamt__"),
-        (None, "stats__"),
+        *_NAUTILUS_STATS_CHAIN,
         ("src/frame.ch", "frame__"),
         ("src/join.ch", "join__"),
     ],
@@ -87,12 +125,31 @@ def strip_module_surface(src: str) -> str:
     return src
 
 
+_STRING_LITERAL_RE = re.compile(r'"(?:\\.|[^"\\])*"')
+
+
 def apply_name_map(src: str, mapping: dict[str, str]) -> str:
-    updated = src
-    for old, new in sorted(mapping.items(), key=lambda item: -len(item[0])):
-        updated = re.sub(rf"\b{re.escape(old)}(?=\s*\[)", new, updated)
-        updated = re.sub(rf"\b{re.escape(old)}(?=\s*\()", new, updated)
-    return updated
+    # Whole-word rename: besides `name(` / `name[` call sites, functions are
+    # referenced bare in pipe chains (`x |> name |> ...`) and as first-class
+    # arguments, which lookahead-based rewrites miss. String literals are
+    # excluded — a def name that is also an English word (e.g. `columns`)
+    # must not be rewritten inside fail() messages, or the synthesized
+    # program's diagnostics diverge from the real modules. Known limitation:
+    # locals that share a def's name still get renamed (harmless shadowing
+    # today; scope-aware renaming is out of a triage harness's weight class).
+    def rename(segment: str) -> str:
+        for old, new in sorted(mapping.items(), key=lambda item: -len(item[0])):
+            segment = re.sub(rf"\b{re.escape(old)}\b", new, segment)
+        return segment
+
+    parts: list[str] = []
+    last = 0
+    for m in _STRING_LITERAL_RE.finditer(src):
+        parts.append(rename(src[last : m.start()]))
+        parts.append(m.group(0))
+        last = m.end()
+    parts.append(rename(src[last:]))
+    return "".join(parts)
 
 
 def prefix_defs(src: str, prefix: str) -> tuple[str, dict[str, str]]:
@@ -101,11 +158,15 @@ def prefix_defs(src: str, prefix: str) -> tuple[str, dict[str, str]]:
     return apply_name_map(src, mapping), mapping
 
 
-def build_prefixed_modules(specs: list[tuple[str | None, str]]) -> str:
+def build_prefixed_modules(specs: list[tuple[str, str]]) -> str:
     accumulated: dict[str, str] = {}
     parts: list[str] = []
     for rel_path, prefix in specs:
-        raw = _nautilus_stats_src() if rel_path is None else (REPO / rel_path).read_text()
+        raw = (
+            _nautilus_src(rel_path.removeprefix("nautilus:"))
+            if rel_path.startswith("nautilus:")
+            else (REPO / rel_path).read_text()
+        )
         src = strip_module_surface(raw)
         src, local_map = prefix_defs(src, prefix)
         src = apply_name_map(src, accumulated)
@@ -114,11 +175,21 @@ def build_prefixed_modules(specs: list[tuple[str | None, str]]) -> str:
     return "\n".join(parts)
 
 
+def _compiler_supports_fopenmp() -> bool:
+    # macOS aliases `gcc` to clang, which rejects -fopenmp without libomp.
+    probe = subprocess.run(
+        ["gcc", "-fopenmp", "-x", "c", "-", "-o", "/dev/null"],
+        input=b"int main(void){return 0;}",
+        capture_output=True,
+    )
+    return probe.returncode == 0
+
+
 def native_link_cmd(binary: Path, sources: list[Path], out_dir: Path) -> list[str]:
     return [
         "gcc",
         "-O2",
-        "-fopenmp",
+        *(["-fopenmp"] if _compiler_supports_fopenmp() else []),
         "-o",
         str(binary),
         *(str(source) for source in sources),

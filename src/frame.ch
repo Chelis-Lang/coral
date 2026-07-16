@@ -20,7 +20,6 @@ type KeyValue =
 type Frame[n] =
   | Frame { cols: Hamt[Column[n]], col_order: List[string] }
 def zero_i64() -> int64 = cast(0, int64)
-def zero_i32() -> int32 = cast(0, int32)
 def one_i64() -> int64 = cast(1, int64)
 def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))
 def bool_list_to_tensor[n](values: List[bool]) -> tensor[n, bool] = {
@@ -149,7 +148,7 @@ def column_tail[n, k](col: Column[n], count: int64) -> Column[k] = {
     start = sub(total, kept)
     idx_list = range(start, total)
     idx = to_tensor(idx_list)
-    IntCol(gather(xs, idx, zero_i32()), gather(mask, idx, zero_i32()))
+    IntCol(gather(xs, idx, cast(0, int32)), gather(mask, idx, cast(0, int32)))
   }
     | FloatCol(xs) => {
     total = numel(xs)
@@ -157,7 +156,7 @@ def column_tail[n, k](col: Column[n], count: int64) -> Column[k] = {
     start = sub(total, kept)
     idx_list = range(start, total)
     idx = to_tensor(idx_list)
-    FloatCol(gather(xs, idx, zero_i32()))
+    FloatCol(gather(xs, idx, cast(0, int32)))
   }
     | StringCol(xs) => {
     total = len(xs)
@@ -172,7 +171,7 @@ def column_tail[n, k](col: Column[n], count: int64) -> Column[k] = {
     start = sub(total, kept)
     idx_list = range(start, total)
     idx = to_tensor(idx_list)
-    BoolCol(gather(xs, idx, zero_i32()))
+    BoolCol(gather(xs, idx, cast(0, int32)))
   }
   }
 }
@@ -194,7 +193,7 @@ def slice_column_range[n, k](col: Column[n], start: int64, finish: int64) -> Col
     if lte(hi, lo) then IntCol(to_tensor([]), bool_list_to_tensor([])) else {
       idx_list = range(lo, hi)
       idx = to_tensor(idx_list)
-      IntCol(gather(xs, idx, zero_i32()), gather(mask, idx, zero_i32()))
+      IntCol(gather(xs, idx, cast(0, int32)), gather(mask, idx, cast(0, int32)))
     }
   }
     | FloatCol(xs) => {
@@ -204,7 +203,7 @@ def slice_column_range[n, k](col: Column[n], start: int64, finish: int64) -> Col
     if lte(hi, lo) then FloatCol(to_tensor([])) else {
       idx_list = range(lo, hi)
       idx = to_tensor(idx_list)
-      FloatCol(gather(xs, idx, zero_i32()))
+      FloatCol(gather(xs, idx, cast(0, int32)))
     }
   }
     | StringCol(xs) => {
@@ -223,7 +222,7 @@ def slice_column_range[n, k](col: Column[n], start: int64, finish: int64) -> Col
     if lte(hi, lo) then BoolCol(bool_list_to_tensor([])) else {
       idx_list = range(lo, hi)
       idx = to_tensor(idx_list)
-      BoolCol(gather(xs, idx, zero_i32()))
+      BoolCol(gather(xs, idx, cast(0, int32)))
     }
   }
   }
@@ -281,20 +280,20 @@ def perm_from_key_column[n](col: Column[n], ascending: bool) -> (tensor[n, int64
     | FloatCol(xs) => {
     xs_list = to_list(xs)
     fresh_tensor = to_tensor(xs_list)
-    perm = orient_perm(sort(fresh_tensor, zero_i32()).1, ascending)
+    perm = orient_perm(sort(fresh_tensor, cast(0, int32)).1, ascending)
     (perm, FloatCol(to_tensor(xs_list)))
   }
     | IntCol(xs, mask) => {
     xs_list = to_list(xs)
     mask_list = to_list(mask)
     fresh_tensor = to_tensor(xs_list)
-    perm = orient_perm(sort(fresh_tensor, zero_i32()).1, ascending)
+    perm = orient_perm(sort(fresh_tensor, cast(0, int32)).1, ascending)
     (perm, IntCol(to_tensor(xs_list), bool_list_to_tensor(mask_list)))
   }
     | BoolCol(xs) => {
     xs_list = to_list(xs)
     fresh_tensor = to_tensor(map(fn (b: bool) -> if b then one_i64() else zero_i64(), xs_list))
-    perm = orient_perm(sort(fresh_tensor, zero_i32()).1, ascending)
+    perm = orient_perm(sort(fresh_tensor, cast(0, int32)).1, ascending)
     (perm, BoolCol(bool_list_to_tensor(xs_list)))
   }
     | StringCol(xs) => {
@@ -538,10 +537,10 @@ def mask_to_index_list(items: List[(int64, bool)], acc: List[int64]) -> List[int
 }
 def reindex_column[n, k](col: Column[n], idx_tensor: tensor[k, int64], idx_list: List[int64]) -> Column[k] = {
   match col with {
-    | IntCol(xs, mask) => IntCol(gather(xs, idx_tensor, zero_i32()), gather(mask, idx_tensor, zero_i32()))
-    | FloatCol(xs) => FloatCol(gather(xs, idx_tensor, zero_i32()))
+    | IntCol(xs, mask) => IntCol(gather(xs, idx_tensor, cast(0, int32)), gather(mask, idx_tensor, cast(0, int32)))
+    | FloatCol(xs) => FloatCol(gather(xs, idx_tensor, cast(0, int32)))
     | StringCol(xs) => StringCol(list_gather_string(xs, idx_list))
-    | BoolCol(xs) => BoolCol(gather(xs, idx_tensor, zero_i32()))
+    | BoolCol(xs) => BoolCol(gather(xs, idx_tensor, cast(0, int32)))
   }
 }
 def list_gather_string(xs: List[string], idxs: List[int64]) -> List[string] = { map(fn (i: int64) -> index(xs, i), idxs) }

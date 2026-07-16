@@ -45,15 +45,15 @@ scale.
 
 ## Toolchain
 
-Pinned to `chelis v0.10.1` in `reef.toml`:
+Pinned to `chelis v0.16.1` in `reef.toml`:
 
 ```toml
-compiler = "=0.10.1"
+compiler = "=0.16.1"
 ```
 
 ## Build
 
-A Coral checkout uses `chelis-std 0.4.0` and `nautilus 0.7.28`
+A Coral checkout uses `chelis-std 0.4.0` and `nautilus 0.7.34`
 resolved from the local reef registry. With the compiler on `PATH`, or
 `CHELIS_BIN` pointed at the published binary:
 
@@ -78,7 +78,7 @@ python parity/run_parity.py            # pandas comparison oracle
 - `sort_by` covers int, float, bool, and string columns
 - `outer_join` is implemented and golden-validated
 - `Coral.Reshape` ships `pivot`, `melt`, `stack`, and `unstack`
-- Parquet I/O is upstream-blocked (see `docs/upstream_bugs.md`)
+- Parquet I/O is upstream-blocked (see `docs/UPSTREAM_BUGS.md`)
 - null semantics are intentionally narrower than pandas in the first pass
 - the prior `chelis test` evaluator gap is fully resolved as of chelis
   v0.3.1: tensor-tensor `eq`/`neq`/`lt`/`gt` (v0.2.5), `to_tensor([bool, ...])`

@@ -14,16 +14,36 @@ concurrency:
 env:
   # AUTO-SYNC: must match reef.toml. The pin-consistency-guard job
   # below fails immediately if these drift from reef.toml.
-  CHELIS_TAG: v0.14.0
-  CHELIS_VERSION: 0.14.0
-  NAUTILUS_TAG: v0.7.33
-  CORAL_VERSION: 0.7.30
+  CHELIS_TAG: v0.16.1
+  CHELIS_VERSION: 0.16.1
+  NAUTILUS_TAG: v0.7.34
+  CORAL_VERSION: 0.7.31
 
 jobs:
   pin-consistency-guard:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # conform bump-check diffs pins against origin/main.
+          fetch-depth: 0
+
+      # No reef-cache-key: audit/bump-check never touch the reef registry,
+      # and joining the shared cache from the fastest job risks saving an
+      # empty registry under a fresh key before the real jobs populate it.
+      - name: Install chelis toolchain (cached)
+        uses: ./.github/actions/install-chelis
+        with:
+          chelis-tag: ${{ env.CHELIS_TAG }}
+          chelis-version: ${{ env.CHELIS_VERSION }}
+          gh-token: ${{ secrets.CHELIS_RELEASE_TOKEN }}
+
+      - name: Audit shell conformance and workflow pins
+        run: chelis reef conform audit --explain
+
+      - name: Enforce the pin-bump contract
+        run: chelis reef conform bump-check --base origin/main
+
       - name: Assert CI chelis pin matches reef.toml
         run: |
           set -euo pipefail
@@ -102,6 +122,11 @@ jobs:
       - name: chelis test (node-local parallel)
         run: chelis test tests/ --timeout 600 --jobs auto
 
+      # Shell contract §6: each case must fail with the diagnostic
+      # pinned on line 1 of its paired .expect sidecar.
+      - name: chelis test (negative contracts)
+        run: chelis test tests_neg/ --expect neg
+
   mac-smoke:
     needs: lint
     runs-on: macos-latest
@@ -152,8 +177,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Python deps
-        run: pip install pandas --quiet
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+
+      - name: Install locked parity environment
+        run: uv sync --project parity --frozen
 
       - name: Install chelis toolchain (cached)
         id: chelis
@@ -180,5 +208,5 @@ jobs:
       - name: mdBook examples
         run: python scripts/validate_book_examples.py
 
-      - name: pandas parity
-        run: python parity/run_parity.py --strict
+      - name: pandas parity (validate reviewed goldens; never regenerate in CI)
+        run: uv run --project parity --frozen python parity/run_parity.py --strict

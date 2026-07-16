@@ -6,6 +6,73 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+Compiler-pin bump to chelis 0.16.1. `compiler = "=0.14.0"` to
+`"=0.16.1"`; package version 0.7.30 to 0.7.31; CI env vars
+(`CHELIS_TAG`, `CHELIS_VERSION`, `CORAL_VERSION`) updated to match.
+
+Bare-build lane fix for a pre-existing lowering limitation: `chelis
+build` (bare, single-file) rejects `gather` / `sort` axis arguments
+passed through a zero-arg helper — verified identical on 0.12.1 /
+0.14.0 / 0.16.1 — so `src/frame.ch` inlines `cast(0, int32)` at all 15
+axis sites (12 `gather` + 3 `sort`) and drops the `zero_i32` helper
+(tracked in `docs/UPSTREAM_BUGS.md` §Tracking). No behavior change;
+package and test lanes were never affected.
+
+`scripts/repro_multimodule_bare_build.py` repairs — the probe had been
+dark since nautilus `stats.ch` began importing from
+`Nautilus.Distributions`: the concat now pulls the transitive nautilus
+modules (`special.ch`, `distributions.ch`) ahead of `stats.ch`;
+zstd package tarballs fall back to the `zstd` binary on Python < 3.14;
+`apply_name_map` renames whole words so pipe-position (`x |> f`) and
+first-class references are prefixed (the old lookahead form silently
+missed them — see the unnarrowed checker note in
+`docs/UPSTREAM_BUGS.md`); `-fopenmp` is dropped when the local `gcc`
+(macOS clang) rejects it. All three targets (frame / groupby / join)
+build, link, and run clean on 0.16.1.
+
+Documentation reconciliation: README Toolchain/Build, `AGENTS.md`
+toolchain pin, `docs/releases.md` download examples, `docs/status.md`
+typecheck pin, `SKILL.md` claims (bare builds, test lane, Parquet
+re-probe), and mdBook current-gate claims (groupby, reshape, pandas
+comparison) now agree on chelis 0.16.1 — they had been stale at 0.10.1
+since the 0.12.0 bump. The Parquet parked entry records the 0.16.1
+re-probe (still checks clean, still no runtime symbol).
+
+The `nautilus` dependency moves 0.7.33 to 0.7.34 (its
+chelis-0.16.1-pinning release, published 2026-07-16), with
+`NAUTILUS_TAG` updated to match.
+
+`chelis reef conform` adoption (closes #17): `conform sync`
+re-materializes the shared skill set from the pinned toolchain
+(refreshed `cli-surface`, new `issue-resolution` / `packaging-install`,
+stamped in `agent-skills/UPSTREAM.toml`) and stamps the `AGENTS.md`
+managed inheritance block; `AGENTS.md` gains the Pin Bump Checklist and
+the track-latest Toolchain Policy wording; `docs/upstream_bugs.md` is
+renamed to `docs/UPSTREAM_BUGS.md` with the canonical §Actively blocking
+/ §Tracking / §Parked / §Archived sections; `docs/CHELIS_SURFACE.md` is
+added (coral-scoped capability inventory, all rows `@pin` at 0.16.1);
+`tests_neg/frame/` lands three check-time negative contracts with
+pinned-diagnostic `.expect` sidecars, run via `chelis test tests_neg/
+--expect neg` locally and in CI; `parity/` becomes a locked uv project
+(`pyproject.toml` + `uv.lock`, CI runs it via `uv run --project parity
+--frozen`); `docs/issue_drafts/` is established with the parked
+unbound-pipe draft; CI's `pin-consistency-guard` job now installs the
+toolchain and runs `chelis reef conform audit --explain` plus `chelis
+reef conform bump-check --base origin/main` (fetch-depth 0) alongside
+the offline bash guard. The bare-lane syntactic-axis limitation is now
+filed upstream as chelis#741 and cited from its Tracking entry.
+`chelis reef conform audit` exits 0 (no MUST failures) and `bump-check`
+reports the 0.14.0 → 0.16.1 pin change with a green audit.
+
+Validation under chelis 0.16.1 against the released nautilus 0.7.34:
+`chelis reef build`, `chelis test tests/ --timeout 600 --jobs auto`
+(70 passed, 0 failed), `parity/run_parity.py --strict`,
+`scripts/run_static_checks.py`, `scripts/run_skill_checks.py` (11/11),
+`scripts/validate_book_examples.py` (8/8),
+`scripts/repro_multimodule_bare_build.py` (all targets), `chelis lint
+--check .`, and per-file `chelis fmt --check` all pass. Note: 0.16.1
+`fmt` no longer accepts directory arguments (per-file only).
+
 ## [0.7.28] - 2026-06-25
 
 Cascade to chelis v0.10.1, nautilus v0.7.30.

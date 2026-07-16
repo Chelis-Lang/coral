@@ -38,19 +38,18 @@ comparison) now agree on chelis 0.16.1 — they had been stale at 0.10.1
 since the 0.12.0 bump. The Parquet parked entry records the 0.16.1
 re-probe (still checks clean, still no runtime symbol).
 
-Validation under chelis 0.16.1 with a locally-built nautilus 0.7.34
-(pinned `=0.16.1`): `chelis reef build`, `chelis test tests/ --timeout
-600 --jobs auto` (70 passed, 0 failed), `parity/run_parity.py
---strict`, `scripts/run_static_checks.py`, `scripts/run_skill_checks.py`
-(11/11), `scripts/validate_book_examples.py` (8/8),
+The `nautilus` dependency moves 0.7.33 to 0.7.34 (its
+chelis-0.16.1-pinning release, published 2026-07-16), with
+`NAUTILUS_TAG` updated to match.
+
+Validation under chelis 0.16.1 against the released nautilus 0.7.34:
+`chelis reef build`, `chelis test tests/ --timeout 600 --jobs auto`
+(70 passed, 0 failed), `parity/run_parity.py --strict`,
+`scripts/run_static_checks.py`, `scripts/run_skill_checks.py` (11/11),
+`scripts/validate_book_examples.py` (8/8),
 `scripts/repro_multimodule_bare_build.py` (all targets), `chelis lint
 --check .`, and per-file `chelis fmt --check` all pass. Note: 0.16.1
 `fmt` no longer accepts directory arguments (per-file only).
-
-**Release gate:** merge once the successor nautilus release (pinned
-`=0.16.1`) is published and `reef.toml` / `NAUTILUS_TAG` are flipped to
-its version (they stay 0.7.33 on this branch until then), with CI
-re-run green.
 
 ## [0.7.28] - 2026-06-25
 

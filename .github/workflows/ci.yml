@@ -16,7 +16,7 @@ env:
   # below fails immediately if these drift from reef.toml.
   CHELIS_TAG: v0.16.1
   CHELIS_VERSION: 0.16.1
-  NAUTILUS_TAG: v0.7.33
+  NAUTILUS_TAG: v0.7.34
   CORAL_VERSION: 0.7.31
 
 jobs:

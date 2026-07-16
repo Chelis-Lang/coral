@@ -22,4 +22,4 @@ def main() -> int64 = {
 currently call `fail(...)` at runtime. Parquet support remains gated on upstream
 `Chelis-Lang/chelis` shipping the runtime backing for `Std.Io.Parquet`; the
 v0.7.6 probe still resolves the import at check time but does not provide a
-usable runtime path. See `docs/upstream_bugs.md` for the full probe log.
+usable runtime path. See `docs/UPSTREAM_BUGS.md` for the full probe log.

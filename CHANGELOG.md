@@ -42,6 +42,28 @@ The `nautilus` dependency moves 0.7.33 to 0.7.34 (its
 chelis-0.16.1-pinning release, published 2026-07-16), with
 `NAUTILUS_TAG` updated to match.
 
+`chelis reef conform` adoption (closes #17): `conform sync`
+re-materializes the shared skill set from the pinned toolchain
+(refreshed `cli-surface`, new `issue-resolution` / `packaging-install`,
+stamped in `agent-skills/UPSTREAM.toml`) and stamps the `AGENTS.md`
+managed inheritance block; `AGENTS.md` gains the Pin Bump Checklist and
+the track-latest Toolchain Policy wording; `docs/upstream_bugs.md` is
+renamed to `docs/UPSTREAM_BUGS.md` with the canonical §Actively blocking
+/ §Tracking / §Parked / §Archived sections; `docs/CHELIS_SURFACE.md` is
+added (coral-scoped capability inventory, all rows `@pin` at 0.16.1);
+`tests_neg/frame/` lands three check-time negative contracts with
+pinned-diagnostic `.expect` sidecars, run via `chelis test tests_neg/
+--expect neg` locally and in CI; `parity/` becomes a locked uv project
+(`pyproject.toml` + `uv.lock`, CI runs it via `uv run --project parity
+--frozen`); `docs/issue_drafts/` is established with the parked
+unbound-pipe draft; CI's `pin-consistency-guard` job now installs the
+toolchain and runs `chelis reef conform audit --explain` plus `chelis
+reef conform bump-check --base origin/main` (fetch-depth 0) alongside
+the offline bash guard. The bare-lane syntactic-axis limitation is now
+filed upstream as chelis#741 and cited from its Tracking entry.
+`chelis reef conform audit` exits 0 (no MUST failures) and `bump-check`
+reports the 0.14.0 → 0.16.1 pin change with a green audit.
+
 Validation under chelis 0.16.1 against the released nautilus 0.7.34:
 `chelis reef build`, `chelis test tests/ --timeout 600 --jobs auto`
 (70 passed, 0 failed), `parity/run_parity.py --strict`,

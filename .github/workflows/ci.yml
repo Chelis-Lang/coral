@@ -24,6 +24,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # conform bump-check diffs pins against origin/main.
+          fetch-depth: 0
+
+      - name: Install chelis toolchain (cached)
+        uses: ./.github/actions/install-chelis
+        with:
+          chelis-tag: ${{ env.CHELIS_TAG }}
+          chelis-version: ${{ env.CHELIS_VERSION }}
+          gh-token: ${{ secrets.CHELIS_RELEASE_TOKEN }}
+          reef-cache-key: nautilus-${{ env.NAUTILUS_TAG }}
+
+      - name: Audit shell conformance and workflow pins
+        run: chelis reef conform audit --explain
+
+      - name: Enforce the pin-bump contract
+        run: chelis reef conform bump-check --base origin/main
+
       - name: Assert CI chelis pin matches reef.toml
         run: |
           set -euo pipefail
@@ -102,6 +120,11 @@ jobs:
       - name: chelis test (node-local parallel)
         run: chelis test tests/ --timeout 600 --jobs auto
 
+      # Shell contract §6: each case must fail with the diagnostic
+      # pinned on line 1 of its paired .expect sidecar.
+      - name: chelis test (negative contracts)
+        run: chelis test tests_neg/ --expect neg
+
   mac-smoke:
     needs: lint
     runs-on: macos-latest
@@ -152,8 +175,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Python deps
-        run: pip install pandas --quiet
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+
+      - name: Install locked parity environment
+        run: uv sync --project parity --frozen
 
       - name: Install chelis toolchain (cached)
         id: chelis
@@ -180,5 +206,5 @@ jobs:
       - name: mdBook examples
         run: python scripts/validate_book_examples.py
 
-      - name: pandas parity
-        run: python parity/run_parity.py --strict
+      - name: pandas parity (validate reviewed goldens; never regenerate in CI)
+        run: uv run --project parity --frozen python parity/run_parity.py --strict

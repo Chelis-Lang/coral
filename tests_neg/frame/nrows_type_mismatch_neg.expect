@@ -1,0 +1,6 @@
+type mismatch: Pkg__coral__Coral__Frame__Frame
+
+Assumption: Coral.Frame.nrows takes a Frame, not a scalar. Passing an int64
+must be rejected during checking with a Frame-vs-int64 type mismatch. If the
+checker ever accepts this program, the negative suite should report an
+unexpected pass rather than silently coercing the scalar.

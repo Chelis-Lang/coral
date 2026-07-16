@@ -77,7 +77,11 @@ def _nautilus_src(member_path: str) -> str:
             raise RuntimeError(
                 f"cannot read {tarball}: need Python >= 3.14 (tarfile zstd) or a `zstd` binary on PATH"
             )
-        raw = subprocess.run([zstd, "-dc", str(tarball)], check=True, capture_output=True).stdout
+        try:
+            raw = subprocess.run([zstd, "-dc", str(tarball)], check=True, capture_output=True).stdout
+        except subprocess.CalledProcessError as exc:
+            reason = exc.stderr.decode(errors="replace").strip()
+            raise RuntimeError(f"zstd failed to decompress {tarball}: {reason}") from exc
         tf = tarfile.open(fileobj=io.BytesIO(raw), mode="r:")
     with tf:
         member = tf.getmember(member_path)
@@ -121,14 +125,31 @@ def strip_module_surface(src: str) -> str:
     return src
 
 
+_STRING_LITERAL_RE = re.compile(r'"(?:\\.|[^"\\])*"')
+
+
 def apply_name_map(src: str, mapping: dict[str, str]) -> str:
     # Whole-word rename: besides `name(` / `name[` call sites, functions are
     # referenced bare in pipe chains (`x |> name |> ...`) and as first-class
-    # arguments, which lookahead-based rewrites miss.
-    updated = src
-    for old, new in sorted(mapping.items(), key=lambda item: -len(item[0])):
-        updated = re.sub(rf"\b{re.escape(old)}\b", new, updated)
-    return updated
+    # arguments, which lookahead-based rewrites miss. String literals are
+    # excluded — a def name that is also an English word (e.g. `columns`)
+    # must not be rewritten inside fail() messages, or the synthesized
+    # program's diagnostics diverge from the real modules. Known limitation:
+    # locals that share a def's name still get renamed (harmless shadowing
+    # today; scope-aware renaming is out of a triage harness's weight class).
+    def rename(segment: str) -> str:
+        for old, new in sorted(mapping.items(), key=lambda item: -len(item[0])):
+            segment = re.sub(rf"\b{re.escape(old)}\b", new, segment)
+        return segment
+
+    parts: list[str] = []
+    last = 0
+    for m in _STRING_LITERAL_RE.finditer(src):
+        parts.append(rename(src[last : m.start()]))
+        parts.append(m.group(0))
+        last = m.end()
+    parts.append(rename(src[last:]))
+    return "".join(parts)
 
 
 def prefix_defs(src: str, prefix: str) -> tuple[str, dict[str, str]]:

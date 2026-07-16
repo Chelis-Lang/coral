@@ -78,4 +78,7 @@ runs:
       uses: actions/cache@v4
       with:
         path: ~/.chelis/reef
-        key: chelis-reef-${{ inputs.platform }}-${{ inputs.reef-cache-key }}
+        # The chelis tag is part of the key: a registry populated under one
+        # compiler must not be restored after a chelis-only pin bump, or
+        # jobs would skip `chelis reef install` on a stale hit.
+        key: chelis-reef-${{ inputs.platform }}-${{ inputs.chelis-tag }}-${{ inputs.reef-cache-key }}

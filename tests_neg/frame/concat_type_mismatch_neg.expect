@@ -1,6 +1,7 @@
-type mismatch: List Pkg__coral__Coral__Frame__Frame
+type mismatch: List
 
 Assumption: Coral.Frame.concat takes a List[Frame]. Passing an int64 must be
-rejected during checking with a List[Frame]-vs-int64 type mismatch. If the
+rejected during checking with a List[Frame]-vs-int64 type mismatch (the
+pinned fragment stays mangle-insensitive; see the sibling nrows case). If the
 checker ever accepts this program, the negative suite should report an
 unexpected pass rather than silently wrapping the scalar.

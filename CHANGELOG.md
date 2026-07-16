@@ -13,10 +13,10 @@ Compiler-pin bump to chelis 0.16.1. `compiler = "=0.14.0"` to
 Bare-build lane fix for a pre-existing lowering limitation: `chelis
 build` (bare, single-file) rejects `gather` / `sort` axis arguments
 passed through a zero-arg helper — verified identical on 0.12.1 /
-0.14.0 / 0.16.1 — so `src/frame.ch` inlines `cast(0, int32)` at all 14
-axis sites and drops the `zero_i32` helper (tracked in
-`docs/upstream_bugs.md` §Tracking). No behavior change; package and
-test lanes were never affected.
+0.14.0 / 0.16.1 — so `src/frame.ch` inlines `cast(0, int32)` at all 15
+axis sites (12 `gather` + 3 `sort`) and drops the `zero_i32` helper
+(tracked in `docs/UPSTREAM_BUGS.md` §Tracking). No behavior change;
+package and test lanes were never affected.
 
 `scripts/repro_multimodule_bare_build.py` repairs — the probe had been
 dark since nautilus `stats.ch` began importing from
@@ -26,7 +26,7 @@ zstd package tarballs fall back to the `zstd` binary on Python < 3.14;
 `apply_name_map` renames whole words so pipe-position (`x |> f`) and
 first-class references are prefixed (the old lookahead form silently
 missed them — see the unnarrowed checker note in
-`docs/upstream_bugs.md`); `-fopenmp` is dropped when the local `gcc`
+`docs/UPSTREAM_BUGS.md`); `-fopenmp` is dropped when the local `gcc`
 (macOS clang) rejects it. All three targets (frame / groupby / join)
 build, link, and run clean on 0.16.1.
 

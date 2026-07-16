@@ -28,8 +28,8 @@ published release.
 
 This is the Coral-scoped view of the
 [canonical Chelis inventory](https://github.com/Chelis-Lang/chelis/blob/v0.16.1/docs/CHELIS_SURFACE.md).
-Version-sensitive limitation rows below resolve to executable probes cited in
-[`docs/UPSTREAM_BUGS.md`](UPSTREAM_BUGS.md).
+Version-sensitive limitation rows below resolve to the probes or manual
+re-probe records cited in [`docs/UPSTREAM_BUGS.md`](UPSTREAM_BUGS.md).
 
 ## Capability inventory
 

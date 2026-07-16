@@ -64,7 +64,8 @@ v0.3.2.)
   regained coverage at the 0.16.1 pin bump (it had been dark; see the
   probe's History note). The package lane (`chelis reef build`) and the
   `chelis test` lane are unaffected. Worked around in `src/frame.ch` by
-  inlining `cast(0, int32)` at all 14 axis sites and dropping the
+  inlining `cast(0, int32)` at all 15 axis sites (12 `gather` + 3
+  `sort`) and dropping the
   `zero_i32` helper. Restore a named helper when chelis#741 resolves
   helper-call axes in rank monomorphization. Re-probe:
   `python3 scripts/repro_multimodule_bare_build.py` (all three targets);

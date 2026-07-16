@@ -28,13 +28,15 @@ jobs:
           # conform bump-check diffs pins against origin/main.
           fetch-depth: 0
 
+      # No reef-cache-key: audit/bump-check never touch the reef registry,
+      # and joining the shared cache from the fastest job risks saving an
+      # empty registry under a fresh key before the real jobs populate it.
       - name: Install chelis toolchain (cached)
         uses: ./.github/actions/install-chelis
         with:
           chelis-tag: ${{ env.CHELIS_TAG }}
           chelis-version: ${{ env.CHELIS_VERSION }}
           gh-token: ${{ secrets.CHELIS_RELEASE_TOKEN }}
-          reef-cache-key: nautilus-${{ env.NAUTILUS_TAG }}
 
       - name: Audit shell conformance and workflow pins
         run: chelis reef conform audit --explain

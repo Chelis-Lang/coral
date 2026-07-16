@@ -53,7 +53,7 @@ compiler = "=0.16.1"
 
 ## Build
 
-A Coral checkout uses `chelis-std 0.4.0` and `nautilus 0.7.33`
+A Coral checkout uses `chelis-std 0.4.0` and `nautilus 0.7.34`
 resolved from the local reef registry. With the compiler on `PATH`, or
 `CHELIS_BIN` pointed at the published binary:
 

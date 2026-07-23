@@ -13,6 +13,21 @@ concrete need; archived items are historical.
 
 ## Tracking
 
+- **Block `if` with `else` on a later line rejected at parse time (chelis 0.17.1 regression, [chelis#849](https://github.com/Chelis-Lang/chelis/issues/849)).**
+  An `if ... then X` inside a `{ }` block whose `else` begins on a subsequent
+  line now fails with `expected Else, found Eof` on 0.17.1; the identical source
+  parsed cleanly on 0.16.1, and the `else` is present (this is not the intended
+  mandatory-`else`/totality behavior — it is newline-sensitivity in block
+  parsing). Surfaced in `parity/run_parity.py`'s `window_program`, whose
+  generated runtime program put `else` on new lines inside `{ }`-wrapped
+  helpers, breaking `chelis fmt --inplace` in the pandas-parity window-runtime
+  lane. Worked around by keeping every `else` on the same line as its preceding
+  branch (also the canonical form `chelis fmt` emits); the site carries a
+  `chelis#849` comment forbidding reintroduction of the newline. Restore the
+  multi-line-in-block layout when 0.17.x parses it again. Re-probe:
+  `uv run --project parity --frozen python parity/run_parity.py --strict`
+  (window-runtime lane); minimal A/B repro in the issue body.
+
 - **`numel(to_tensor([]))` returns 1 (chelis v0.7.7, [chelis#646](https://github.com/Chelis-Lang/chelis/issues/646)).** Probe at
   `/tmp/probe_numel_test.ch` confirms `numel(to_tensor([])) = 1` while
   `len(to_list(to_tensor([]))) = 0`. Affected Coral surface (`column_len`,
@@ -85,12 +100,20 @@ concrete need; archived items are historical.
   `--target groupby`. The parked draft carries the full body and the
   narrow-first filing condition; the single-reference rejection it
   depends on is pinned by `tests_neg/frame/unbound_function_neg.ch`.
+  Re-probed at the 0.17.1 pin bump: unbound `|>` pipe targets are now
+  correctly rejected with `UnboundVariable` in every constructible case —
+  single reference in `main`, inside a nested `if` branch, and at scale (40
+  defs each with a distinct unbound pipe target, all 40 diagnosed). The
+  anomalous acceptance is not reproducible on 0.17.1, so the draft stays
+  unfiled per its own narrow-first condition (an unreproducible report would
+  not be actionable). Keep the draft cite until either a minimal reproducer is
+  isolated on a supported pin or the entry is retired.
 
 ## Parked
 
 - **`grad` C-backend lowering ([chelis#405](https://github.com/Chelis-Lang/chelis/issues/405)).** `chelis check` accepts `grad(f)(x)` at score 1.0; `chelis build --target c` rejects with "can't lower these defs — their body applies/binds `grad` (or `vmap`) in a position the host lane can't resolve". Upstream recorded this as a Phase 5 deferred item (commit `a3ca2be` in chelis v0.3.1: `docs(spec): record host-lane scalar AD as Phase 5 deferred item`); the design (forward-mode dual numbers) is locked behind a real driver appearing. Coral's `grad` usage stays illustrative in docs. **Re-probe only when chelis ships Phase 5 or when Coral acquires a concrete scalar-AD use case worth pushing for it.** No per-release re-probe.
 
-- **`Std.Io.Parquet` runtime backing ([`docs/issue_drafts/std_io_parquet_runtime_backing.md`](issue_drafts/std_io_parquet_runtime_backing.md)).** Missing upstream feature, not a
+- **`Std.Io.Parquet` runtime backing ([chelis#850](https://github.com/Chelis-Lang/chelis/issues/850)).** Missing upstream feature, not a
   regression. `chelis-std`'s `io/parquet.ch` exports signatures only
   (`read_parquet`, `write_parquet`) with no callable function bodies, so
   Coral's workaround (`read_parquet_frame` / `write_parquet_frame` as
@@ -104,9 +127,14 @@ concrete need; archived items are historical.
   length 1`. The user-visible conclusion is unchanged: Parquet remains
   unavailable. Re-probed at the chelis 0.16.1 pin bump: `import
   Std.Io.Parquet (read_parquet)` still checks clean and
-  `libchelis_runtime.a` still contains no parquet symbol. **Re-probe when
-  upstream signals movement** or at the next major coral release, not on
-  patches.
+  `libchelis_runtime.a` still contains no parquet symbol. Re-probed at the
+  0.17.1 pin bump and filed as chelis#850: a call to the sig-only
+  `read_parquet` (with the exact chelis-std 0.4.0 module) checks at score 1.0
+  with an empty error list, and `chelis build` lowers it to an undeclared C
+  `read_parquet(...)` call that fails the native compile — the issue is filed
+  around that loud-checking gap (a score-1.0 check must not lower to a missing
+  runtime symbol), not just the missing feature. **Re-probe when upstream
+  signals movement** or at the next major coral release, not on patches.
 
 ## Archived
 

@@ -211,15 +211,20 @@ def window_program(fixture: dict) -> str:
         call = f'{op}(to_tensor([{input_values}]), cast({fixture["window"]}, int64))'
     else:
         call = f'{op}(to_tensor([{input_values}]), cast({fixture["alpha"]!r}, f32))'
+    # chelis 0.17.1 regressed block parsing: an `if ... then X` inside a `{ }`
+    # block whose `else` begins on a *later line* now fails to parse with a
+    # misleading `expected Else, found Eof`, even though the `else` is present.
+    # The same source parses cleanly on 0.16.1 (see chelis#849). Until it is
+    # fixed upstream, keep every `else` on the same line as its preceding branch
+    # (this is also the canonical form `chelis fmt` emits). Do not reintroduce a
+    # newline before `else` inside a block.
     return f"""
 def rt_abs_f32(x: f32) -> f32 = if lt(x, cast(0.0, f32)) then neg(x) else x
 
 def rt_max_f32(lhs: f32, rhs: f32) -> f32 = if gt(lhs, rhs) then lhs else rhs
 
 def rt_approx_eq(actual: f32, expected: f32, abs_tol: f32, rel_tol: f32) -> bool = {{
-  if and(neq(actual, actual), neq(expected, expected)) then true
-  else if or(neq(actual, actual), neq(expected, expected)) then false
-  else {{
+  if and(neq(actual, actual), neq(expected, expected)) then true else if or(neq(actual, actual), neq(expected, expected)) then false else {{
     diff = rt_abs_f32(sub(actual, expected))
     bound = rt_max_f32(abs_tol, mul(rel_tol, rt_abs_f32(expected)))
     lte(diff, bound)
@@ -227,18 +232,13 @@ def rt_approx_eq(actual: f32, expected: f32, abs_tol: f32, rel_tol: f32) -> bool
 }}
 
 def rt_float_list_eq(actual: List[f32], expected: List[f32], abs_tol: f32, rel_tol: f32) -> bool = {{
-  if neq(len(actual), len(expected)) then false
-  else if eq(len(actual), cast(0, int64)) then true
-  else if not(rt_approx_eq(index(actual, cast(0, int64)), index(expected, cast(0, int64)), abs_tol, rel_tol)) then false
-  else rt_float_list_eq(drop(actual, cast(1, int64)), drop(expected, cast(1, int64)), abs_tol, rel_tol)
+  if neq(len(actual), len(expected)) then false else if eq(len(actual), cast(0, int64)) then true else if not(rt_approx_eq(index(actual, cast(0, int64)), index(expected, cast(0, int64)), abs_tol, rel_tol)) then false else rt_float_list_eq(drop(actual, cast(1, int64)), drop(expected, cast(1, int64)), abs_tol, rel_tol)
 }}
 
 def main() -> f32 = {{
   actual = to_list({call})
   expected = [{expected_values}]
-  if rt_float_list_eq(actual, expected, cast({fixture["abs_tol"]!r}, f32), cast({fixture["rel_tol"]!r}, f32))
-    then cast(1.0, f32)
-    else cast(0.0, f32)
+  if rt_float_list_eq(actual, expected, cast({fixture["abs_tol"]!r}, f32), cast({fixture["rel_tol"]!r}, f32)) then cast(1.0, f32) else cast(0.0, f32)
 }}
 """
 

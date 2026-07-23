@@ -17,7 +17,7 @@ env:
   CHELIS_TAG: v0.17.1
   CHELIS_VERSION: 0.17.1
   NAUTILUS_TAG: v0.7.35
-  CORAL_VERSION: 0.7.31
+  CORAL_VERSION: 0.7.32
 
 jobs:
   pin-consistency-guard:

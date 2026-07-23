@@ -9,14 +9,11 @@ concrete need; archived items are historical.
 
 ## Actively blocking
 
-(none — the eval-interpreter gap that gated `chelis test` from `IntCol` /
-`BoolCol` / `is_nan` / `filter`-by-mask was the last open blocker, resolved
-upstream in v0.3.1; the issue#5 declared-signature follow-up resolved in
-v0.3.2.)
+(none yet)
 
 ## Tracking
 
-- **`numel(to_tensor([]))` returns 1 (chelis v0.7.7).** Probe at
+- **`numel(to_tensor([]))` returns 1 (chelis v0.7.7, [chelis#646](https://github.com/Chelis-Lang/chelis/issues/646)).** Probe at
   `/tmp/probe_numel_test.ch` confirms `numel(to_tensor([])) = 1` while
   `len(to_list(to_tensor([]))) = 0`. Affected Coral surface (`column_len`,
   `row_count`, length-checks in `filter` / `from_pairs`) worked around in
@@ -25,7 +22,10 @@ v0.3.2.)
   fixed. Re-probe at chelis v0.7.8.
 
 - **`neq(&tensor, &tensor)` returns `tensor[n, f32]` instead of
-  `tensor[n, bool]` (chelis v0.7.7).** Triggered the lint cleanup
+  `tensor[n, bool]` (chelis v0.7.7, [chelis#630](https://github.com/Chelis-Lang/chelis/issues/630)).** The
+  return dtype is the type-level symptom of that issue: `neq` lowers
+  from `cmplt` / `max_elem` float arithmetic with no native
+  bool-returning `CmpNe`, so the result carries `f32`. Triggered the lint cleanup
   rewrite of `is_nan` from the original `neq(copy(col), col)` to a
   `map(fn x -> neq(x, x))` + `bool_list_to_tensor` form, which is
   correct but O(n) on the host lane and gives up the tensor-fusion
@@ -34,7 +34,7 @@ v0.3.2.)
   upstream `neq` overload resolution produces `tensor[n, bool]` for
   `(&tensor, &tensor)` arg pairs.
 
-- **HAMT native-evaluator overhead (chelis v0.7.7).** `chelis test`
+- **HAMT native-evaluator overhead (chelis v0.7.7, [chelis#828](https://github.com/Chelis-Lang/chelis/issues/828)).** `chelis test`
   on a 100-key HAMT (`/tmp/coral-redteam/03_hamt_collisions.ch`)
   exceeds the 30s default budget. 60 keys clocks at ~57s of
   evaluator time. Dominant cost is per-call evaluator overhead in
@@ -44,7 +44,7 @@ v0.3.2.)
   interpreter or when a Coral consumer hits 100+ columns in
   evaluator mode (50–100 is the documented design range).
 
-- **`not` is scalar-only in chelis v0.7.7.** `not(tensor[n, bool])`
+- **`not` is scalar-only in chelis v0.7.7 ([chelis#647](https://github.com/Chelis-Lang/chelis/issues/647)).** `not(tensor[n, bool])`
   fails with "bool op expects bool arg". Affected Coral surface
   (`drop_nan` originally did `filter(df, not(is_nan(...)))`) worked
   around in v0.7.8 by reformulating the keep-mask as
@@ -71,9 +71,7 @@ v0.3.2.)
   `python3 scripts/repro_multimodule_bare_build.py` (all three targets);
   minimal A/B repro in the issue body.
 
-- **Unbound `|>` pipe targets accepted in large bare builds (chelis
-  0.16.1, unnarrowed — parked draft:
-  [`docs/issue_drafts/bare_build_unbound_pipe_targets.md`](issue_drafts/bare_build_unbound_pipe_targets.md)).**
+- **Unbound `|>` pipe targets accepted in large bare builds (chelis 0.16.1, unnarrowed; parked draft [`docs/issue_drafts/bare_build_unbound_pipe_targets.md`](issue_drafts/bare_build_unbound_pipe_targets.md)).**
   While the probe's
   prefixer still missed pipe-position references, `chelis build` accepted
   a multi-thousand-line concat containing ~13 unbound function references
@@ -90,9 +88,9 @@ v0.3.2.)
 
 ## Parked
 
-- **`grad` C-backend lowering.** `chelis check` accepts `grad(f)(x)` at score 1.0; `chelis build --target c` rejects with "can't lower these defs — their body applies/binds `grad` (or `vmap`) in a position the host lane can't resolve". Upstream recorded this as a Phase 5 deferred item (commit `a3ca2be` in chelis v0.3.1: `docs(spec): record host-lane scalar AD as Phase 5 deferred item`); the design (forward-mode dual numbers) is locked behind a real driver appearing. Coral's `grad` usage stays illustrative in docs. **Re-probe only when chelis ships Phase 5 or when Coral acquires a concrete scalar-AD use case worth pushing for it.** No per-release re-probe.
+- **`grad` C-backend lowering ([chelis#405](https://github.com/Chelis-Lang/chelis/issues/405)).** `chelis check` accepts `grad(f)(x)` at score 1.0; `chelis build --target c` rejects with "can't lower these defs — their body applies/binds `grad` (or `vmap`) in a position the host lane can't resolve". Upstream recorded this as a Phase 5 deferred item (commit `a3ca2be` in chelis v0.3.1: `docs(spec): record host-lane scalar AD as Phase 5 deferred item`); the design (forward-mode dual numbers) is locked behind a real driver appearing. Coral's `grad` usage stays illustrative in docs. **Re-probe only when chelis ships Phase 5 or when Coral acquires a concrete scalar-AD use case worth pushing for it.** No per-release re-probe.
 
-- **`Std.Io.Parquet` runtime backing.** Missing upstream feature, not a
+- **`Std.Io.Parquet` runtime backing ([`docs/issue_drafts/std_io_parquet_runtime_backing.md`](issue_drafts/std_io_parquet_runtime_backing.md)).** Missing upstream feature, not a
   regression. `chelis-std`'s `io/parquet.ch` exports signatures only
   (`read_parquet`, `write_parquet`) with no callable function bodies, so
   Coral's workaround (`read_parquet_frame` / `write_parquet_frame` as

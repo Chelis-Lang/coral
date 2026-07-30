@@ -33,7 +33,7 @@ Known deferred items:
 Test harness layout (Phase 3t):
 
 - `tests/*.ch` — Chelis-native tests run via
-  `chelis test tests/ --jobs auto`. 70 tests across frame, window,
+  `chelis test tests/ --jobs auto`. 71 tests across frame, window,
   groupby, join, reshape, io, nan, internal. All expected values are
   mathematical identities, hand-computed from inputs, structural
   assertions, or round-trip identities — never pandas-derived.
@@ -49,7 +49,8 @@ Test harness layout (Phase 3t):
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints
-  typecheck on published `chelis v0.16.1`
+  typecheck on the staging Chelis 0.17.3 candidate. Chelis 0.17.4 will
+  replace it before publication.
 - 8 `tests/*.ch` modules cover construction, filter (via mask
   consumers), head/tail/slice, rename/with_column/drop, sort_by
   (string asc/desc, float), concat, describe, single-key aggregations
@@ -84,6 +85,9 @@ What is currently proven:
 
 What is not yet proven:
 
+- the stripped Frame/GroupBy/Join bare-C probe on the intended 0.17.4
+  replacement compiler. The 0.17.3 staging candidate is blocked by
+  chelis#935 while lowering the nullary generic `Hamt.Empty` constructor.
 - (resolved in v0.3.1, moved out of "not yet proven") The prior
   `chelis test` evaluator gap is fully closed: tensor-tensor
   `eq`/`neq`/`lt`/`gt` (v0.2.5), `to_tensor([bool, ...])`, and

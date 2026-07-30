@@ -12,6 +12,12 @@ Validated operations in the current slice:
 - `rolling_max`
 - `ewm(alpha, adjust=False)`
 
+Every operation has the shape contract
+`tensor[n, f32] -> tensor[n, f32]`: rolling windows retain leading NaNs
+rather than shortening the output, and EWM emits one value per input value.
+The positive test suite and a mismatched-extent negative contract pin this
+relationship at compile time.
+
 ```chelis
 module Coral.BookWindow
 import Coral.Window (rolling_mean, rolling_std, ewm)

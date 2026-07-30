@@ -1,6 +1,6 @@
 # Chelis Capability Surface (this shell)
 
-<!-- BEGIN CHELIS MANAGED BLOCK: chelis-surface-header chelis@0.17.1 (sha256:28011bed9ccb5778) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: chelis-surface-header chelis@0.17.3 (sha256:28011bed9ccb5778) -->
 This file is a domain-scoped view of the canonical Chelis capability surface,
 generated for the pinned toolchain. Each capability row is marked `@pin` (usable
 at the current pin) or `@upstream` (lands at the next bump). **Read it before
@@ -14,20 +14,23 @@ in `Chelis-Lang/chelis`.
 
 | Item | Value |
 |---|---|
-| Pinned compiler | `chelis 0.16.1` (`reef.toml`: `=0.16.1`) |
-| Bundled standard library | `chelis-std 0.4.0`, compiler-bound to `=0.16.1` |
-| Reef dependency | `nautilus 0.7.34` (its chelis-0.16.1-pinning release) |
-| Latest published upstream | `chelis 0.16.1` (`v0.16.1`, published 2026-07-12) |
-| Last refreshed | 2026-07-16 |
+| Pinned compiler | staging `chelis 0.17.3` source candidate (`reef.toml`: `=0.17.3`); planned replacement `0.17.4` after chelis#935 |
+| Bundled standard library | `chelis-std 0.4.0`, compiler-bound to `=0.17.3` in the candidate-generated lock |
+| Reef dependency | locally published `nautilus 0.7.36` candidate from commit `ee9a302` |
+| Latest published upstream | `chelis 0.17.2` (`v0.17.2`, published 2026-07-30) |
+| Last refreshed | 2026-07-30 |
 
 `@pin` means the row describes behavior available (or a limitation verified)
-on the exact pinned release. `@upstream` means a capability exists in a newer
-published release and will arrive at the next pin bump. There are no
-`@upstream` rows in this snapshot because the pin is already the latest
-published release.
+on the exact pinned candidate. `@upstream` means the capability is not
+available at this staging pin and must be re-probed before the planned 0.17.4
+retarget. Official Chelis 0.17.4, a matching Nautilus package, and Coral
+0.7.33 assets do not exist yet.
 
 This is the Coral-scoped view of the
-[canonical Chelis inventory](https://github.com/Chelis-Lang/chelis/blob/v0.16.1/docs/CHELIS_SURFACE.md).
+[canonical Chelis inventory at the validated source commit](https://github.com/Chelis-Lang/chelis/blob/fdfb1e3f3f57a91ce44024d944e46cd33fcfee7f/docs/CHELIS_SURFACE.md).
+That source tree is identical to pre-squash commit `4dd8dcd`, from which the
+tested local candidate binary was built; this is commit identity, not a release
+asset claim.
 Version-sensitive limitation rows below resolve to the probes or manual
 re-probe records cited in [`docs/UPSTREAM_BUGS.md`](UPSTREAM_BUGS.md).
 
@@ -41,7 +44,7 @@ re-probe records cited in [`docs/UPSTREAM_BUGS.md`](UPSTREAM_BUGS.md).
 | Literals, casts, and promotion | Unsuffixed floats default to `f32` and integers to `int32`; there is no implicit promotion — `cast` is explicit everywhere Coral crosses widths (`cast(0, int32)` axis args, `cast(x, int64)` counts, `cast(v, f32)` payloads). | `@pin` |
 | Algebraic data types and match | `Column` / `Frame` / `KeyValue` / `Json` are ADTs consumed by exhaustive `match`. This is the backbone of every per-column-type dispatch in `frame.ch`, `groupby.ch`, `join.ch`, `reshape.ch`, and `io.ch`. | `@pin` |
 | Symbolic dimensions | `Column[n]` / `Frame[n]` / `tensor[n, f32]` carry a symbolic row count through the whole public API; call sites instantiate `n` by unification, and shape changes (`head`, `tail`, `slice`, joins, reshape) introduce fresh dims (`Column[k]`). | `@pin` |
-| Borrowing and linearity | v0.14.0 enforces left-to-right evaluation order for linearity: consuming reads (`index(xs, i)`) must be bound with `let` before a `drop(xs, ...)` in the same expression. `src/` was rewritten for this at the 0.14.0 bump and stays clean on 0.16.1. | `@pin` |
+| Borrowing and linearity | v0.14.0 enforces left-to-right evaluation order for linearity: consuming reads (`index(xs, i)`) must be bound with `let` before a `drop(xs, ...)` in the same expression. `src/` was rewritten for this at the 0.14.0 bump and stays clean on the 0.17.3 candidate. | `@pin` |
 
 ### Primitive and builtin families used by Coral
 
@@ -68,7 +71,7 @@ re-probe records cited in [`docs/UPSTREAM_BUGS.md`](UPSTREAM_BUGS.md).
 
 | Lane | Coral usage | Status |
 |---|---|---|
-| Evaluator (`chelis test`) | The 70-test positive suite (`tests/*.ch`) and negative suite (`tests_neg/`). | `@pin` |
+| Evaluator (`chelis test`) | The 71-test positive suite (`tests/*.ch`) and negative suite (`tests_neg/`). | `@pin` |
 | Package build (`chelis reef build`) | Release artifact (`dist/coral-<ver>.chb` + `.tar.zst`). | `@pin` |
-| Bare C build (`chelis build` + native link) | Not a shipping lane; exercised by the stripped multi-module triage probe `scripts/repro_multimodule_bare_build.py` (frame/groupby/join targets, all green on 0.16.1). Subject to the syntactic-axis constraint above. | `@pin` |
+| Bare C build (`chelis build` + native link) | Not a shipping lane; the stripped Frame/GroupBy/Join probe is blocked at the staging pin by chelis#935's nullary generic `Hamt.Empty` lowering. Re-run all three targets on 0.17.4; the syntactic-axis constraint above also remains in force. | `@upstream` |
 | `grad` / AD | Not part of Coral's surface: `grad` through Coral's host-list algorithms is not an advertised capability, and host-lane scalar AD remains a deferred upstream item (`UPSTREAM_BUGS` §Parked). Doc usage stays illustrative. | `@pin` |

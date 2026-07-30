@@ -45,27 +45,35 @@ scale.
 
 ## Toolchain
 
-Pinned to `chelis v0.16.1` in `reef.toml`:
+This staging checkout remains pinned to the locally validated `chelis
+v0.17.3` candidate in `reef.toml`:
 
 ```toml
-compiler = "=0.16.1"
+compiler = "=0.17.3"
 ```
 
 ## Build
 
-A Coral checkout uses `chelis-std 0.4.0` and `nautilus 0.7.34`
-resolved from the local reef registry. With the compiler on `PATH`, or
-`CHELIS_BIN` pointed at the published binary:
+A Coral checkout uses `chelis-std 0.4.0` and the locally published
+`nautilus 0.7.36` candidate. Chelis 0.17.4 will replace 0.17.3 after
+chelis#935 is fixed; Nautilus and Coral must then be retargeted in dependency
+order. Until that happens, `CHELIS_BIN` may point at the exact local 0.17.3
+candidate only for staging validation and reproducing the blocked bare-C
+gate. Do not present any candidate as installable from GitHub until its
+official assets exist.
+
+With the selected compiler on `PATH`, or `CHELIS_BIN` pointed at that exact
+candidate:
 
 ```sh
 chelis check src/frame.ch
 chelis reef build
 chelis test tests/ --jobs auto         # internal correctness (Chelis-native)
 chelis test tests/ --jobs 1            # serial fallback for debugging
-python scripts/run_static_checks.py
-python scripts/run_skill_checks.py
-python scripts/validate_book_examples.py
-python parity/run_parity.py            # pandas comparison oracle
+uv run --python 3.11 --no-project python scripts/run_static_checks.py
+CHELIS_BIN=/path/to/chelis uv run --python 3.11 --no-project python scripts/run_skill_checks.py
+CHELIS_BIN=/path/to/chelis uv run --python 3.11 --no-project python scripts/validate_book_examples.py
+CHELIS_BIN=/path/to/chelis uv run --project parity --frozen python parity/run_parity.py --strict
 ```
 
 ## Current deltas

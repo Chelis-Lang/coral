@@ -38,24 +38,33 @@ the IR is the contract; the consumer compiles to their platform.**
 
 ## How a Mac (or any) user consumes Coral
 
-End-to-end, with no platform-specific Coral artifact required:
+This repository currently stages against Chelis 0.17.3 and Nautilus 0.7.36,
+but Chelis 0.17.4 will replace 0.17.3 after chelis#935 is fixed. No matching
+GitHub Release asset or Coral 0.7.33 release exists. The versioned commands
+below describe the planned post-publication flow; do not run them until
+Chelis 0.17.4, a compiler-matched Nautilus release, and Coral 0.7.33 all have
+official checksummed assets. Source commits and locally validated packages are
+not substitutes for published consumer assets.
+
+End-to-end after publication, with no platform-specific Coral artifact
+required:
 
 1. Download the chelis toolchain that matches the consumer's OS:
    ```sh
-   gh release download v0.16.1 --repo Chelis-Lang/chelis \
-     --pattern 'chelis-v0.16.1-darwin-arm64.tar.gz'
+   gh release download v0.17.4 --repo Chelis-Lang/chelis \
+     --pattern 'chelis-v0.17.4-darwin-arm64.tar.gz'
    ```
    (or `linux-x86_64` for Linux consumers).
 2. Extract and put `bin/chelis` on PATH.
 3. Publish Coral into the consumer's local reef registry from the
    release artifact:
    ```sh
-   chelis reef publish coral-0.7.28.tar.zst
+   chelis reef publish coral-0.7.33.tar.zst
    ```
 4. In their own Chelis project's `reef.toml`:
    ```toml
    [dependencies]
-   coral = { version = "0.7.28" }
+   coral = { version = "0.7.33" }
    ```
 5. `chelis reef build` resolves the platform-agnostic `.chb` +
    sources; the consumer's chelis compiles the result to whatever

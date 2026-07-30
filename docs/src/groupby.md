@@ -28,6 +28,8 @@ def main() -> int64 = {
 }
 ```
 
-The honest gate today is fixture-backed plus compile-checked. Stripped bare
-builds for GroupBy are fully clean on `chelis v0.16.1`: build, link, and
-execution all pass with no upstream blockers.
+The honest gate today is fixture-backed plus evaluator-tested. Stripped bare
+builds were fully clean on `chelis v0.16.1`, but the 0.17.3 staging candidate
+is blocked by chelis#935 while lowering the nullary generic `Hamt.Empty`
+constructor. The Frame/GroupBy/Join bare probe must return green on the
+replacement 0.17.4 candidate.

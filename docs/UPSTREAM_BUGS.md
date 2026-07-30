@@ -9,7 +9,18 @@ concrete need; archived items are historical.
 
 ## Actively blocking
 
-(none yet)
+- **Nullary generic ADT constructors lose concrete result type arguments in
+  C host lowering ([chelis#935](https://github.com/Chelis-Lang/chelis/issues/935)).**
+  On the 0.17.3 source candidate, all three stripped bare-build targets
+  (Frame, GroupBy, Join) fail while lowering `Hamt.Empty` with
+  `generic ADT 'Hamt' has no applied type arguments` under `[05-UNS-1]`.
+  The package build, evaluator tests, and Window C-runtime parity lane are
+  unaffected. Chelis 0.17.4 is the intended replacement release carrying the
+  fix. Acceptance oracle after that candidate exists:
+  `python3 scripts/repro_multimodule_bare_build.py --target frame`, repeated
+  for `groupby` and `join`; all three must build, link, run, and exit zero.
+  Do not retarget Coral or archive this entry based only on the upstream unit
+  reproducer.
 
 ## Tracking
 

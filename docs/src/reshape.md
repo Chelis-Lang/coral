@@ -1,8 +1,9 @@
 # Reshape
 
 `Coral.Reshape` provides wide-to-long and long-to-wide transformations on
-`Frame` values. All four operations are compile-checked against
-`chelis v0.16.1`.
+`Frame` values. All four operations are evaluator-tested on the 0.17.3
+staging candidate. The separate stripped bare-C gate remains blocked by
+chelis#935 until the planned 0.17.4 retarget.
 
 Validated operations in the current slice:
 

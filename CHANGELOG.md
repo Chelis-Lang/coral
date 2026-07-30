@@ -6,6 +6,27 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+Prepared Coral 0.7.33 on the Chelis 0.17.3 staging candidate and Nautilus
+0.7.36 candidate cascade. The compiler pin, Nautilus dependency, CI mirrors,
+and managed conformance blocks move together. Local validation consumes the
+exact SMT-enabled Chelis candidate and Nautilus commit `ee9a302`. Chelis
+0.17.4 will replace 0.17.3 after chelis#935 is fixed; Nautilus and then Coral
+must be retargeted before publication. No candidate is presented as an
+official release asset.
+
+Corrected all six `Coral.Window` public signatures to return `tensor[n, f32]`
+for an input `tensor[n, f32]`. They preserve length by construction; the old
+independent output dimension `m` was unconstrained. Positive compile-level
+tests and a negative mismatched-extent contract now pin the preserved extent;
+the runtime parity generator also emits a concrete same-extent wrapper.
+
+The package build, 71-test evaluator suite, negative suite, documentation
+checks, and strict pandas parity are green on the staging compiler. The
+stripped Frame/GroupBy/Join bare-C probe is the one remaining blocked gate:
+all three targets hit chelis#935 while lowering the nullary generic
+`Hamt.Empty` constructor. Re-run that probe on the 0.17.4 candidate before
+retargeting the pins.
+
 Compiler-pin bump to chelis 0.16.1. `compiler = "=0.14.0"` to
 `"=0.16.1"`; package version 0.7.30 to 0.7.31; CI env vars
 (`CHELIS_TAG`, `CHELIS_VERSION`, `CORAL_VERSION`) updated to match.

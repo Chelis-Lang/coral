@@ -8,7 +8,7 @@ function names to avoid obvious user-space symbol collisions, runs
 `chelis build`, links the generated C with a tiny driver, and executes
 the resulting binary.
 
-Expected current outcome on `chelis v0.4.0`:
+Expected current outcome on the pinned Chelis release:
 - `chelis build` exits rc=0 with no panic in output
 - native C compile/link succeeds
 - binary executes and returns the expected value

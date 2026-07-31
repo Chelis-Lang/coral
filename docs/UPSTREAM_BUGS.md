@@ -9,8 +9,6 @@ concrete need; archived items are historical.
 
 ## Actively blocking
 
-(none yet)
-
 ## Tracking
 
 - **Block `if` with `else` on a later line rejected at parse time (chelis 0.17.1 regression, [chelis#849](https://github.com/Chelis-Lang/chelis/issues/849)).**
@@ -137,6 +135,16 @@ concrete need; archived items are historical.
   signals movement** or at the next major coral release, not on patches.
 
 ## Archived
+
+- **Nullary generic ADT constructors lose concrete result type arguments in
+  C host lowering ([chelis#935](https://github.com/Chelis-Lang/chelis/issues/935);
+  RESOLVED in the 0.17.4 release).** The official release binary from tag
+  commit `0b0c92f9916163b05a483fba70473496923730e6` (SHA-256
+  `d08ebfe67fed11f4458251d47e732de3249d93a3d700c87991a39e219887cc7e`)
+  passed the stripped bare-C Frame (11/11), GroupBy (8/8), and Join (6/6)
+  targets: each built, linked, ran, and exited zero. This is the downstream
+  acceptance oracle that had been required before archiving, not an inference
+  from the upstream unit reproducer.
 
 - **[chelis#5](https://github.com/Chelis-Lang/chelis/issues/5) — comparison-op return-type override clobbered tensor shape on scalar-first arg (RESOLVED v0.3.2).** Filed against v0.3.1 with the framing "both `gt(tensor, scalar)` and `gt(scalar, tensor)` in the same module break inference" — that framing was a misread. The actual bug was in `infer.rs:4441-4455`: the comparison-op return-type override only inspected `arg_tys.first()` for dim recovery, so when the first arg was `Prim(F32)` (the scalar-first form), the override returned `Prim(Bool)` and discarded the tensor shape that the v0.3.1 broadcast rewrite had already correctly produced via unification. The Coral repro escaped detection because it used an untyped top-level binding; the actual failure surfaces against a *declared* return signature. Fix walks all args with `find_map` preferring tensor over scalar for dim recovery (~10 LOC). New regression tests landed in chelis at `crates/chelis-types/tests/issue5_cmp_broadcast_both_forms.rs` and `coral_prerequisites.rs::coral_comparison_ops_broadcast_scalar_first_with_declared_signature` (the shape Coral's test missed). Coral was never functionally blocked since all our `gt` usages are scalar-scalar inside fold accumulators.
 

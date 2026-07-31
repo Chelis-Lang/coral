@@ -6,6 +6,29 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+Prepared Coral 0.7.33 for the published Chelis 0.17.4 and Nautilus 0.7.36
+cascade. The compiler pin, Nautilus dependency, CI mirrors, and managed
+conformance blocks move together. Validation consumes the official
+publisher-checksummed releases: Chelis tag commit `0b0c92f9916163b05a483fba70473496923730e6`
+and Nautilus tag commit `2c434a9dfefca79c371b4c66af62b121a47841d6`.
+
+Hardened CI and release transport: Linux uses the glibc-2.31 compiler asset,
+Linux and Darwin verify the publisher sidecar before extraction, toolchain
+caches are checksum-schema scoped, and the Coral release requires canonical
+artifact verification plus a byte-identical rebuild and publishes a checksum
+manifest for the complete payload set.
+
+Corrected all six `Coral.Window` public signatures to return `tensor[n, f32]`
+for an input `tensor[n, f32]`. They preserve length by construction; the old
+independent output dimension `m` was unconstrained. Positive compile-level
+tests and a negative mismatched-extent contract now pin the preserved extent;
+the runtime parity generator also emits a concrete same-extent wrapper.
+
+The package build, 71-test evaluator suite, 4-case negative suite,
+documentation checks, strict pandas parity, and stripped
+Frame/GroupBy/Join bare-C probes are green on the exact final compiler and
+Nautilus package after chelis#935.
+
 Compiler-pin bump to chelis 0.16.1. `compiler = "=0.14.0"` to
 `"=0.16.1"`; package version 0.7.30 to 0.7.31; CI env vars
 (`CHELIS_TAG`, `CHELIS_VERSION`, `CORAL_VERSION`) updated to match.

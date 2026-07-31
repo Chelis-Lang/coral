@@ -20,9 +20,8 @@ Current parity-backed scope:
 
 Documented deltas:
 
-- stripped Frame/GroupBy/Join bare builds are fully clean on `chelis v0.16.1`:
-  build, link, and execution all pass; acceptance gate is fixture goldens plus
-  the compile-level probe in `parity/run_parity.py`
+- stripped Frame/GroupBy/Join bare builds pass on the official Chelis
+  0.17.4 release after chelis#935's nullary generic `Hamt.Empty` lowering fix
 - GroupBy, Join, and IO are currently fixture-backed plus compile-checked
 - Window and Frame both have an executed runtime parity lane; GroupBy, Join, and IO are fixture-backed plus compile-checked
 - Chelis-native correctness lives in `tests/*.ch`

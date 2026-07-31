@@ -2,6 +2,14 @@ module Coral.Tests.Window
 import Std.Test (assert_true, assert_eq, assert_close)
 import Coral.Window (rolling_sum, rolling_mean, rolling_std, rolling_min, rolling_max, ewm)
 def is_nan_local(x: f32) -> bool = neq(x, x)
+def rolling_mean_preserves_extent_4(col: tensor[4, f32]) -> tensor[4, f32] = rolling_mean(col, cast(2, int64))
+def ewm_preserves_extent_3(col: tensor[3, f32]) -> tensor[3, f32] = ewm(col, cast(0.5, f32))
+def test_window_signatures_preserve_input_extent() -> unit ! { Test } = {
+  mean_out = to_list(rolling_mean_preserves_extent_4(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32), cast(4.0, f32)])))
+  ewm_out = to_list(ewm_preserves_extent_3(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)])))
+  _ = assert_true(eq(len(mean_out), cast(4, int64)), "rolling_mean preserves n")
+  assert_true(eq(len(ewm_out), cast(3, int64)), "ewm preserves n")
+}
 def test_rolling_sum_basic() -> unit ! { Test } = {
   input = to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32), cast(4.0, f32), cast(5.0, f32)])
   out = to_list(rolling_sum(input, cast(3, int64)))

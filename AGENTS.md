@@ -5,7 +5,7 @@ to this file so Claude-style and Codex-style entry points do not drift.
 
 ## Repo Identity
 
-<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.17.1 (sha256:758a5eb9aefb5c7e) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.17.4 (sha256:758a5eb9aefb5c7e) -->
 This repository is a downstream **shell** of the Chelis compiler. Its upstream
 of truth is `Chelis-Lang/chelis`: the monorepo `AGENTS.md` applies verbatim
 (machine-local environment sections excepted), and
@@ -32,10 +32,12 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
 - Coral should track the latest **published and validation-clean**
   Chelis release by default. Treat stale pins as drift, not as a reason
   to stay on an older compiler.
-- `reef.toml` should pin the currently validated release exactly. As of
-  this repo state, that is `chelis 0.16.1`. Bumps cascade in dependency
-  order (`nautilus` first, then coral) via the Pin Bump Checklist below
-  — never edit the pin directly on `main`.
+- `reef.toml` should pin the currently validated release exactly. This
+  state pins the official `chelis 0.17.4` and `nautilus 0.7.36` releases,
+  validated from their publisher-checksummed assets after the chelis#935 fix.
+  Bumps cascade in dependency order (`nautilus` first, then
+  coral) via the Pin Bump Checklist below — never edit the pin directly on
+  `main`.
 - Do not vendor or build the Chelis compiler from source inside this
   repo. Consume the released tarball from the private
   `Chelis-Lang/chelis` releases. CI authenticates via the repo secret

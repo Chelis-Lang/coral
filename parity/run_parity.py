@@ -207,10 +207,11 @@ def window_program(fixture: dict) -> str:
     op = fixture["operation"]
     input_values = ", ".join(chelis_float_literal(value) for value in fixture["input"])
     expected_values = ", ".join(chelis_float_literal(value) for value in fixture["expected"])
+    extent = len(fixture["input"])
     if "window" in fixture:
-        call = f'{op}(to_tensor([{input_values}]), cast({fixture["window"]}, int64))'
+        call_body = f'{op}(values, cast({fixture["window"]}, int64))'
     else:
-        call = f'{op}(to_tensor([{input_values}]), cast({fixture["alpha"]!r}, f32))'
+        call_body = f'{op}(values, cast({fixture["alpha"]!r}, f32))'
     # chelis 0.17.1 regressed block parsing: an `if ... then X` inside a `{ }`
     # block whose `else` begins on a *later line* now fails to parse with a
     # misleading `expected Else, found Eof`, even though the `else` is present.
@@ -235,8 +236,10 @@ def rt_float_list_eq(actual: List[f32], expected: List[f32], abs_tol: f32, rel_t
   if neq(len(actual), len(expected)) then false else if eq(len(actual), cast(0, int64)) then true else if not(rt_approx_eq(index(actual, cast(0, int64)), index(expected, cast(0, int64)), abs_tol, rel_tol)) then false else rt_float_list_eq(drop(actual, cast(1, int64)), drop(expected, cast(1, int64)), abs_tol, rel_tol)
 }}
 
+def rt_window_call(values: tensor[{extent}, f32]) -> tensor[{extent}, f32] = {call_body}
+
 def main() -> f32 = {{
-  actual = to_list({call})
+  actual = to_list(rt_window_call(to_tensor([{input_values}])))
   expected = [{expected_values}]
   if rt_float_list_eq(actual, expected, cast({fixture["abs_tol"]!r}, f32), cast({fixture["rel_tol"]!r}, f32)) then cast(1.0, f32) else cast(0.0, f32)
 }}

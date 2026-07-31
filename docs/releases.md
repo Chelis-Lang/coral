@@ -2,32 +2,34 @@
 
 ## What Coral publishes per release
 
-Each Coral release on GitHub ships exactly two artifacts:
+Each Coral release on GitHub ships exactly three artifacts:
 
 - `coral-X.Y.Z.chb` (≈13 KB) — Reef shell package
 - `coral-X.Y.Z.tar.zst` (≈13 KB) — source archive
+- `coral-X.Y.Z.sha256` — publisher checksum manifest sealing both payloads
 
-Both are produced by `chelis reef build` + `chelis reef publish`.
-Neither is platform-specific.
+The payload pair is produced by `chelis reef build`; the release gate validates
+it with the compiler's canonical artifact verifier, seals both files, rebuilds,
+and requires byte-identical checksums before publication. None is
+platform-specific.
 
 ## Why the artifacts are platform-agnostic
 
 The `.tar.zst` is the source tree (`reef.toml`, the `.ch` files under
-`src/`, and packaging metadata). The payload is platform-neutral even
-though compressed bytes may differ between builds because archive
-metadata and compression framing are not specified as reproducible.
+`src/`, and packaging metadata). The payload is platform-neutral. The release
+workflow requires its second unchanged build to be byte-identical to the sealed
+first build.
 
 The `.chb` is a Zstandard-compressed envelope containing
 desugared/type-checked AST + module exports + type signatures +
-effects + dependency list. Its bytes are build-output bytes, not a
-cross-build reproducibility promise. No ELF, no Mach-O, no `.o`, no
+effects + dependency list. No ELF, no Mach-O, no `.o`, no
 `.a`. Verified via `strings`: contains UTF-8 names like `"coral"`,
 `"Coral.Frame"`, type signatures in IR form. Contains zero platform
 references.
 
 Compare to chelis itself, which ships per-platform binaries:
 
-- `chelis-vX.Y.Z-linux-x86_64.tar.gz`
+- `chelis-vX.Y.Z-linux-x86_64-glibc2.31.tar.gz`
 - `chelis-vX.Y.Z-darwin-arm64.tar.gz`
 
 Inside those: `bin/chelis` is a Rust-compiled binary (ELF on Linux,
@@ -38,24 +40,29 @@ the IR is the contract; the consumer compiles to their platform.**
 
 ## How a Mac (or any) user consumes Coral
 
-End-to-end, with no platform-specific Coral artifact required:
+This repository uses the official, publisher-checksummed Chelis 0.17.4 and
+Nautilus 0.7.36 releases. Coral 0.7.33 is not installable until this repository's
+own tag workflow publishes its three checksummed assets.
+
+End-to-end after publication, with no platform-specific Coral artifact
+required:
 
 1. Download the chelis toolchain that matches the consumer's OS:
    ```sh
-   gh release download v0.16.1 --repo Chelis-Lang/chelis \
-     --pattern 'chelis-v0.16.1-darwin-arm64.tar.gz'
+   gh release download v0.17.4 --repo Chelis-Lang/chelis \
+     --pattern 'chelis-v0.17.4-darwin-arm64.tar.gz'
    ```
-   (or `linux-x86_64` for Linux consumers).
+   (or `linux-x86_64-glibc2.31` for Linux consumers).
 2. Extract and put `bin/chelis` on PATH.
 3. Publish Coral into the consumer's local reef registry from the
    release artifact:
    ```sh
-   chelis reef publish coral-0.7.28.tar.zst
+   chelis reef publish coral-0.7.33.tar.zst
    ```
 4. In their own Chelis project's `reef.toml`:
    ```toml
    [dependencies]
-   coral = { version = "0.7.28" }
+   coral = { version = "0.7.33" }
    ```
 5. `chelis reef build` resolves the platform-agnostic `.chb` +
    sources; the consumer's chelis compiles the result to whatever
@@ -93,7 +100,7 @@ specific:
 ## Non-goal: do NOT add platform suffixes to Coral release artifacts
 
 Future contributors who notice that core chelis ships
-`chelis-vX.Y.Z-linux-x86_64.tar.gz` and
+`chelis-vX.Y.Z-linux-x86_64-glibc2.31.tar.gz` and
 `chelis-vX.Y.Z-darwin-arm64.tar.gz` may feel the urge to mirror that
 two-tarball pattern in Coral. Don't. The artifacts are intentionally
 cross-platform. The reasons are above; if you find yourself disagreeing

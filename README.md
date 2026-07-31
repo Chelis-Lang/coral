@@ -45,22 +45,19 @@ scale.
 
 ## Toolchain
 
-This staging checkout remains pinned to the locally validated `chelis
-v0.17.3` candidate in `reef.toml`:
+This staging checkout targets the `chelis v0.17.4` candidate in `reef.toml`:
 
 ```toml
-compiler = "=0.17.3"
+compiler = "=0.17.4"
 ```
 
 ## Build
 
-A Coral checkout uses `chelis-std 0.4.0` and the locally published
-`nautilus 0.7.36` candidate. Chelis 0.17.4 will replace 0.17.3 after
-chelis#935 is fixed; Nautilus and Coral must then be retargeted in dependency
-order. Until that happens, `CHELIS_BIN` may point at the exact local 0.17.3
-candidate only for staging validation and reproducing the blocked bare-C
-gate. Do not present any candidate as installable from GitHub until its
-official assets exist.
+A Coral checkout uses `chelis-std 0.4.0` and the staged `nautilus 0.7.36`
+candidate. Local validation used the exact 0.17.4 candidate binary and its
+matching locally published Nautilus package, in dependency order. Do not
+present either candidate as installable from GitHub until its official assets
+exist.
 
 With the selected compiler on `PATH`, or `CHELIS_BIN` pointed at that exact
 candidate:

@@ -20,9 +20,8 @@ Current parity-backed scope:
 
 Documented deltas:
 
-- stripped Frame/GroupBy/Join bare builds were fully clean on `chelis
-  v0.16.1`; the 0.17.3 staging candidate is blocked by chelis#935's nullary
-  generic `Hamt.Empty` lowering and must be re-probed on 0.17.4
+- stripped Frame/GroupBy/Join bare builds pass on the exact final Chelis
+  0.17.4 candidate after chelis#935's nullary generic `Hamt.Empty` lowering fix
 - GroupBy, Join, and IO are currently fixture-backed plus compile-checked
 - Window and Frame both have an executed runtime parity lane; GroupBy, Join, and IO are fixture-backed plus compile-checked
 - Chelis-native correctness lives in `tests/*.ch`

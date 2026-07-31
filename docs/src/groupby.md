@@ -28,8 +28,7 @@ def main() -> int64 = {
 }
 ```
 
-The honest gate today is fixture-backed plus evaluator-tested. Stripped bare
-builds were fully clean on `chelis v0.16.1`, but the 0.17.3 staging candidate
-is blocked by chelis#935 while lowering the nullary generic `Hamt.Empty`
-constructor. The Frame/GroupBy/Join bare probe must return green on the
-replacement 0.17.4 candidate.
+The honest gate today is fixture-backed plus evaluator-tested. The stripped
+Frame/GroupBy/Join bare probes also build, link, and run on the exact final
+Chelis 0.17.4 candidate after chelis#935's nullary generic `Hamt.Empty`
+lowering fix.

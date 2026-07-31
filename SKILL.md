@@ -184,7 +184,8 @@ def main() -> int64 = {
 - Parquet is upstream-blocked (`import Std.Io.Parquet` resolves at check time through the current staging pin, but the runtime path is still not callable; functions intentionally fail).
 - `describe` skips NaN for float columns and masked entries for int columns; uses sample std (`ddof=1`).
 - `Coral.Window` and `Coral.Frame` both have an executed runtime parity lane: pandas goldens + runtime build/link/execute lane (in `parity/run_parity.py`). GroupBy, Join, and IO are fixture-backed plus compile-checked.
-- Stripped Frame/GroupBy/Join bare builds were clean on `chelis v0.16.1`; the 0.17.3 staging candidate is blocked by chelis#935 and must be re-probed on the replacement 0.17.4 candidate.
+- Stripped Frame/GroupBy/Join bare builds are clean on the exact Chelis 0.17.4
+  candidate binary after chelis#935.
 - The 71 tests in `tests/*.ch` run via `chelis test tests/ --jobs auto` and assert mathematical identities, hand-computed values, structural properties, and round-trip identities. Pandas comparison work lives in `parity/`.
 - `chelis test` evaluator gap is fully resolved as of v0.3.1: tensor-tensor `eq`/`neq`/`lt`/`gt` (since v0.2.5), `to_tensor([bool, ...])`, and tensor-scalar `gt(tensor, scalar)` (since v0.3.1) all work. IntCol construction, `is_nan`/`any_nan`/`count_nan` tensor exports, `agg_count`, `value_counts`, int CSV round-trip, and bool CSV/JSON round-trips all run end-to-end via `chelis test`.
 

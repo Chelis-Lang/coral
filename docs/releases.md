@@ -38,12 +38,12 @@ the IR is the contract; the consumer compiles to their platform.**
 
 ## How a Mac (or any) user consumes Coral
 
-This repository currently stages against Chelis 0.17.3 and Nautilus 0.7.36,
-but Chelis 0.17.4 will replace 0.17.3 after chelis#935 is fixed. No matching
-GitHub Release asset or Coral 0.7.33 release exists. The versioned commands
+This repository currently stages against Chelis 0.17.4 and Nautilus 0.7.36
+candidates validated together from exact local artifacts. No matching GitHub
+Release asset or Coral 0.7.33 release exists. The versioned commands
 below describe the planned post-publication flow; do not run them until
 Chelis 0.17.4, a compiler-matched Nautilus release, and Coral 0.7.33 all have
-official checksummed assets. Source commits and locally validated packages are
+official checksummed assets. Source commits and locally staged packages are
 not substitutes for published consumer assets.
 
 End-to-end after publication, with no platform-specific Coral artifact

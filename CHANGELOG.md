@@ -6,6 +6,30 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+Prepared and validated the Coral 0.7.34 manifest and CI mirrors for the Chelis
+0.17.5 / Nautilus 0.7.37 cascade. The required `chelis reef conform bump
+0.17.5` restamped the managed conformance blocks.
+
+This is release-candidate validation, not a publication claim. The
+annotated Chelis v0.17.5 tag resolves to
+`333cb4d3688573036d37828eba68416c11c5d1b4`. Its published glibc-2.31 archive
+has SHA-256
+`65f5949a540a547aacbee9845b3d40d2a02d1b28e3c8d608fc7af140fafd6ccf`,
+and the extracted binary has SHA-256
+`9728e7824cd5d8aba26daf5189f95b90c98f9636b8aa0b6ca2fe9cc286c44801`.
+Nautilus v0.7.37 is published from commit
+`1b932d75ed4d03a53f90b2093f0801992e963050`; its CHB and archive SHA-256 are
+`daeb7a4a3cef0f3c98e06c048998cd207a9aa372d161e7c115e430068ecbdd1d`
+and `d5a861566850a0706aae07f68b21bc2eecdd0dfcedafbe26a0083447fa24143b`.
+The full local gate passed: 71/71 native tests, 4/4 negative contracts, strict
+pandas/runtime parity, 11/11 SKILL examples, 8/8 mdBook examples, all three
+bare-C build/link/run targets, conformance audit and bump-check, and two
+byte-identical Coral builds. The verified local candidate artifact SHA-256
+values are `97fcab7dc44f80e2d05b70dc117bf1d8276328e408593fe0d89729d00ffea4b1`
+(CHB) and `da9b67fd475c26713e611c078969a342fa07bb1bbfaeccca34af6ddcdbcea68e`
+(archive). Official Coral release identities remain contingent on the
+post-merge release workflow.
+
 Prepared Coral 0.7.33 for the published Chelis 0.17.4 and Nautilus 0.7.36
 cascade. The compiler pin, Nautilus dependency, CI mirrors, and managed
 conformance blocks move together. Validation consumes the official

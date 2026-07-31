@@ -66,7 +66,7 @@ What is currently proven:
 - HAMT-dependent operations (`from_pairs`, `with_column`, `describe`,
   joins, reshape) run end-to-end via `chelis test` — closes the v0.2.0
   generic-specialization runtime gap
-- 44 checked-in `parity/goldens/*.json` fixtures (frame/groupby/io/join/
+- 45 checked-in `parity/goldens/*.json` fixtures (frame/groupby/io/join/
   window/reshape) are generated from pandas
 - `parity/run_parity.py` validates golden inventory, runs the
   pandas comparison check, executes a 2-fixture window runtime

@@ -62,10 +62,11 @@ artifact is published, with no platform-specific Coral artifact required:
    ```
    (or `linux-x86_64-glibc2.31` for Linux consumers).
 2. Extract and put `bin/chelis` on PATH.
-3. Publish Coral into the consumer's local reef registry from the
-   release artifact:
+3. Install the published Coral release into the consumer's local Reef
+   registry (private-repository access requires an authenticated `gh` session
+   or `GITHUB_TOKEN`):
    ```sh
-   chelis reef publish coral-0.7.34.tar.zst
+   chelis reef install --from-github Chelis-Lang/coral@v0.7.34
    ```
 4. In their own Chelis project's `reef.toml`:
    ```toml

@@ -33,11 +33,9 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
   Chelis release by default. Treat stale pins as drift, not as a reason
   to stay on an older compiler.
 - `reef.toml` should pin the currently validated release exactly. This
-  staging state pins the locally validated `chelis 0.17.4` candidate and
-  `nautilus 0.7.36`. Validation used the exact release-candidate compiler
-  binary and matching locally published Nautilus package after the chelis#935
-  fix. Neither candidate is publication-accepted until its official release
-  assets exist. Bumps cascade in dependency order (`nautilus` first, then
+  state pins the official `chelis 0.17.4` and `nautilus 0.7.36` releases,
+  validated from their publisher-checksummed assets after the chelis#935 fix.
+  Bumps cascade in dependency order (`nautilus` first, then
   coral) via the Pin Bump Checklist below — never edit the pin directly on
   `main`.
 - Do not vendor or build the Chelis compiler from source inside this

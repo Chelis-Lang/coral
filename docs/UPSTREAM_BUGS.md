@@ -138,9 +138,9 @@ concrete need; archived items are historical.
 
 - **Nullary generic ADT constructors lose concrete result type arguments in
   C host lowering ([chelis#935](https://github.com/Chelis-Lang/chelis/issues/935);
-  RESOLVED in the 0.17.4 candidate).** The exact release-candidate binary from
-  source commit `9a58c5781105bbe07d37afbb6ecfc7b3a879e0de` (SHA-256
-  `7562c464ab68e8878fd20d24e0194deb204e092aebdff4e7c8c094e535fc4a39`)
+  RESOLVED in the 0.17.4 release).** The official release binary from tag
+  commit `0b0c92f9916163b05a483fba70473496923730e6` (SHA-256
+  `d08ebfe67fed11f4458251d47e732de3249d93a3d700c87991a39e219887cc7e`)
   passed the stripped bare-C Frame (11/11), GroupBy (8/8), and Join (6/6)
   targets: each built, linked, ran, and exited zero. This is the downstream
   acceptance oracle that had been required before archiving, not an inference

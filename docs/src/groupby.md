@@ -29,6 +29,6 @@ def main() -> int64 = {
 ```
 
 The honest gate today is fixture-backed plus evaluator-tested. The stripped
-Frame/GroupBy/Join bare probes also build, link, and run on the exact final
-Chelis 0.17.4 candidate after chelis#935's nullary generic `Hamt.Empty`
+Frame/GroupBy/Join bare probes also build, link, and run on the official
+Chelis 0.17.4 release after chelis#935's nullary generic `Hamt.Empty`
 lowering fix.

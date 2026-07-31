@@ -49,7 +49,7 @@ Test harness layout (Phase 3t):
 What is currently proven:
 
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints
-  typecheck on the staging Chelis 0.17.4 candidate.
+  typecheck on the official Chelis 0.17.4 release.
 - 8 `tests/*.ch` modules cover construction, filter (via mask
   consumers), head/tail/slice, rename/with_column/drop, sort_by
   (string asc/desc, float), concat, describe, single-key aggregations
@@ -84,10 +84,9 @@ What is currently proven:
 
 What is not yet proven:
 
-- publication of Chelis 0.17.4, Nautilus 0.7.36, and Coral 0.7.33 release
-  assets. Local validation is complete against the exact compiler binary from
-  source commit `9a58c5781105bbe07d37afbb6ecfc7b3a879e0de` and Nautilus candidate
-  commit `f6e120cecd70589aa916a5641557264dbb1c1d61`.
+- publication of Coral 0.7.33 release assets. Chelis 0.17.4 and Nautilus 0.7.36
+  are published and independently checksum-verified; Coral remains unshipped
+  until its post-merge tag workflow succeeds.
 - (resolved in v0.3.1, moved out of "not yet proven") The prior
   `chelis test` evaluator gap is fully closed: tensor-tensor
   `eq`/`neq`/`lt`/`gt` (v0.2.5), `to_tensor([bool, ...])`, and

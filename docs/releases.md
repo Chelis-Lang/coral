@@ -40,29 +40,38 @@ the IR is the contract; the consumer compiles to their platform.**
 
 ## How a Mac (or any) user consumes Coral
 
-This repository uses the official, publisher-checksummed Chelis 0.17.4 and
-Nautilus 0.7.36 releases. Coral 0.7.33 is not installable until this repository's
-own tag workflow publishes its three checksummed assets.
+Coral 0.7.34 pins Chelis 0.17.5 and Nautilus 0.7.37. Chelis 0.17.5 is
+published at commit
+`333cb4d3688573036d37828eba68416c11c5d1b4`; its official glibc-2.31 archive
+SHA-256 is `65f5949a540a547aacbee9845b3d40d2a02d1b28e3c8d608fc7af140fafd6ccf`
+and its extracted binary SHA-256 is
+`9728e7824cd5d8aba26daf5189f95b90c98f9636b8aa0b6ca2fe9cc286c44801`.
+Nautilus 0.7.37 is published from commit
+`1b932d75ed4d03a53f90b2093f0801992e963050`; its official CHB and archive
+SHA-256 are `daeb7a4a3cef0f3c98e06c048998cd207a9aa372d161e7c115e430068ecbdd1d`
+and `d5a861566850a0706aae07f68b21bc2eecdd0dfcedafbe26a0083447fa24143b`.
+The exact dependency chain passes the complete Coral release gate.
 
-End-to-end after publication, with no platform-specific Coral artifact
-required:
+End-to-end once the corresponding Coral 0.7.34
+artifact is published, with no platform-specific Coral artifact required:
 
 1. Download the chelis toolchain that matches the consumer's OS:
    ```sh
-   gh release download v0.17.4 --repo Chelis-Lang/chelis \
-     --pattern 'chelis-v0.17.4-darwin-arm64.tar.gz'
+   gh release download v0.17.5 --repo Chelis-Lang/chelis \
+     --pattern 'chelis-v0.17.5-darwin-arm64.tar.gz'
    ```
    (or `linux-x86_64-glibc2.31` for Linux consumers).
 2. Extract and put `bin/chelis` on PATH.
-3. Publish Coral into the consumer's local reef registry from the
-   release artifact:
+3. Install the published Coral release into the consumer's local Reef
+   registry (private-repository access requires an authenticated `gh` session
+   or `GITHUB_TOKEN`):
    ```sh
-   chelis reef publish coral-0.7.33.tar.zst
+   chelis reef install --from-github Chelis-Lang/coral@v0.7.34
    ```
 4. In their own Chelis project's `reef.toml`:
    ```toml
    [dependencies]
-   coral = { version = "0.7.33" }
+   coral = { version = "0.7.34" }
    ```
 5. `chelis reef build` resolves the platform-agnostic `.chb` +
    sources; the consumer's chelis compiles the result to whatever

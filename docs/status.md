@@ -33,24 +33,30 @@ Known deferred items:
 Test harness layout (Phase 3t):
 
 - `tests/*.ch` — Chelis-native tests run via
-  `chelis test tests/ --jobs auto`. 71 tests across frame, window,
-  groupby, join, reshape, io, nan, internal. All expected values are
+  `chelis test tests/ --jobs auto`. 71 tests across as-of, frame, window,
+  groupby, join, reshape, io, nan, and internal modules. All expected values are
   mathematical identities, hand-computed from inputs, structural
   assertions, or round-trip identities — never pandas-derived.
 - `parity/` — pandas comparison oracle. `parity/run_parity.py` runs the
   golden inventory check, `parity/gen_goldens.py --check` (regenerates
   goldens from pandas and compares), a 2-fixture window runtime parity
   cross-check (rolling_mean + ewm), and the negative test suite.
-  `parity/goldens/` holds 44 pandas-derived JSON fixtures.
+  `parity/goldens/` holds 45 pandas-derived JSON fixtures.
 - `scripts/` — documentation/lint validators (`run_static_checks.py`,
   `run_skill_checks.py`, `validate_book_examples.py`) plus the
   upstream-blocker probe `repro_multimodule_bare_build.py`.
 
 What is currently proven:
 
+- The validated dependency chain is the official Chelis 0.17.5 and Nautilus
+  0.7.37 publisher-checksummed releases. The compiler binary SHA-256 is
+  `9728e7824cd5d8aba26daf5189f95b90c98f9636b8aa0b6ca2fe9cc286c44801`;
+  the Nautilus CHB and archive SHA-256 are
+  `daeb7a4a3cef0f3c98e06c048998cd207a9aa372d161e7c115e430068ecbdd1d`
+  and `d5a861566850a0706aae07f68b21bc2eecdd0dfcedafbe26a0083447fa24143b`.
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints
-  typecheck on the official Chelis 0.17.4 release.
-- 8 `tests/*.ch` modules cover construction, filter (via mask
+  typecheck on the official Chelis 0.17.5 release.
+- 9 `tests/*.ch` modules cover as-of lookup/join, construction, filter (via mask
   consumers), head/tail/slice, rename/with_column/drop, sort_by
   (string asc/desc, float), concat, describe, single-key aggregations
   (sum/mean/min/max), inner/left/outer join, melt/pivot/stack/unstack,
@@ -60,7 +66,7 @@ What is currently proven:
 - HAMT-dependent operations (`from_pairs`, `with_column`, `describe`,
   joins, reshape) run end-to-end via `chelis test` — closes the v0.2.0
   generic-specialization runtime gap
-- 44 checked-in `parity/goldens/*.json` fixtures (frame/groupby/io/join/
+- 45 checked-in `parity/goldens/*.json` fixtures (frame/groupby/io/join/
   window/reshape) are generated from pandas
 - `parity/run_parity.py` validates golden inventory, runs the
   pandas comparison check, executes a 2-fixture window runtime
@@ -84,9 +90,13 @@ What is currently proven:
 
 What is not yet proven:
 
-- publication of Coral 0.7.33 release assets. Chelis 0.17.4 and Nautilus 0.7.36
-  are published and independently checksum-verified; Coral remains unshipped
-  until its post-merge tag workflow succeeds.
+- publication of official Coral 0.7.34 release assets. The complete local gate
+  passed on the exact published dependency chain, including two byte-identical
+  builds and canonical verification of candidate CHB SHA-256
+  `97fcab7dc44f80e2d05b70dc117bf1d8276328e408593fe0d89729d00ffea4b1`
+  and archive SHA-256
+  `da9b67fd475c26713e611c078969a342fa07bb1bbfaeccca34af6ddcdbcea68e`.
+  The post-merge tag workflow must publish and checksum the official copies.
 - (resolved in v0.3.1, moved out of "not yet proven") The prior
   `chelis test` evaluator gap is fully closed: tensor-tensor
   `eq`/`neq`/`lt`/`gt` (v0.2.5), `to_tensor([bool, ...])`, and

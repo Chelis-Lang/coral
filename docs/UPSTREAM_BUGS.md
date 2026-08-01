@@ -7,18 +7,18 @@ tracking-but-not-blocking gets re-probed when upstream signals movement; parked
 items get re-probed only when their gating phase ships or when Coral has a new
 concrete need; archived items are historical.
 
-> **0.17.5 validation status (2026-07-31):** the annotated Chelis v0.17.5
-> tag resolves to commit `333cb4d3688573036d37828eba68416c11c5d1b4`; its
+> **0.18.1 validation status (2026-08-01):** the annotated Chelis v0.18.1
+> tag resolves to commit `c8db387d06d538ce8039ac37645a43def48373c9`; its
 > publisher-checksummed glibc-2.31 archive and extracted binary have SHA-256
-> `65f5949a540a547aacbee9845b3d40d2a02d1b28e3c8d608fc7af140fafd6ccf`
-> and `9728e7824cd5d8aba26daf5189f95b90c98f9636b8aa0b6ca2fe9cc286c44801`,
-> respectively. Nautilus 0.7.37 is published from commit
-> `1b932d75ed4d03a53f90b2093f0801992e963050`; its CHB and archive SHA-256 are
-> `daeb7a4a3cef0f3c98e06c048998cd207a9aa372d161e7c115e430068ecbdd1d`
-> and `d5a861566850a0706aae07f68b21bc2eecdd0dfcedafbe26a0083447fa24143b`.
-> Coral's complete downstream gate passes on that exact chain. No tracked issue
-> below changed upstream state, so issue-specific verdicts and narrowing cites
-> remain as recorded.
+> `88a1a53b47b7168e4df614e66a6d9313176174b1dc3a25a43db5f73a3ee8f0cd`
+> and `0d7a46262b4ba2975702d5ed2def5d54b79b5d68258602da59069b6715cc690b`,
+> respectively. Nautilus 0.7.38 is published from commit
+> `6b4c10f19a2cd120c08ba3c7d9cb746c161106ec`; its CHB and archive SHA-256 are
+> `cad8bd996ddeddb25f698496a394ab45388a120f9b870e7832cb5b87b5935740`
+> and `39a81b079dfae2a0aa907574954eeb48631757fb5fb1d0940def0c8a98adf4f6`.
+> Re-probing the affected surfaces detected fixes for empty-tensor `numel` and
+> tensor-bool `not`; both Coral workarounds are retired below. Tensor `neq` is
+> partly de-narrowed, with its borrowed/borrowed residue still cited.
 
 ## Actively blocking
 
@@ -37,28 +37,22 @@ concrete need; archived items are historical.
   `chelis#849` comment forbidding reintroduction of the newline. Restore the
   multi-line-in-block layout when 0.17.x parses it again. Re-probe:
   `uv run --project parity --frozen python parity/run_parity.py --strict`
-  (window-runtime lane); minimal A/B repro in the issue body.
+  (window-runtime lane); minimal A/B repro in the issue body. Re-probed on the
+  exact 0.18.1 binary: `fmt`, `check`, and `build` still reject the minimal
+  block/newline form with `expected Else, found Eof`; the workaround remains.
+  `tests_blocked/parser/if_else_newline.ch` is the mechanical bump probe.
 
-- **`numel(to_tensor([]))` returns 1 (chelis v0.7.7, [chelis#646](https://github.com/Chelis-Lang/chelis/issues/646)).** Probe at
-  `/tmp/probe_numel_test.ch` confirms `numel(to_tensor([])) = 1` while
-  `len(to_list(to_tensor([]))) = 0`. Affected Coral surface (`column_len`,
-  `row_count`, length-checks in `filter` / `from_pairs`) worked around in
-  v0.7.8 by routing through `len(to_list(xs))` — O(n) instead of O(1)
-  but correct. Restore numel-based fast paths when the upstream bug is
-  fixed. Re-probe at chelis v0.7.8.
-
-- **`neq(&tensor, &tensor)` returns `tensor[n, f32]` instead of
-  `tensor[n, bool]` (chelis v0.7.7, [chelis#630](https://github.com/Chelis-Lang/chelis/issues/630)).** The
-  return dtype is the type-level symptom of that issue: `neq` lowers
-  from `cmplt` / `max_elem` float arithmetic with no native
-  bool-returning `CmpNe`, so the result carries `f32`. Triggered the lint cleanup
-  rewrite of `is_nan` from the original `neq(copy(col), col)` to a
-  `map(fn x -> neq(x, x))` + `bool_list_to_tensor` form, which is
-  correct but O(n) on the host lane and gives up the tensor-fusion
-  path the spec promises ("filter→mutate→aggregate compiles to a
-  single fused kernel"). Restore the tensor-native `is_nan` when the
-  upstream `neq` overload resolution produces `tensor[n, bool]` for
-  `(&tensor, &tensor)` arg pairs.
+- **Borrowed/borrowed tensor `neq` still selects `tensor[n, f32]`
+  ([chelis#630](https://github.com/Chelis-Lang/chelis/issues/630)).** The exact
+  0.18.1 binary now gives IEEE-correct scalar NaN equality and infers owned
+  `neq(tensor[n, f32], tensor[n, f32]) -> tensor[n, bool]`. It also infers
+  `neq(copy(col), col) -> tensor[n, bool]` for a borrowed input, so Coral has
+  restored tensor-native `is_nan`, `drop_nan`, and their fusion path. The
+  borrowed/borrowed form `neq(lhs: &tensor, rhs: &tensor)` still checks at
+  `tensor[n, f32]`, however. `src/frame.ch` therefore cites chelis#630 at the
+  one remaining explicit-copy narrowing. Retire that copy only when the
+  borrowed/borrowed probe infers `tensor[n, bool]`;
+  `tests_blocked/types/tensor_neq_borrowed.ch` enforces that trigger.
 
 - **HAMT native-evaluator overhead (chelis v0.7.7, [chelis#828](https://github.com/Chelis-Lang/chelis/issues/828)).** `chelis test`
   on a 100-key HAMT (`/tmp/coral-redteam/03_hamt_collisions.ch`)
@@ -69,14 +63,6 @@ concrete need; archived items are historical.
   emits compiled code. Re-probe when chelis ships a faster
   interpreter or when a Coral consumer hits 100+ columns in
   evaluator mode (50–100 is the documented design range).
-
-- **`not` is scalar-only in chelis v0.7.7 ([chelis#647](https://github.com/Chelis-Lang/chelis/issues/647)).** `not(tensor[n, bool])`
-  fails with "bool op expects bool arg". Affected Coral surface
-  (`drop_nan` originally did `filter(df, not(is_nan(...)))`) worked
-  around in v0.7.8 by reformulating the keep-mask as
-  `bool_list_to_tensor(map(fn x -> eq(x, x), ...))`. Restore the
-  direct `not(is_nan_mask)` form when chelis ships a bool-tensor
-  `not`.
 
 - **[chelis#741](https://github.com/Chelis-Lang/chelis/issues/741) —
   bare-lane tensor-op axis must be syntactic (chelis ≤ 0.16.1).**
@@ -95,7 +81,10 @@ concrete need; archived items are historical.
   `zero_i32` helper. Restore a named helper when chelis#741 resolves
   helper-call axes in rank monomorphization. Re-probe:
   `python3 scripts/repro_multimodule_bare_build.py` (all three targets);
-  minimal A/B repro in the issue body.
+  minimal A/B repro in the issue body. Re-probed on 0.18.1: the helper form
+  checks at score 1.0 but fails bare build with the same lowering diagnostic;
+  the inline `cast(0, int32)` control builds, and all three Coral targets
+  build/link/run. The narrowing remains.
 
 - **Unbound `|>` pipe targets accepted in large bare builds (chelis 0.16.1, unnarrowed; parked draft [`docs/issue_drafts/bare_build_unbound_pipe_targets.md`](issue_drafts/bare_build_unbound_pipe_targets.md)).**
   While the probe's
@@ -148,6 +137,18 @@ concrete need; archived items are historical.
   signals movement** or at the next major coral release, not on patches.
 
 ## Archived
+
+- **Empty tensor `numel` ([chelis#646](https://github.com/Chelis-Lang/chelis/issues/646); RESOLVED on 0.18.1).**
+  Live eval on the publisher-checksummed 0.18.1 binary returns `0` for both
+  `numel(to_tensor([]))` and `len(to_list(to_tensor([])))`. Coral restored
+  O(1) `numel` in Frame and IO tensor row-count paths; new empty
+  float/int/bool/string column tests pass end to end.
+
+- **Tensor-bool `not` ([chelis#647](https://github.com/Chelis-Lang/chelis/issues/647); RESOLVED on 0.18.1).**
+  Owned and borrowed `tensor[n, bool]` probes both infer
+  `tensor[n, bool]`, eval returns the elementwise complement, and the C build
+  succeeds. Coral restored direct `not(is_nan(col))` and `not(mask)` paths;
+  new executed float- and integer-NaN drop tests pin both surfaces.
 
 - **Nullary generic ADT constructors lose concrete result type arguments in
   C host lowering ([chelis#935](https://github.com/Chelis-Lang/chelis/issues/935);

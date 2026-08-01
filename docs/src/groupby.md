@@ -30,5 +30,5 @@ def main() -> int64 = {
 
 The honest gate today is fixture-backed plus evaluator-tested. The stripped
 Frame/GroupBy/Join bare probes also build, link, and run on the official
-Chelis 0.17.5 / Nautilus 0.7.37 chain after chelis#935's nullary generic
+Chelis 0.18.1 / Nautilus 0.7.38 chain after chelis#935's nullary generic
 `Hamt.Empty` lowering fix.

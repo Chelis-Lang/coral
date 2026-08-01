@@ -1,0 +1,5 @@
+expected Else, found Eof
+Blocker: chelis#849. Inside a block, a newline before an existing `else`
+still terminates the `if` expression early on the exact 0.18.1 release.
+On pass: remove the same-line workaround in parity/run_parity.py, promote
+this source to a parser regression test, and archive the tracking entry.

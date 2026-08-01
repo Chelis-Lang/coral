@@ -153,10 +153,10 @@ def column_value_string[n](col: Column[n], idx: int64) -> string = {
 def row_count[n](df: Frame[n]) -> int64 = {
   names = columns(df)
   if eq(len(names), zero_i64()) then zero_i64() else match get_column(df, index(names, zero_i64())) with {
-    | IntCol(xs, imask) => len(to_list(xs))
-    | FloatCol(xs) => len(to_list(xs))
+    | IntCol(xs, imask) => numel(xs)
+    | FloatCol(xs) => numel(xs)
     | StringCol(xs) => len(xs)
-    | BoolCol(xs) => len(to_list(xs))
+    | BoolCol(xs) => numel(xs)
   }
 }
 def join_strings(values: List[string], sep: string) -> string = join_from(values, sep, true, "")

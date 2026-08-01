@@ -1,0 +1,5 @@
+body doesn't match declared signature
+Blocker residue: chelis#630. Owned tensor `neq` and the copied-left form now
+infer tensor[n, bool] on 0.18.1, but borrowed/borrowed operands still infer
+tensor[n, f32]. On pass: remove Coral.Frame.is_nan's explicit copy, promote
+this source to a type regression test, and archive the remaining entry.

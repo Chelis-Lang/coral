@@ -1,6 +1,6 @@
 module Coral.Tests.Frame
 import Std.Test (assert_true, assert_eq, assert_eq_int, assert_eq_string, assert_close)
-import Coral.Frame (Frame, Column, FloatCol, StringCol, ColumnType, from_pairs, nrows, ncols, columns, filter, head, tail, slice, sort_by, with_column, drop_column, rename, concat, describe, get_float_col, get_string_col)
+import Coral.Frame (Frame, Column, FloatCol, StringCol, BoolCol, ColumnType, from_pairs, nrows, ncols, columns, filter, head, tail, slice, sort_by, with_column, drop_column, rename, concat, describe, get_float_col, get_string_col, int_col_of_list)
 def test_construction_nrows_ncols() -> unit ! { Test } = {
   df = from_pairs([("a", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)])))])
   _ = assert_eq_int(nrows(df), cast(3, int64), "nrows == 3")
@@ -10,6 +10,16 @@ def test_construction_multiple_cols() -> unit ! { Test } = {
   df = from_pairs([("a", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)]))), ("b", FloatCol(to_tensor([cast(10.0, f32), cast(20.0, f32), cast(30.0, f32)])))])
   _ = assert_eq_int(nrows(df), cast(3, int64), "nrows == 3")
   assert_eq_int(ncols(df), cast(2, int64), "ncols == 2")
+}
+def test_empty_tensor_columns_have_zero_rows() -> unit ! { Test } = {
+  float_df = from_pairs([("value", FloatCol(to_tensor([])))])
+  int_df = from_pairs([("value", int_col_of_list([]))])
+  bool_df = from_pairs([("value", BoolCol(to_tensor([])))])
+  string_df = from_pairs([("value", StringCol([]))])
+  _ = assert_eq_int(nrows(float_df), cast(0, int64), "empty float tensor has zero rows")
+  _ = assert_eq_int(nrows(int_df), cast(0, int64), "empty int tensor has zero rows")
+  _ = assert_eq_int(nrows(bool_df), cast(0, int64), "empty bool tensor has zero rows")
+  assert_eq_int(nrows(string_df), cast(0, int64), "empty string list has zero rows")
 }
 def test_head_tail_slice() -> unit ! { Test } = {
   df = from_pairs([("a", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32), cast(4.0, f32), cast(5.0, f32)])))])

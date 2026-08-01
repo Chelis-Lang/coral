@@ -1,6 +1,6 @@
 module Coral.Tests.Nan
 import Std.Test (assert_true, assert_false, assert_eq_int, assert_eq_bool, assert_close)
-import Coral.Frame (Frame, Column, FloatCol, from_pairs, nrows, ncols, get_float_col, fill_nan, is_nan, any_nan, count_nan)
+import Coral.Frame (Frame, Column, IntCol, FloatCol, from_pairs, nrows, ncols, get_float_col, get_int_col, fill_nan, drop_nan, is_nan, any_nan, count_nan, drop_nan_col)
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
 def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))
@@ -106,4 +106,20 @@ def test_any_nan_tensor_export() -> unit ! { Test } = {
   _ = assert_true(any_nan(with_nan), "any_nan tensor: true when present")
   __borrow_migration_out_8 = assert_false(any_nan(without_nan), "any_nan tensor: false when absent")
   __borrow_migration_out_8
+}
+def test_drop_nan_uses_tensor_native_mask() -> unit ! { Test } = {
+  df = from_pairs([("value", FloatCol(to_tensor([cast(1.0, f32), nan_f32(), cast(2.0, f32)])))])
+  kept = drop_nan(df, "value")
+  values = to_list(get_float_col(kept, "value"))
+  _ = assert_eq_int(nrows(kept), cast(2, int64), "drop_nan keeps two finite rows")
+  _ = assert_close(index(values, zero_i64()), cast(1.0, f32), cast(0.00001, f32), "first finite value stays")
+  assert_close(index(values, one_i64()), cast(2.0, f32), cast(0.00001, f32), "second finite value stays")
+}
+def test_drop_nan_col_uses_tensor_native_not() -> unit ! { Test } = {
+  df = from_pairs([("value", IntCol(to_tensor([cast(10, int64), cast(20, int64), cast(30, int64)]), to_tensor([false, true, false])))])
+  kept = drop_nan_col(df, "value")
+  values = to_list(get_int_col(kept, "value"))
+  _ = assert_eq_int(nrows(kept), cast(2, int64), "drop_nan_col keeps two unmasked rows")
+  _ = assert_eq_int(index(values, zero_i64()), cast(10, int64), "first unmasked int stays")
+  assert_eq_int(index(values, one_i64()), cast(30, int64), "second unmasked int stays")
 }

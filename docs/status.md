@@ -59,11 +59,13 @@ What is currently proven:
   and `39a81b079dfae2a0aa907574954eeb48631757fb5fb1d0940def0c8a98adf4f6`.
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints
   typecheck on the official Chelis 0.18.1 release.
-- Empty tensor row counts now use O(1) `numel`; tensor-native `neq` and `not`
-  drive float and integer NaN masks. Empty float/int/bool column tests and
-  executed drop-NaN tests pin the de-narrowed paths. The one remaining
-  `chelis#630` residue is explicit: borrowed/borrowed tensor `neq` still
-  selects `tensor[f32]`, so `is_nan` copies one operand before `neq`.
+- Empty tensor row counts now use O(1) `numel`, and tensor-native `not` drives
+  integer masks and mask inversion. Empty float/int/bool column tests and
+  executed drop-NaN tests pin those paths. Two `chelis#630` residues remain:
+  borrowed/borrowed tensor `neq` selects `tensor[f32]`, and bool-typed tensor
+  `neq` is IEEE-wrong for NaN in native C. Float `is_nan` therefore retains an
+  O(n) scalar host-map, protected by evaluator tests plus a compile-link-run
+  mask/drop-core/count/any regression.
 - 9 `tests/*.ch` modules cover as-of lookup/join, construction, filter (via mask
   consumers), head/tail/slice, rename/with_column/drop, sort_by
   (string asc/desc, float), concat, describe, single-key aggregations
@@ -104,8 +106,8 @@ What is not yet proven:
   and 2 blocked probes; strict pandas/runtime parity; all SKILL/mdBook examples;
   all three bare-C build/link/run targets; conformance audit and bump-check; and
   byte-identical, corruption-rejecting artifact verification. Candidate SHA-256
-  values are `858320a0b87a929b965518b9dbdfbf25664bdf992a71d12d3b15a6ec058baf48`
-  (CHB) and `3f9d415e26b4ad8d71866f85c81d1499141fe9f37c4322f3e0624b40e2a0fa9d`
+  values are `457bc6a41246795f0ce77763e490b4869225faf837255d15e655fb3e709e9a8b`
+  (CHB) and `8a95c0bb412c86040cba5210d4a305034761d5a205291c30b472c324b78650f5`
   (archive).
 - (resolved in v0.3.1, moved out of "not yet proven") The prior
   `chelis test` evaluator gap is fully closed: tensor-tensor

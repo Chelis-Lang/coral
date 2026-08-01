@@ -107,7 +107,7 @@ def test_any_nan_tensor_export() -> unit ! { Test } = {
   __borrow_migration_out_8 = assert_false(any_nan(without_nan), "any_nan tensor: false when absent")
   __borrow_migration_out_8
 }
-def test_drop_nan_uses_tensor_native_mask() -> unit ! { Test } = {
+def test_drop_nan_uses_ieee_safe_mask() -> unit ! { Test } = {
   df = from_pairs([("value", FloatCol(to_tensor([cast(1.0, f32), nan_f32(), cast(2.0, f32)])))])
   kept = drop_nan(df, "value")
   values = to_list(get_float_col(kept, "value"))

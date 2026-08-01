@@ -339,8 +339,9 @@ def drop_column[n](df: Frame[n], name: string) -> Frame[n] = {
     | Frame { cols: cols, col_order: order } => Frame { cols: hamt_remove(cols, name), col_order: list_filter_string(fn (entry: string) -> neq(entry, name), order) }
   }
 }
--- chelis#630: borrowed/borrowed neq still infers f32; copying one operand selects tensor[bool].
-def is_nan[n](col: &tensor[n, f32]) -> tensor[n, bool] = neq(copy(col), col)
+-- chelis#630: tensor neq's native C lowering is not IEEE-correct for NaN; keep
+-- the scalar host-map path until evaluator and compiled backends agree.
+def is_nan[n](col: &tensor[n, f32]) -> tensor[n, bool] = to_tensor(map(fn (x: f32) -> neq(x, x), to_list(col)))
 def fill_nan[n](col: &tensor[n, f32], value: f32) -> tensor[n, f32] = { to_tensor(map(fn (x: f32) -> if neq(x, x) then value else x, to_list(col))) }
 def drop_nan[n, k](df: Frame[n], col_name: string) -> Frame[k] = {
   col = get_float_col(df, col_name)

@@ -135,6 +135,9 @@ jobs:
       - name: chelis test (upstream blocker probes)
         run: chelis test tests_blocked/ --expect blocked
 
+      - name: native float NaN regression
+        run: python scripts/repro_native_nan.py
+
   mac-smoke:
     needs: lint
     runs-on: macos-latest

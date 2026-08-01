@@ -42,17 +42,22 @@ concrete need; archived items are historical.
   block/newline form with `expected Else, found Eof`; the workaround remains.
   `tests_blocked/parser/if_else_newline.ch` is the mechanical bump probe.
 
-- **Borrowed/borrowed tensor `neq` still selects `tensor[n, f32]`
+- **Float tensor `neq` has two remaining residues
   ([chelis#630](https://github.com/Chelis-Lang/chelis/issues/630)).** The exact
-  0.18.1 binary now gives IEEE-correct scalar NaN equality and infers owned
-  `neq(tensor[n, f32], tensor[n, f32]) -> tensor[n, bool]`. It also infers
-  `neq(copy(col), col) -> tensor[n, bool]` for a borrowed input, so Coral has
-  restored tensor-native `is_nan`, `drop_nan`, and their fusion path. The
+  0.18.1 evaluator gives IEEE-correct scalar NaN equality and owned or
+  copied-left tensor `neq` now infers `tensor[n, bool]`. Native C is still
+  semantically wrong: for `[NaN, -0.0, 3.5]`,
+  `neq(copy(values), values)` evaluates to `[true, false, false]`, while the
+  compiled program reports false for the NaN lane because generated C derives
+  `neq` from the two ordered `<` comparisons. Independently, the
   borrowed/borrowed form `neq(lhs: &tensor, rhs: &tensor)` still checks at
-  `tensor[n, f32]`, however. `src/frame.ch` therefore cites chelis#630 at the
-  one remaining explicit-copy narrowing. Retire that copy only when the
-  borrowed/borrowed probe infers `tensor[n, bool]`;
-  `tests_blocked/types/tensor_neq_borrowed.ch` enforces that trigger.
+  `tensor[n, f32]`. Under `chelis#630`, `src/frame.ch` therefore retains the
+  O(n), IEEE-safe scalar host-map for float masks;
+  `scripts/repro_native_nan.py` compile-links-runs
+  the production mask/drop-core/count/any path. Retire that host-map only when
+  native tensor `neq` agrees with the evaluator and the borrowed/borrowed probe
+  infers `tensor[n, bool]`; `tests_blocked/types/tensor_neq_borrowed.ch`
+  enforces the typing trigger.
 
 - **HAMT native-evaluator overhead (chelis v0.7.7, [chelis#828](https://github.com/Chelis-Lang/chelis/issues/828)).** `chelis test`
   on a 100-key HAMT (`/tmp/coral-redteam/03_hamt_collisions.ch`)

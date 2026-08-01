@@ -24,13 +24,15 @@ Nautilus v0.7.38 is published from commit
 `39a81b079dfae2a0aa907574954eeb48631757fb5fb1d0940def0c8a98adf4f6`.
 
 The de-narrowing pass restores O(1) `numel` row counts after live 0.18.1
-probes showed empty tensors now report zero, and restores tensor-native NaN
-masks after tensor-bool `not` became available. Coral now uses
-`neq(copy(col), col)` plus direct tensor `not`; the explicit copy remains an
-honest chelis#630 narrowing because borrowed/borrowed tensor `neq` still
-infers `tensor[f32]`. New empty-column and float/int drop-NaN tests cover the
-restored paths. The chelis#849 newline parser and chelis#741 helper-axis
-limitations remain reproducible and cited.
+probes showed empty tensors now report zero, and restores direct tensor-bool
+`not`. Owned and copied-left float tensor `neq` now infer bool, but a fresh
+evaluator-versus-native red-team probe found that the native C lowering is
+still not IEEE-correct for NaN (chelis#630). Coral therefore retains an O(n)
+scalar host-map for float NaN masks while integer masks and mask inversion use
+direct tensor `not`. New empty-column and float/int drop-NaN tests cover the
+evaluator paths, and a compile-link-run regression covers float mask,
+drop-core, count, and any behavior in native C. The chelis#849 newline parser
+and chelis#741 helper-axis limitations remain reproducible and cited.
 
 The complete local gate passes on the exact official dependency chain: 74/74
 native tests, 4/4 negative contracts, 2/2 expected-to-fail blocker probes,
@@ -38,8 +40,8 @@ strict pandas/runtime parity, 11/11 SKILL examples, 8/8 mdBook examples, all
 three bare-C build/link/run targets, conformance audit, and bump-check. The
 release artifacts pass canonical verification, reject independently corrupted
 CHB and archive controls, and rebuild byte-identically. Candidate SHA-256
-values are `858320a0b87a929b965518b9dbdfbf25664bdf992a71d12d3b15a6ec058baf48`
-(CHB) and `3f9d415e26b4ad8d71866f85c81d1499141fe9f37c4322f3e0624b40e2a0fa9d`
+values are `457bc6a41246795f0ce77763e490b4869225faf837255d15e655fb3e709e9a8b`
+(CHB) and `8a95c0bb412c86040cba5210d4a305034761d5a205291c30b472c324b78650f5`
 (archive). Official Coral release identities remain contingent on the
 post-merge tag workflow.
 

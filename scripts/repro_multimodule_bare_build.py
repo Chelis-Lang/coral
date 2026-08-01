@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Validate the stripped multi-module bare-build end-to-end on the current compiler.
+"""Validate a trivial-entry stripped multi-module build on the current compiler.
 
 This is an upstream-triage helper, not a CI gate.
 
 It concatenates stripped Coral modules into one temporary file, prefixes
-function names to avoid obvious user-space symbol collisions, runs
-`chelis build`, links the generated C with a tiny driver, and executes
-the resulting binary.
+function names to avoid obvious user-space symbol collisions, adds a constant
+entrypoint, runs `chelis build`, links the generated C with a tiny driver, and
+executes the resulting binary. This is a module/lowering smoke test, not proof
+that invoked recursive generic Frame APIs lower; the production `drop_nan`
+boundary is probed separately under chelis#941.
 
 Expected current outcome on the pinned Chelis release:
 - `chelis build` exits rc=0 with no panic in output
@@ -16,7 +18,7 @@ Expected current outcome on the pinned Chelis release:
 History:
 - v0.1.15–v0.1.17: invalid-C type-collapse caused link failure
 - v0.1.18: invalid-C fixed; Phase 0e RISC DAG panic remained (non-fatal, rc=0)
-- v0.1.19: Phase 0e panic fixed; build, link, and run are now fully clean
+- v0.1.19: Phase 0e panic fixed; the trivial-entry smoke is fully clean
 - chelis v0.16.1 / nautilus 0.7.33+: nautilus `stats.ch` imports
   `chi_squared_cdf` from `Nautilus.Distributions`, so the concat now pulls
   the transitive nautilus modules (`special.ch`, `distributions.ch`) ahead
@@ -263,7 +265,7 @@ def main() -> int:
             print(f"regression: binary exited with rc={run.returncode}")
             return 1
 
-        print(f"stripped multi-module bare-build OK: build clean, link OK, run OK (output={run.stdout.strip()!r})")
+        print(f"trivial-entry stripped multi-module smoke OK: build clean, link OK, run OK (output={run.stdout.strip()!r})")
         return 0
     finally:
         shutil.rmtree(workdir, ignore_errors=True)

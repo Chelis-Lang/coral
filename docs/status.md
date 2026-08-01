@@ -66,6 +66,11 @@ What is currently proven:
   `neq` is IEEE-wrong for NaN in native C. Float `is_nan` therefore retains an
   O(n) scalar host-map, protected by evaluator tests plus a compile-link-run
   mask/drop-core/count/any regression.
+- The bare native lane is split honestly: stripped Frame/GroupBy/Join modules
+  with a trivial entrypoint build/link/run, and the NaN drop core executes.
+  Invoking actual `drop_nan(Frame, ...)` still reaches the branded recursive
+  generic HAMT boundary (`chelis#941`), mechanically pinned by
+  `scripts/repro_native_drop_nan_blocked.py`.
 - 9 `tests/*.ch` modules cover as-of lookup/join, construction, filter (via mask
   consumers), head/tail/slice, rename/with_column/drop, sort_by
   (string asc/desc, float), concat, describe, single-key aggregations
@@ -103,12 +108,18 @@ What is not yet proven:
 - publication of official Coral 0.7.35 release assets. The post-merge tag
   workflow must publish and checksum the official copies after fresh red-team
   review. The exact release-candidate gate is green: 74 positive, 4 negative,
-  and 2 blocked probes; strict pandas/runtime parity; all SKILL/mdBook examples;
-  all three bare-C build/link/run targets; conformance audit and bump-check; and
+  and 2 Chelis blocked probes plus the native chelis#941 expected-failure
+  probe; strict pandas/runtime parity; all SKILL/mdBook examples; all three
+  trivial-entry bare-C module smokes; conformance audit and bump-check; and
   byte-identical, corruption-rejecting artifact verification. Candidate SHA-256
   values are `457bc6a41246795f0ce77763e490b4869225faf837255d15e655fb3e709e9a8b`
   (CHB) and `8a95c0bb412c86040cba5210d4a305034761d5a205291c30b472c324b78650f5`
   (archive).
+- native compile-link-run of the full production `drop_nan(Frame, ...)` call.
+  Official Chelis 0.18.1 rejects its recursive generic `hamt__from_pairs_rec`
+  specialization under chelis#941/[05-UNS-1]. The positive native regression
+  covers mask creation, `any_nan`, `count_nan`, and the exact
+  mask-to-index/gather drop core, not full Frame reconstruction.
 - (resolved in v0.3.1, moved out of "not yet proven") The prior
   `chelis test` evaluator gap is fully closed: tensor-tensor
   `eq`/`neq`/`lt`/`gt` (v0.2.5), `to_tensor([bool, ...])`, and

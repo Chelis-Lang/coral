@@ -59,6 +59,20 @@ concrete need; archived items are historical.
   infers `tensor[n, bool]`; `tests_blocked/types/tensor_neq_borrowed.ch`
   enforces the typing trigger.
 
+- **Invoked native Frame operations still hit the recursive generic HAMT
+  boundary ([chelis#941](https://github.com/Chelis-Lang/chelis/issues/941)).**
+  The issue intentionally permits a branded unsupported boundary until bounded
+  monomorphized symbols exist. On the exact 0.18.1 binary, a program that
+  constructs a real `Frame` and calls production `drop_nan` fails `chelis
+  build` at `hamt__from_pairs_rec` with `recursive generic host call ...
+  requires bounded monomorphized symbols (chelis#941; [05-UNS-1])`. The
+  trivial-entry Frame/GroupBy/Join harness proves stripped modules generate,
+  link, and start; it does not prove invoked recursive generic Frame APIs.
+  `scripts/repro_native_drop_nan_blocked.py` is the mechanical expected-failure
+  probe. Re-probe on the next compiler release or any chelis#941 follow-up;
+  promote the actual full-drop compile-link-run only when that probe reports
+  `FIX-DETECTED`.
+
 - **HAMT native-evaluator overhead (chelis v0.7.7, [chelis#828](https://github.com/Chelis-Lang/chelis/issues/828)).** `chelis test`
   on a 100-key HAMT (`/tmp/coral-redteam/03_hamt_collisions.ch`)
   exceeds the 30s default budget. 60 keys clocks at ~57s of
@@ -161,9 +175,9 @@ concrete need; archived items are historical.
   commit `0b0c92f9916163b05a483fba70473496923730e6` (SHA-256
   `d08ebfe67fed11f4458251d47e732de3249d93a3d700c87991a39e219887cc7e`)
   passed the stripped bare-C Frame (11/11), GroupBy (8/8), and Join (6/6)
-  targets: each built, linked, ran, and exited zero. This is the downstream
-  acceptance oracle that had been required before archiving, not an inference
-  from the upstream unit reproducer.
+  trivial-entry targets: each built, linked, ran, and exited zero. This closes
+  the nullary-constructor regression without claiming that invoked recursive
+  generic Frame APIs work; that separate boundary is tracked by chelis#941.
 
 - **[chelis#5](https://github.com/Chelis-Lang/chelis/issues/5) — comparison-op return-type override clobbered tensor shape on scalar-first arg (RESOLVED v0.3.2).** Filed against v0.3.1 with the framing "both `gt(tensor, scalar)` and `gt(scalar, tensor)` in the same module break inference" — that framing was a misread. The actual bug was in `infer.rs:4441-4455`: the comparison-op return-type override only inspected `arg_tys.first()` for dim recovery, so when the first arg was `Prim(F32)` (the scalar-first form), the override returned `Prim(Bool)` and discarded the tensor shape that the v0.3.1 broadcast rewrite had already correctly produced via unification. The Coral repro escaped detection because it used an untyped top-level binding; the actual failure surfaces against a *declared* return signature. Fix walks all args with `find_map` preferring tensor over scalar for dim recovery (~10 LOC). New regression tests landed in chelis at `crates/chelis-types/tests/issue5_cmp_broadcast_both_forms.rs` and `coral_prerequisites.rs::coral_comparison_ops_broadcast_scalar_first_with_declared_signature` (the shape Coral's test missed). Coral was never functionally blocked since all our `gt` usages are scalar-scalar inside fold accumulators.
 
@@ -173,8 +187,8 @@ concrete need; archived items are historical.
 
 - **int64 C backend (RESOLVED v0.2.1, stable through v0.4.0).** Original blocker: chelis v0.1.21 / v0.2.0 panicked at `emit.rs:415:26` with "Phase 0f C backend only supports f32/bool tensors, found int64 at node 0" for any program whose dependency graph included the HAMT module. Fix shipped in v0.2.1; HAMT-backed Frame ops have built, linked, and run cleanly through every release since. No further action needed.
 
-- **Multi-module bare-build invalid-C type-collapse (FIXED v0.1.18).** `hamt_put`, `slice`, `empty_column`, and `drop_nan` signatures previously collapsed to `int` in generated C. Stripped multi-module bare-build (frame / groupby / join) generates valid C, links cleanly, executes correctly.
+- **Multi-module bare-build invalid-C type-collapse (FIXED v0.1.18).** `hamt_put`, `slice`, `empty_column`, and `drop_nan` signatures previously collapsed to `int` in generated C. The stripped trivial-entry multi-module smoke (frame / groupby / join) generates valid C, links cleanly, and executes correctly; invoked recursive generic Frame operations remain narrowed under chelis#941.
 
-- **Phase 0e RISC DAG panic for `if` (FIXED v0.1.19).** Introduced as a non-fatal silent panic with rc=0 in v0.1.18; resolved in v0.1.19. `chelis build` on stripped Frame/GroupBy/Join programs is fully clean. [`scripts/repro_multimodule_bare_build.py`](/home/jeff/Documents/scratch/coral/scripts/repro_multimodule_bare_build.py) verifies end-to-end operation and exits 0 on success.
+- **Phase 0e RISC DAG panic for `if` (FIXED v0.1.19).** Introduced as a non-fatal silent panic with rc=0 in v0.1.18; resolved in v0.1.19. `chelis build` on stripped Frame/GroupBy/Join trivial-entry programs is clean. [`scripts/repro_multimodule_bare_build.py`](/home/jeff/Documents/scratch/coral/scripts/repro_multimodule_bare_build.py) verifies that smoke lane; chelis#941 separately narrows invoked recursive generic Frame APIs.
 
 - **Tensor-to-list `copy(values)` compatibility (chelis v0.1.18).** Coral already applies the workaround in `describe`. Compiler-surface change preserved here as historical context for downstream shells.

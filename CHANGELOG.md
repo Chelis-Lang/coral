@@ -31,13 +31,18 @@ still not IEEE-correct for NaN (chelis#630). Coral therefore retains an O(n)
 scalar host-map for float NaN masks while integer masks and mask inversion use
 direct tensor `not`. New empty-column and float/int drop-NaN tests cover the
 evaluator paths, and a compile-link-run regression covers float mask,
-drop-core, count, and any behavior in native C. The chelis#849 newline parser
-and chelis#741 helper-axis limitations remain reproducible and cited.
+drop-core, count, and any behavior in native C. Full native
+`drop_nan(Frame, ...)` remains explicitly blocked at recursive generic
+`hamt__from_pairs_rec` (chelis#941); a mechanical expected-failure probe now
+prevents the trivial-entry bare-module smoke from being mistaken for that
+capability. The chelis#849 newline parser and chelis#741 helper-axis
+limitations remain reproducible and cited.
 
 The complete local gate passes on the exact official dependency chain: 74/74
-native tests, 4/4 negative contracts, 2/2 expected-to-fail blocker probes,
+native tests, 4/4 negative contracts, 2/2 Chelis expected-to-fail blocker
+probes plus the native chelis#941 expected failure,
 strict pandas/runtime parity, 11/11 SKILL examples, 8/8 mdBook examples, all
-three bare-C build/link/run targets, conformance audit, and bump-check. The
+three trivial-entry bare-C module smokes, conformance audit, and bump-check. The
 release artifacts pass canonical verification, reject independently corrupted
 CHB and archive controls, and rebuild byte-identically. Candidate SHA-256
 values are `457bc6a41246795f0ce77763e490b4869225faf837255d15e655fb3e709e9a8b`
@@ -65,8 +70,9 @@ the runtime parity generator also emits a concrete same-extent wrapper.
 
 The package build, 71-test evaluator suite, 4-case negative suite,
 documentation checks, strict pandas parity, and stripped
-Frame/GroupBy/Join bare-C probes are green on the exact final compiler and
-Nautilus package after chelis#935.
+Frame/GroupBy/Join trivial-entry bare-C smokes are green on the exact final
+compiler and Nautilus package after chelis#935. Invoked recursive generic
+Frame operations are a separate chelis#941 boundary.
 
 Compiler-pin bump to chelis 0.16.1. `compiler = "=0.14.0"` to
 `"=0.16.1"`; package version 0.7.30 to 0.7.31; CI env vars

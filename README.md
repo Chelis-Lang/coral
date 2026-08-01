@@ -76,6 +76,8 @@ chelis test tests/ --jobs auto         # internal correctness (Chelis-native)
 chelis test tests/ --jobs 1            # serial fallback for debugging
 chelis test tests_neg/ --expect neg    # negative contracts
 chelis test tests_blocked/ --expect blocked # upstream de-narrowing probes
+python scripts/repro_native_nan.py     # positive native mask/drop-core lane
+python scripts/repro_native_drop_nan_blocked.py # expected chelis#941 boundary
 uv run --python 3.11 --no-project python scripts/run_static_checks.py
 CHELIS_BIN=/path/to/chelis uv run --python 3.11 --no-project python scripts/run_skill_checks.py
 CHELIS_BIN=/path/to/chelis uv run --python 3.11 --no-project python scripts/validate_book_examples.py
@@ -93,6 +95,9 @@ CHELIS_BIN=/path/to/chelis uv run --project parity --frozen python parity/run_pa
 - `outer_join` is implemented and golden-validated
 - `Coral.Reshape` ships `pivot`, `melt`, `stack`, and `unstack`
 - Parquet I/O is upstream-blocked (see `docs/UPSTREAM_BUGS.md`)
+- native compilation of an invoked full `drop_nan(Frame, ...)` remains
+  upstream-blocked by recursive generic HAMT specialization (chelis#941); the
+  positive native lane covers the production mask/drop core
 - null semantics are intentionally narrower than pandas in the first pass
 - the prior `chelis test` evaluator gap is fully resolved as of chelis
   v0.3.1: tensor-tensor `eq`/`neq`/`lt`/`gt` (v0.2.5), `to_tensor([bool, ...])`

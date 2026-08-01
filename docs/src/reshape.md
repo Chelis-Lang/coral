@@ -3,7 +3,9 @@
 `Coral.Reshape` provides wide-to-long and long-to-wide transformations on
 `Frame` values. All four operations are evaluator-tested on the 0.18.1
 release line. The stripped bare-C Frame/GroupBy/Join gates pass on the
-official release after the chelis#935 fix.
+official release after the chelis#935 fix with a trivial entrypoint. They are
+module/lowering smokes, not proof that invoked recursive generic Frame APIs
+compile; full native Frame reconstruction remains blocked by chelis#941.
 
 Validated operations in the current slice:
 

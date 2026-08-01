@@ -138,6 +138,9 @@ jobs:
       - name: native float NaN regression
         run: python scripts/repro_native_nan.py
 
+      - name: native full drop remains explicitly blocked
+        run: python scripts/repro_native_drop_nan_blocked.py
+
   mac-smoke:
     needs: lint
     runs-on: macos-latest

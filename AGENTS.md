@@ -5,7 +5,7 @@ to this file so Claude-style and Codex-style entry points do not drift.
 
 ## Repo Identity
 
-<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.17.5 (sha256:758a5eb9aefb5c7e) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.18.1 (sha256:758a5eb9aefb5c7e) -->
 This repository is a downstream **shell** of the Chelis compiler. Its upstream
 of truth is `Chelis-Lang/chelis`: the monorepo `AGENTS.md` applies verbatim
 (machine-local environment sections excepted), and
@@ -33,19 +33,19 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
   Chelis release by default. Treat stale pins as drift, not as a reason
   to stay on an older compiler.
 - `reef.toml` should pin the currently validated release exactly. The
-  `release/v0.7.34` candidate targets `chelis 0.17.5` and `nautilus 0.7.37`.
-  Chelis 0.17.5 is published at commit
-  `333cb4d3688573036d37828eba68416c11c5d1b4`; its
+  `release/v0.7.35` candidate targets `chelis 0.18.1` and `nautilus 0.7.38`.
+  Chelis 0.18.1 is published at commit
+  `c8db387d06d538ce8039ac37645a43def48373c9`; its
   publisher-checksummed glibc-2.31 archive SHA-256 is
-  `65f5949a540a547aacbee9845b3d40d2a02d1b28e3c8d608fc7af140fafd6ccf`
+  `88a1a53b47b7168e4df614e66a6d9313176174b1dc3a25a43db5f73a3ee8f0cd`
   and its extracted binary SHA-256 is
-  `9728e7824cd5d8aba26daf5189f95b90c98f9636b8aa0b6ca2fe9cc286c44801`.
-  Nautilus 0.7.37 is published from commit
-  `1b932d75ed4d03a53f90b2093f0801992e963050`; its CHB SHA-256 is
-  `daeb7a4a3cef0f3c98e06c048998cd207a9aa372d161e7c115e430068ecbdd1d`
+  `0d7a46262b4ba2975702d5ed2def5d54b79b5d68258602da59069b6715cc690b`.
+  Nautilus 0.7.38 is published from commit
+  `6b4c10f19a2cd120c08ba3c7d9cb746c161106ec`; its CHB SHA-256 is
+  `cad8bd996ddeddb25f698496a394ab45388a120f9b870e7832cb5b87b5935740`
   and its archive SHA-256 is
-  `d5a861566850a0706aae07f68b21bc2eecdd0dfcedafbe26a0083447fa24143b`.
-  This exact chain passed Coral's complete local release gate on 2026-07-31.
+  `39a81b079dfae2a0aa907574954eeb48631757fb5fb1d0940def0c8a98adf4f6`.
+  This exact chain passed Coral's complete local release gate on 2026-08-01.
   Bumps cascade in dependency order (`nautilus` first, then coral) via the Pin
   Bump Checklist below — never edit the pin directly on `main`.
 - Do not vendor or build the Chelis compiler from source inside this

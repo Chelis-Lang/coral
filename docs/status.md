@@ -33,7 +33,7 @@ Known deferred items:
 Test harness layout (Phase 3t):
 
 - `tests/*.ch` — Chelis-native tests run via
-  `chelis test tests/ --jobs auto`. 71 tests across as-of, frame, window,
+  `chelis test tests/ --jobs auto`. 74 tests across as-of, frame, window,
   groupby, join, reshape, io, nan, and internal modules. All expected values are
   mathematical identities, hand-computed from inputs, structural
   assertions, or round-trip identities — never pandas-derived.
@@ -45,17 +45,32 @@ Test harness layout (Phase 3t):
 - `scripts/` — documentation/lint validators (`run_static_checks.py`,
   `run_skill_checks.py`, `validate_book_examples.py`) plus the
   upstream-blocker probe `repro_multimodule_bare_build.py`.
+- `tests_neg/` pins 4 user-error diagnostics; `tests_blocked/` pins 2 live
+  upstream failures and intentionally becomes loud `FIX-detected` evidence
+  when either narrowing can be removed.
 
 What is currently proven:
 
-- The validated dependency chain is the official Chelis 0.17.5 and Nautilus
-  0.7.37 publisher-checksummed releases. The compiler binary SHA-256 is
-  `9728e7824cd5d8aba26daf5189f95b90c98f9636b8aa0b6ca2fe9cc286c44801`;
+- The validated dependency chain is the official Chelis 0.18.1 and Nautilus
+  0.7.38 publisher-checksummed releases. The compiler binary SHA-256 is
+  `0d7a46262b4ba2975702d5ed2def5d54b79b5d68258602da59069b6715cc690b`;
   the Nautilus CHB and archive SHA-256 are
-  `daeb7a4a3cef0f3c98e06c048998cd207a9aa372d161e7c115e430068ecbdd1d`
-  and `d5a861566850a0706aae07f68b21bc2eecdd0dfcedafbe26a0083447fa24143b`.
+  `cad8bd996ddeddb25f698496a394ab45388a120f9b870e7832cb5b87b5935740`
+  and `39a81b079dfae2a0aa907574954eeb48631757fb5fb1d0940def0c8a98adf4f6`.
 - `src/internal/hamt.ch`, `src/frame.ch`, and the shell entrypoints
-  typecheck on the official Chelis 0.17.5 release.
+  typecheck on the official Chelis 0.18.1 release.
+- Empty tensor row counts now use O(1) `numel`, and tensor-native `not` drives
+  integer masks and mask inversion. Empty float/int/bool column tests and
+  executed drop-NaN tests pin those paths. Two `chelis#630` residues remain:
+  borrowed/borrowed tensor `neq` selects `tensor[f32]`, and bool-typed tensor
+  `neq` is IEEE-wrong for NaN in native C. Float `is_nan` therefore retains an
+  O(n) scalar host-map, protected by evaluator tests plus a compile-link-run
+  mask/drop-core/count/any regression.
+- The bare native lane is split honestly: stripped Frame/GroupBy/Join modules
+  with a trivial entrypoint build/link/run, and the NaN drop core executes.
+  Invoking actual `drop_nan(Frame, ...)` still reaches the branded recursive
+  generic HAMT boundary (`chelis#941`), mechanically pinned by
+  `scripts/repro_native_drop_nan_blocked.py`.
 - 9 `tests/*.ch` modules cover as-of lookup/join, construction, filter (via mask
   consumers), head/tail/slice, rename/with_column/drop, sort_by
   (string asc/desc, float), concat, describe, single-key aggregations
@@ -90,13 +105,21 @@ What is currently proven:
 
 What is not yet proven:
 
-- publication of official Coral 0.7.34 release assets. The complete local gate
-  passed on the exact published dependency chain, including two byte-identical
-  builds and canonical verification of candidate CHB SHA-256
-  `97fcab7dc44f80e2d05b70dc117bf1d8276328e408593fe0d89729d00ffea4b1`
-  and archive SHA-256
-  `da9b67fd475c26713e611c078969a342fa07bb1bbfaeccca34af6ddcdbcea68e`.
-  The post-merge tag workflow must publish and checksum the official copies.
+- publication of official Coral 0.7.35 release assets. The post-merge tag
+  workflow must publish and checksum the official copies after fresh red-team
+  review. The exact release-candidate gate is green: 74 positive, 4 negative,
+  and 2 Chelis blocked probes plus the native chelis#941 expected-failure
+  probe; strict pandas/runtime parity; all SKILL/mdBook examples; all three
+  trivial-entry bare-C module smokes; conformance audit and bump-check; and
+  byte-identical, corruption-rejecting artifact verification. Candidate SHA-256
+  values are `457bc6a41246795f0ce77763e490b4869225faf837255d15e655fb3e709e9a8b`
+  (CHB) and `8a95c0bb412c86040cba5210d4a305034761d5a205291c30b472c324b78650f5`
+  (archive).
+- native compile-link-run of the full production `drop_nan(Frame, ...)` call.
+  Official Chelis 0.18.1 rejects its recursive generic `hamt__from_pairs_rec`
+  specialization under chelis#941/[05-UNS-1]. The positive native regression
+  covers mask creation, `any_nan`, `count_nan`, and the exact
+  mask-to-index/gather drop core, not full Frame reconstruction.
 - (resolved in v0.3.1, moved out of "not yet proven") The prior
   `chelis test` evaluator gap is fully closed: tensor-tensor
   `eq`/`neq`/`lt`/`gt` (v0.2.5), `to_tensor([bool, ...])`, and

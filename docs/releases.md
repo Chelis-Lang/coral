@@ -40,25 +40,25 @@ the IR is the contract; the consumer compiles to their platform.**
 
 ## How a Mac (or any) user consumes Coral
 
-Coral 0.7.34 pins Chelis 0.17.5 and Nautilus 0.7.37. Chelis 0.17.5 is
+Coral 0.7.35 pins Chelis 0.18.1 and Nautilus 0.7.38. Chelis 0.18.1 is
 published at commit
-`333cb4d3688573036d37828eba68416c11c5d1b4`; its official glibc-2.31 archive
-SHA-256 is `65f5949a540a547aacbee9845b3d40d2a02d1b28e3c8d608fc7af140fafd6ccf`
+`c8db387d06d538ce8039ac37645a43def48373c9`; its official glibc-2.31 archive
+SHA-256 is `88a1a53b47b7168e4df614e66a6d9313176174b1dc3a25a43db5f73a3ee8f0cd`
 and its extracted binary SHA-256 is
-`9728e7824cd5d8aba26daf5189f95b90c98f9636b8aa0b6ca2fe9cc286c44801`.
-Nautilus 0.7.37 is published from commit
-`1b932d75ed4d03a53f90b2093f0801992e963050`; its official CHB and archive
-SHA-256 are `daeb7a4a3cef0f3c98e06c048998cd207a9aa372d161e7c115e430068ecbdd1d`
-and `d5a861566850a0706aae07f68b21bc2eecdd0dfcedafbe26a0083447fa24143b`.
+`0d7a46262b4ba2975702d5ed2def5d54b79b5d68258602da59069b6715cc690b`.
+Nautilus 0.7.38 is published from commit
+`6b4c10f19a2cd120c08ba3c7d9cb746c161106ec`; its official CHB and archive
+SHA-256 are `cad8bd996ddeddb25f698496a394ab45388a120f9b870e7832cb5b87b5935740`
+and `39a81b079dfae2a0aa907574954eeb48631757fb5fb1d0940def0c8a98adf4f6`.
 The exact dependency chain passes the complete Coral release gate.
 
-End-to-end once the corresponding Coral 0.7.34
+End-to-end once the corresponding Coral 0.7.35
 artifact is published, with no platform-specific Coral artifact required:
 
 1. Download the chelis toolchain that matches the consumer's OS:
    ```sh
-   gh release download v0.17.5 --repo Chelis-Lang/chelis \
-     --pattern 'chelis-v0.17.5-darwin-arm64.tar.gz'
+   gh release download v0.18.1 --repo Chelis-Lang/chelis \
+     --pattern 'chelis-v0.18.1-darwin-arm64.tar.gz'
    ```
    (or `linux-x86_64-glibc2.31` for Linux consumers).
 2. Extract and put `bin/chelis` on PATH.
@@ -66,12 +66,12 @@ artifact is published, with no platform-specific Coral artifact required:
    registry (private-repository access requires an authenticated `gh` session
    or `GITHUB_TOKEN`):
    ```sh
-   chelis reef install --from-github Chelis-Lang/coral@v0.7.34
+   chelis reef install --from-github Chelis-Lang/coral@v0.7.35
    ```
 4. In their own Chelis project's `reef.toml`:
    ```toml
    [dependencies]
-   coral = { version = "0.7.34" }
+   coral = { version = "0.7.35" }
    ```
 5. `chelis reef build` resolves the platform-agnostic `.chb` +
    sources; the consumer's chelis compiles the result to whatever

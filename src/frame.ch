@@ -339,14 +339,13 @@ def drop_column[n](df: Frame[n], name: string) -> Frame[n] = {
     | Frame { cols: cols, col_order: order } => Frame { cols: hamt_remove(cols, name), col_order: list_filter_string(fn (entry: string) -> neq(entry, name), order) }
   }
 }
-def is_nan[n](col: &tensor[n, f32]) -> tensor[n, bool] = {
-  flags = map(fn (x: f32) -> neq(x, x), to_list(col))
-  bool_list_to_tensor(flags)
-}
+-- chelis#630: tensor neq's native C lowering is not IEEE-correct for NaN; keep
+-- the scalar host-map path until evaluator and compiled backends agree.
+def is_nan[n](col: &tensor[n, f32]) -> tensor[n, bool] = to_tensor(map(fn (x: f32) -> neq(x, x), to_list(col)))
 def fill_nan[n](col: &tensor[n, f32], value: f32) -> tensor[n, f32] = { to_tensor(map(fn (x: f32) -> if neq(x, x) then value else x, to_list(col))) }
 def drop_nan[n, k](df: Frame[n], col_name: string) -> Frame[k] = {
   col = get_float_col(df, col_name)
-  keep = bool_list_to_tensor(map(fn (x: f32) -> eq(x, x), to_list(col)))
+  keep = not(is_nan(col))
   filter(df, keep)
 }
 def any_nan[n](col: &tensor[n, f32]) -> bool = fold(fn (acc: bool, flag: bool) -> or(acc, flag), false, to_list(is_nan(col)))
@@ -380,7 +379,7 @@ def fill_int_list(values: List[int64], masks: List[bool], fill_val: int64, acc: 
 def drop_nan_col[n, k](df: Frame[n], col_name: string) -> Frame[k] = {
   match get_column(df, col_name) with {
     | IntCol(dnvals, mask) => {
-    keep = bool_list_to_tensor(map(fn (flag: bool) -> not(flag), to_list(mask)))
+    keep = not(mask)
     filter(df, keep)
   }
     | _ => fail(string_concat("drop_nan_col: column is not int: ", col_name))
@@ -494,10 +493,10 @@ def empty_column[n](ty: ColumnType) -> Column[n] = {
 }
 def column_len[n](col: Column[n]) -> int64 = {
   match col with {
-    | IntCol(xs, lmask) => len(to_list(xs))
-    | FloatCol(xs) => len(to_list(xs))
+    | IntCol(xs, lmask) => numel(xs)
+    | FloatCol(xs) => numel(xs)
     | StringCol(xs) => len(xs)
-    | BoolCol(xs) => len(to_list(xs))
+    | BoolCol(xs) => numel(xs)
   }
 }
 def empty_column_like[n, k](col: Column[n]) -> Column[k] = {

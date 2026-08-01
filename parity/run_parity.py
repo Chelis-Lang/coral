@@ -216,7 +216,8 @@ def window_program(fixture: dict) -> str:
     # block whose `else` begins on a *later line* now fails to parse with a
     # misleading `expected Else, found Eof`, even though the `else` is present.
     # The same source parses cleanly on 0.16.1 (see chelis#849). Until it is
-    # fixed upstream, keep every `else` on the same line as its preceding branch
+    # fixed upstream (still live on 0.18.1), keep every `else` on the same
+    # line as its preceding branch
     # (this is also the canonical form `chelis fmt` emits). Do not reintroduce a
     # newline before `else` inside a block.
     return f"""

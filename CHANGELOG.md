@@ -4,7 +4,45 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.7.37] - Unreleased
+
+Compiler-pin and de-narrowing change set for the published Chelis 0.18.3 /
+Nautilus 0.7.40 cascade. `chelis reef conform bump 0.18.3` advanced the compiler
+pin and every workflow audit mirror, and the Coral package version advanced from
+0.7.35 to 0.7.37.
+
+**This bump skips 0.18.2.** The 0.7.36 / 0.18.2 candidate (PR #24 as originally
+opened) was never published: it failed `scripts/repro_native_nan.py` with
+`unsupported: builtin 'floor' on 'chelis build' host emission (codegen:c)`.
+Nautilus 0.7.39 had worked the chelis#759 float-to-integer trap around by
+wrapping five casts in `floor(...)`, and `floor` has no compiled-lane expression
+identity, so the native build lane broke for every downstream consumer. Chelis
+0.18.3 ships `cast_trunc` ([05-OP-6]) on the Surf, eval, and compiled-C
+surfaces; Nautilus 0.7.40 moves those sites onto it. Coral needed no source
+change of its own — the regression is green again purely from the dependency
+fix.
+
+The annotated Chelis v0.18.3 tag resolves to
+`29700dd73c0e35b672bdd384493054b3107ce308`. Its published Darwin arm64 archive
+and extracted binary have SHA-256
+`cc8737adf8c21040432d94b96635ef48895bd7ac8cdf94bd7696046c44bc7371` and
+`3a14b0d7e0a46a49c9b25f3dc61573d5972a91b411021672e09b8e3e0e9e1eba`. Nautilus
+0.7.40 is published from commit
+`c8466b29ffbe4ebc4126363db8c62a06a5b10e7f` (CHB
+`2ba0d478f55d5b270801ada1b51d8dbc75a4d721a24bb8aa42f6f663b0e19bad`, archive
+`a881f0b96a908a8356b720bfe21e6bde724bea204310e51957b452ad3740a47c`); those
+bytes are identical to the pre-release build this change set was first
+validated against.
+
+No §Tracking entry moved at this pin: chelis#849, the borrowed/borrowed float
+tensor `neq` residue, and chelis#941 all stay blocked.
+
+Complete local gate: 74 positive tests, 4 negative contracts, 2 blocked probes,
+strict pandas parity green, `repro_native_nan.py` OK, `repro_multimodule_bare_build.py`
+OK, `repro_native_drop_nan_blocked.py` blocked as expected, 11/11 SKILL examples,
+8/8 mdBook examples, static checks OK, conform audit green, bump-check green.
+
+## [0.7.35] - 2026-08-01
 
 Prepared the Coral 0.7.35 manifest and CI mirrors for the published Chelis
 0.18.1 / Nautilus 0.7.38 cascade. The required `chelis reef conform bump

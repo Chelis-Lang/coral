@@ -27,11 +27,12 @@ The annotated Chelis v0.18.3 tag resolves to
 and extracted binary have SHA-256
 `cc8737adf8c21040432d94b96635ef48895bd7ac8cdf94bd7696046c44bc7371` and
 `3a14b0d7e0a46a49c9b25f3dc61573d5972a91b411021672e09b8e3e0e9e1eba`. Nautilus
-0.7.40 was not yet published at validation time; it was built from commit
-`d51183cfd2de7d99b4b991662fa4321be66016fa` (CHB
+0.7.40 is published from commit
+`c8466b29ffbe4ebc4126363db8c62a06a5b10e7f` (CHB
 `2ba0d478f55d5b270801ada1b51d8dbc75a4d721a24bb8aa42f6f663b0e19bad`, archive
-`a881f0b96a908a8356b720bfe21e6bde724bea204310e51957b452ad3740a47c`) and must be
-re-verified against the published `v0.7.40` assets.
+`a881f0b96a908a8356b720bfe21e6bde724bea204310e51957b452ad3740a47c`); those
+bytes are identical to the pre-release build this change set was first
+validated against.
 
 No §Tracking entry moved at this pin: chelis#849, the borrowed/borrowed float
 tensor `neq` residue, and chelis#941 all stay blocked.

@@ -40,13 +40,14 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
   `cc8737adf8c21040432d94b96635ef48895bd7ac8cdf94bd7696046c44bc7371`
   and its extracted binary SHA-256 is
   `3a14b0d7e0a46a49c9b25f3dc61573d5972a91b411021672e09b8e3e0e9e1eba`.
-  Nautilus 0.7.40 is **not yet published**; it was validated from commit
-  `d51183cfd2de7d99b4b991662fa4321be66016fa`; its CHB SHA-256 is
+  Nautilus 0.7.40 is published from commit
+  `c8466b29ffbe4ebc4126363db8c62a06a5b10e7f`; its CHB SHA-256 is
   `2ba0d478f55d5b270801ada1b51d8dbc75a4d721a24bb8aa42f6f663b0e19bad`
   and its archive SHA-256 is
   `a881f0b96a908a8356b720bfe21e6bde724bea204310e51957b452ad3740a47c`.
   This exact chain passed Coral's complete local release gate on 2026-08-04;
-  re-verify the Nautilus leg against the published `v0.7.40` assets.
+  the published assets are byte-identical to the pre-release build it was
+  first validated against.
   Note that 0.18.2 is skipped — see `CHANGELOG.md` for why the 0.7.36
   candidate was never published.
   Bumps cascade in dependency order (`nautilus` first, then coral) via the Pin

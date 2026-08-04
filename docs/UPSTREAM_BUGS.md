@@ -26,13 +26,14 @@ concrete need; archived items are historical.
 > compiled-C surfaces; Nautilus 0.7.40 moves those five sites onto it, and the
 > native NaN regression is green again at this pin.
 >
-> Nautilus 0.7.40 was **not yet published** when this validation ran. It was
-> built from `Chelis-Lang/nautilus` commit
-> `d51183cfd2de7d99b4b991662fa4321be66016fa` (branch `bump/chelis-0.18.3`,
-> PR #39); its CHB and archive SHA-256 are
+> Nautilus 0.7.40 is published from commit
+> `c8466b29ffbe4ebc4126363db8c62a06a5b10e7f`; its sidecar verifies CHB
 > `2ba0d478f55d5b270801ada1b51d8dbc75a4d721a24bb8aa42f6f663b0e19bad`
-> and `a881f0b96a908a8356b720bfe21e6bde724bea204310e51957b452ad3740a47c`.
-> Re-verify against the published `v0.7.40` assets once that PR merges.
+> and archive
+> `a881f0b96a908a8356b720bfe21e6bde724bea204310e51957b452ad3740a47c`. Those
+> are byte-identical to the pre-release build this change set was first
+> validated against, so the reef build is confirmed reproducible across the
+> branch and the release tag.
 >
 > **Re-probe results at this pin:** no §Tracking entry moved. chelis#849
 > (block `if`/`else` newline) and the borrowed/borrowed float tensor `neq`

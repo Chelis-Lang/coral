@@ -7,18 +7,39 @@ tracking-but-not-blocking gets re-probed when upstream signals movement; parked
 items get re-probed only when their gating phase ships or when Coral has a new
 concrete need; archived items are historical.
 
-> **0.18.1 validation status (2026-08-01):** the annotated Chelis v0.18.1
-> tag resolves to commit `c8db387d06d538ce8039ac37645a43def48373c9`; its
-> publisher-checksummed glibc-2.31 archive and extracted binary have SHA-256
-> `88a1a53b47b7168e4df614e66a6d9313176174b1dc3a25a43db5f73a3ee8f0cd`
-> and `0d7a46262b4ba2975702d5ed2def5d54b79b5d68258602da59069b6715cc690b`,
-> respectively. Nautilus 0.7.38 is published from commit
-> `6b4c10f19a2cd120c08ba3c7d9cb746c161106ec`; its CHB and archive SHA-256 are
-> `cad8bd996ddeddb25f698496a394ab45388a120f9b870e7832cb5b87b5935740`
-> and `39a81b079dfae2a0aa907574954eeb48631757fb5fb1d0940def0c8a98adf4f6`.
-> Re-probing the affected surfaces detected fixes for empty-tensor `numel` and
-> tensor-bool `not`; both Coral workarounds are retired below. Tensor `neq` is
-> partly de-narrowed, with its borrowed/borrowed residue still cited.
+> **0.18.3 validation status (2026-08-04):** the annotated Chelis v0.18.3
+> tag resolves to commit `29700dd73c0e35b672bdd384493054b3107ce308`; its
+> publisher-checksummed Darwin arm64 archive and extracted binary have SHA-256
+> `cc8737adf8c21040432d94b96635ef48895bd7ac8cdf94bd7696046c44bc7371`
+> and `3a14b0d7e0a46a49c9b25f3dc61573d5972a91b411021672e09b8e3e0e9e1eba`,
+> respectively; the glibc-2.31 archive and binary for the same tag are
+> `36789e3a260c61b5082bc8842ba7b975899796ddf17c7b971815a2ed112904a3` and
+> `ea0ba326b190366f905445b4996c3993fe6c5cc7214f14cf5d862a615b78badf`, verified
+> against their sidecars but exercised by CI rather than this gate run.
+>
+> **This bump skips 0.18.2 entirely: 0.18.1 → 0.18.3.** The 0.7.36 / 0.18.2
+> candidate was never published — it failed `scripts/repro_native_nan.py` with
+> `unsupported: builtin 'floor' on 'chelis build' host emission (codegen:c)`,
+> because Nautilus 0.7.39 worked the chelis#759 float-to-integer trap around
+> with `floor(...)` and `floor` has no compiled-lane expression identity.
+> Chelis 0.18.3 ships `cast_trunc` ([05-OP-6]) on the Surf, eval, and
+> compiled-C surfaces; Nautilus 0.7.40 moves those five sites onto it, and the
+> native NaN regression is green again at this pin.
+>
+> Nautilus 0.7.40 was **not yet published** when this validation ran. It was
+> built from `Chelis-Lang/nautilus` commit
+> `d51183cfd2de7d99b4b991662fa4321be66016fa` (branch `bump/chelis-0.18.3`,
+> PR #39); its CHB and archive SHA-256 are
+> `2ba0d478f55d5b270801ada1b51d8dbc75a4d721a24bb8aa42f6f663b0e19bad`
+> and `a881f0b96a908a8356b720bfe21e6bde724bea204310e51957b452ad3740a47c`.
+> Re-verify against the published `v0.7.40` assets once that PR merges.
+>
+> **Re-probe results at this pin:** no §Tracking entry moved. chelis#849
+> (block `if`/`else` newline) and the borrowed/borrowed float tensor `neq`
+> residue both stay blocked under `chelis test tests_blocked/ --expect blocked`
+> (2 ok); chelis#941 stays blocked under
+> `scripts/repro_native_drop_nan_blocked.py`. The empty-tensor `numel` and
+> tensor-bool `not` de-narrowings from 0.18.1 remain archived below.
 
 ## Actively blocking
 

@@ -47,7 +47,8 @@ def test_describe_skip_nan_count() -> unit ! { Test } = {
   nan_v = div(cast(0.0, f32), cast(0.0, f32))
   df = from_pairs([("v", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), nan_v, cast(4.0, f32), cast(5.0, f32)])))])
   d = describe(df)
-  _ = assert_eq_int(nrows(d), cast(8, int64), "describe has 8 rows")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_1 = assert_eq_int(nrows(d), cast(8, int64), "describe has 8 rows")
   count_val = index(to_list(get_float_col(d, "v")), cast(0, int64))
   assert_close(count_val, cast(4.0, f32), cast(0.00001, f32), "skip-nan count == 4")
 }

@@ -6,67 +6,91 @@ def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
 def test_csv_write_then_read_roundtrip() -> unit ! { Test, IO } = {
   df = from_pairs([("price", FloatCol(to_tensor([cast(10.5, f32), cast(20.25, f32)]))), ("city", StringCol(["paris", "london"]))])
-  _ = write_csv_frame(df, "test_io_roundtrip.csv")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_9 = write_csv_frame(df, "test_io_roundtrip.csv")
   back = read_csv_frame("test_io_roundtrip.csv")
   prices = to_list(get_float_col(back, "price"))
   cities = get_string_col(back, "city")
-  _ = assert_eq_int(nrows(back), cast(2, int64), "csv roundtrip nrows == 2")
-  _ = assert_eq_int(ncols(back), cast(2, int64), "csv roundtrip ncols == 2")
-  _ = assert_close(index(prices, zero_i64()), cast(10.5, f32), cast(0.001, f32), "price[0] == 10.5")
-  _ = assert_close(index(prices, one_i64()), cast(20.25, f32), cast(0.001, f32), "price[1] == 20.25")
-  _ = assert_eq_string(index(cities, zero_i64()), "paris", "city[0] == paris")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_1 = assert_eq_int(nrows(back), cast(2, int64), "csv roundtrip nrows == 2")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_2 = assert_eq_int(ncols(back), cast(2, int64), "csv roundtrip ncols == 2")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_10 = assert_close(index(prices, zero_i64()), cast(10.5, f32), cast(0.001, f32), "price[0] == 10.5")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_11 = assert_close(index(prices, one_i64()), cast(20.25, f32), cast(0.001, f32), "price[1] == 20.25")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_12 = assert_eq_string(index(cities, zero_i64()), "paris", "city[0] == paris")
   assert_eq_string(index(cities, one_i64()), "london", "city[1] == london")
 }
 def test_json_write_then_read_roundtrip() -> unit ! { Test, IO } = {
   df = from_pairs([("price", FloatCol(to_tensor([cast(1.25, f32), cast(2.75, f32)]))), ("city", StringCol(["oslo", "berlin"]))])
-  _ = write_json_frame(df, "test_io_roundtrip.json")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_13 = write_json_frame(df, "test_io_roundtrip.json")
   back = read_json_frame("test_io_roundtrip.json")
   prices = to_list(get_float_col(back, "price"))
   cities = get_string_col(back, "city")
-  _ = assert_eq_int(nrows(back), cast(2, int64), "json roundtrip nrows == 2")
-  _ = assert_eq_int(ncols(back), cast(2, int64), "json roundtrip ncols == 2")
-  _ = assert_close(index(prices, zero_i64()), cast(1.25, f32), cast(0.001, f32), "price[0] == 1.25")
-  _ = assert_eq_string(index(cities, zero_i64()), "oslo", "city[0] == oslo")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_3 = assert_eq_int(nrows(back), cast(2, int64), "json roundtrip nrows == 2")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_4 = assert_eq_int(ncols(back), cast(2, int64), "json roundtrip ncols == 2")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_14 = assert_close(index(prices, zero_i64()), cast(1.25, f32), cast(0.001, f32), "price[0] == 1.25")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_15 = assert_eq_string(index(cities, zero_i64()), "oslo", "city[0] == oslo")
   assert_eq_string(index(cities, one_i64()), "berlin", "city[1] == berlin")
 }
 def test_csv_bool_roundtrip() -> unit ! { Test, IO } = {
   df = from_pairs([("flag", BoolCol(to_tensor([true, false, true]))), ("name", StringCol(["a", "b", "c"]))])
-  _ = write_csv_frame(df, "test_io_bool.csv")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_16 = write_csv_frame(df, "test_io_bool.csv")
   back = read_csv_frame("test_io_bool.csv")
   flags = to_list(get_bool_col(back, "flag"))
   trues = fold(fn (acc: int64, x: bool) -> if x then add(acc, one_i64()) else acc, zero_i64(), flags)
-  _ = assert_eq_int(nrows(back), cast(3, int64), "bool roundtrip nrows == 3")
-  _ = assert_eq_int(trues, cast(2, int64), "bool roundtrip preserves true-count == 2")
-  _ = assert_true(index(flags, zero_i64()), "flag[0] == true")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_5 = assert_eq_int(nrows(back), cast(3, int64), "bool roundtrip nrows == 3")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_17 = assert_eq_int(trues, cast(2, int64), "bool roundtrip preserves true-count == 2")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_18 = assert_true(index(flags, zero_i64()), "flag[0] == true")
   assert_true(index(flags, cast(2, int64)), "flag[2] == true")
 }
 def test_json_bool_roundtrip() -> unit ! { Test, IO } = {
   df = from_pairs([("flag", BoolCol(to_tensor([true, true, false, true]))), ("score", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32), cast(4.0, f32)])))])
-  _ = write_json_frame(df, "test_io_bool.json")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_19 = write_json_frame(df, "test_io_bool.json")
   back = read_json_frame("test_io_bool.json")
   flags = to_list(get_bool_col(back, "flag"))
   trues = fold(fn (acc: int64, x: bool) -> if x then add(acc, one_i64()) else acc, zero_i64(), flags)
-  _ = assert_eq_int(nrows(back), cast(4, int64), "json bool roundtrip nrows == 4")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_6 = assert_eq_int(nrows(back), cast(4, int64), "json bool roundtrip nrows == 4")
   assert_eq_int(trues, cast(3, int64), "json bool roundtrip preserves true-count == 3")
 }
 def test_csv_int_roundtrip() -> unit ! { Test, IO } = {
   df = from_pairs([("qty", int_col_of_list([cast(7, int64), cast(42, int64), cast(99, int64)])), ("name", StringCol(["a", "b", "c"]))])
-  _ = write_csv_frame(df, "test_io_int.csv")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_20 = write_csv_frame(df, "test_io_int.csv")
   back = read_csv_frame("test_io_int.csv")
   qtys = to_list(get_int_col(back, "qty"))
   qsum = fold(fn (acc: int64, v: int64) -> add(acc, v), zero_i64(), qtys)
-  _ = assert_eq_int(nrows(back), cast(3, int64), "int round-trip nrows == 3")
-  _ = assert_eq_int(qsum, cast(148, int64), "int round-trip preserves values: 7+42+99 == 148")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_7 = assert_eq_int(nrows(back), cast(3, int64), "int round-trip nrows == 3")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_21 = assert_eq_int(qsum, cast(148, int64), "int round-trip preserves values: 7+42+99 == 148")
   assert_eq_int(index(qtys, one_i64()), cast(42, int64), "qty[1] == 42")
 }
 def test_csv_two_column_roundtrip() -> unit ! { Test, IO } = {
   df = from_pairs([("amount", FloatCol(to_tensor([cast(0.25, f32), cast(0.75, f32)]))), ("label", StringCol(["a", "b"]))])
-  _ = write_csv_frame(df, "smoke_io.csv")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_22 = write_csv_frame(df, "smoke_io.csv")
   back = read_csv_frame("smoke_io.csv")
   amounts = to_list(get_float_col(back, "amount"))
   labels = get_string_col(back, "label")
-  _ = assert_eq_int(ncols(back), cast(2, int64), "smoke ncols == 2")
-  _ = assert_close(index(amounts, zero_i64()), cast(0.25, f32), cast(0.001, f32), "amount[0] == 0.25")
-  _ = assert_eq_string(index(labels, one_i64()), "b", "label[1] == b")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_8 = assert_eq_int(ncols(back), cast(2, int64), "smoke ncols == 2")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_23 = assert_close(index(amounts, zero_i64()), cast(0.25, f32), cast(0.001, f32), "amount[0] == 0.25")
+  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
+  bound_24 = assert_eq_string(index(labels, one_i64()), "b", "label[1] == b")
   assert_eq_string(index(labels, zero_i64()), "a", "label[0] == a")
 }

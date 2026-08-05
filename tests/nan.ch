@@ -46,7 +46,7 @@ def test_fill_nan_all_nan_replaces_all() -> unit ! { Test } = {
   __borrow_migration_out_3 = assert_close(index(vals, cast(2, int64)), cast(7.0, f32), cast(0.00001, f32), "idx 2 filled 7.0")
   __borrow_migration_out_3
 }
-def any_nan_scalar(values: List[f32]) -> bool = { fold(fn (acc: bool, x: f32) -> or(acc, neq(x, x)), false, values) }
+def any_nan_scalar(values: List[f32]) -> bool = fold(fn (acc: bool, x: f32) -> or(acc, neq(x, x)), false, values)
 def test_any_nan_true_when_present() -> unit ! { Test } = {
   with_nan = to_tensor([cast(1.0, f32), nan_f32(), cast(2.0, f32)])
   without_nan = to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)])
@@ -54,7 +54,7 @@ def test_any_nan_true_when_present() -> unit ! { Test } = {
   __borrow_migration_out_4 = assert_false(any_nan_scalar(to_list(without_nan)), "any NaN: false when absent")
   __borrow_migration_out_4
 }
-def count_nan_scalar(values: List[f32]) -> int64 = { fold(fn (acc: int64, x: f32) -> if neq(x, x) then add(acc, one_i64()) else acc, zero_i64(), values) }
+def count_nan_scalar(values: List[f32]) -> int64 = fold(fn (acc: int64, x: f32) -> if neq(x, x) then add(acc, one_i64()) else acc, zero_i64(), values)
 def test_count_nan_counts_nans() -> unit ! { Test } = {
   t = to_tensor([nan_f32(), cast(1.0, f32), nan_f32(), cast(2.0, f32)])
   c = count_nan_scalar(to_list(t))
@@ -65,7 +65,8 @@ def test_count_nan_counts_nans() -> unit ! { Test } = {
 }
 def test_nan_in_frame_float_col() -> unit ! { Test } = {
   df = from_pairs([("x", FloatCol(to_tensor([cast(1.0, f32), nan_f32(), cast(3.0, f32)])))])
-  _ = assert_eq_int(nrows(df), cast(3, int64), "frame nrows == 3")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_1 = assert_eq_int(nrows(df), cast(3, int64), "frame nrows == 3")
   vals = to_list(get_float_col(df, "x"))
   _ = assert_close(index(vals, zero_i64()), cast(1.0, f32), cast(0.00001, f32), "x[0] == 1.0")
   _ = assert_eq_bool(is_nan_scalar(index(vals, one_i64())), true, "x[1] is NaN")
@@ -76,7 +77,8 @@ def test_fill_nan_then_frame_roundtrip() -> unit ! { Test } = {
   filled = fill_nan(raw, cast(0.0, f32))
   df = from_pairs([("x", FloatCol(filled))])
   vals = to_list(get_float_col(df, "x"))
-  _ = assert_eq_int(nrows(df), cast(3, int64), "filled frame nrows == 3")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_2 = assert_eq_int(nrows(df), cast(3, int64), "filled frame nrows == 3")
   _ = assert_close(index(vals, zero_i64()), cast(1.0, f32), cast(0.00001, f32), "x[0] == 1.0")
   _ = assert_close(index(vals, one_i64()), cast(0.0, f32), cast(0.00001, f32), "x[1] filled to 0.0")
   __borrow_migration_out_5 = assert_close(index(vals, cast(2, int64)), cast(3.0, f32), cast(0.00001, f32), "x[2] == 3.0")
@@ -111,7 +113,8 @@ def test_drop_nan_uses_ieee_safe_mask() -> unit ! { Test } = {
   df = from_pairs([("value", FloatCol(to_tensor([cast(1.0, f32), nan_f32(), cast(2.0, f32)])))])
   kept = drop_nan(df, "value")
   values = to_list(get_float_col(kept, "value"))
-  _ = assert_eq_int(nrows(kept), cast(2, int64), "drop_nan keeps two finite rows")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_3 = assert_eq_int(nrows(kept), cast(2, int64), "drop_nan keeps two finite rows")
   _ = assert_close(index(values, zero_i64()), cast(1.0, f32), cast(0.00001, f32), "first finite value stays")
   assert_close(index(values, one_i64()), cast(2.0, f32), cast(0.00001, f32), "second finite value stays")
 }
@@ -119,7 +122,8 @@ def test_drop_nan_col_uses_tensor_native_not() -> unit ! { Test } = {
   df = from_pairs([("value", IntCol(to_tensor([cast(10, int64), cast(20, int64), cast(30, int64)]), to_tensor([false, true, false])))])
   kept = drop_nan_col(df, "value")
   values = to_list(get_int_col(kept, "value"))
-  _ = assert_eq_int(nrows(kept), cast(2, int64), "drop_nan_col keeps two unmasked rows")
+  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
+  asserted_4 = assert_eq_int(nrows(kept), cast(2, int64), "drop_nan_col keeps two unmasked rows")
   _ = assert_eq_int(index(values, zero_i64()), cast(10, int64), "first unmasked int stays")
   assert_eq_int(index(values, one_i64()), cast(30, int64), "second unmasked int stays")
 }

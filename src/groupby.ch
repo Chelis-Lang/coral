@@ -19,11 +19,11 @@ def all_false_mask[n](template_vals: tensor[n, int64]) -> tensor[n, bool] = {
 def group_by[n](df: Frame[n], key_name: string) -> GroupedFrame[n] = {
   template = get_column(df, key_name)
   grouped = group_keys(key_values(df, key_name), [], [])
-  GroupedFrame { frame: df, key_name: key_name, key_template: template, keys: grouped.0, groups: grouped.1 }
+  GroupedFrame { frame: df, key_name, key_template: template, keys: grouped.0, groups: grouped.1 }
 }
-def agg_sum[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
+def agg_sum[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] =
   match gf with {
-    | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => match get_column(df, col) with {
+    | GroupedFrame { frame: df, key_name, key_template, keys, groups } => match get_column(df, col) with {
     | FloatCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_sum"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> sum_f32(select_float_rows(to_list(xs), rows)), groups))))])
     | IntCol(xs, xmask) => {
     xs_list = to_list(xs)
@@ -35,10 +35,9 @@ def agg_sum[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
     | _ => fail("agg_sum: only float and int columns are supported")
   }
   }
-}
-def agg_mean[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
+def agg_mean[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] =
   match gf with {
-    | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => match get_column(df, col) with {
+    | GroupedFrame { frame: df, key_name, key_template, keys, groups } => match get_column(df, col) with {
     | FloatCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_mean"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> mean_f32(select_float_rows(to_list(xs), rows)), groups))))])
     | IntCol(xs, xmask) => {
     xs_list = to_list(xs)
@@ -48,19 +47,17 @@ def agg_mean[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
     | _ => fail("agg_mean: only float and int columns are supported")
   }
   }
-}
-def agg_count[n, m](gf: GroupedFrame[n]) -> Frame[m] = {
+def agg_count[n, m](gf: GroupedFrame[n]) -> Frame[m] =
   match gf with {
-    | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => {
+    | GroupedFrame { frame: df, key_name, key_template, keys, groups } => {
     count_vals = to_tensor(map(fn (rows: List[int64]) -> len(rows), groups))
     count_mask = all_false_mask(count_vals)
     from_pairs([(key_name, key_values_to_column_like(keys, key_template)), ("count", IntCol(count_vals, count_mask))])
   }
   }
-}
-def agg_min[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
+def agg_min[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] =
   match gf with {
-    | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => match get_column(df, col) with {
+    | GroupedFrame { frame: df, key_name, key_template, keys, groups } => match get_column(df, col) with {
     | FloatCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_min"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> min_f32(select_float_rows(to_list(xs), rows)), groups))))])
     | IntCol(xs, xmask) => {
     xs_list = to_list(xs)
@@ -72,10 +69,9 @@ def agg_min[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
     | _ => fail("agg_min: only float and int columns are supported")
   }
   }
-}
-def agg_max[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
+def agg_max[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] =
   match gf with {
-    | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => match get_column(df, col) with {
+    | GroupedFrame { frame: df, key_name, key_template, keys, groups } => match get_column(df, col) with {
     | FloatCol(xs) => from_pairs([(key_name, key_values_to_column_like(keys, key_template)), (string_concat(col, "_max"), FloatCol(to_tensor(map(fn (rows: List[int64]) -> max_f32(select_float_rows(to_list(xs), rows)), groups))))])
     | IntCol(xs, xmask) => {
     xs_list = to_list(xs)
@@ -87,27 +83,24 @@ def agg_max[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] = {
     | _ => fail("agg_max: only float and int columns are supported")
   }
   }
-}
-def agg[n, m](gf: GroupedFrame[n], specs: List[(string, AggFn)]) -> Frame[m] = {
+def agg[n, m](gf: GroupedFrame[n], specs: List[(string, AggFn)]) -> Frame[m] =
   match gf with {
-    | GroupedFrame { frame: df, key_name: key_name, key_template: key_template, keys: keys, groups: groups } => {
+    | GroupedFrame { frame: df, key_name, key_template, keys, groups } => {
     df_pairs = match df with {
-      | Frame { cols: cols, col_order: order } => hamt_entries(cols)
+      | Frame { cols, col_order: order } => hamt_entries(cols)
     }
     key_col = key_values_to_column_like(keys, key_template)
     result_pairs = build_spec_pairs(df_pairs, groups, specs, [])
     from_pairs(prepend_pair_local((key_name, key_col), result_pairs, []))
   }
   }
-}
-def prepend_pair_local[n](first: (string, Column[n]), rest: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = { prepend_pair_local_acc(rest, append(acc, first)) }
-def prepend_pair_local_acc[n](items: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = {
+def prepend_pair_local[n](first: (string, Column[n]), rest: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] = prepend_pair_local_acc(rest, append(acc, first))
+def prepend_pair_local_acc[n](items: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] =
   if eq(len(items), zero_i64()) then acc else {
     hd = index(items, zero_i64())
     prepend_pair_local_acc(drop(items, one_i64()), append(acc, hd))
   }
-}
-def build_spec_pairs[n, m](df_pairs: List[(string, Column[n])], groups: List[List[int64]], specs: List[(string, AggFn)], acc: List[(string, Column[m])]) -> List[(string, Column[m])] = {
+def build_spec_pairs[n, m](df_pairs: List[(string, Column[n])], groups: List[List[int64]], specs: List[(string, AggFn)], acc: List[(string, Column[m])]) -> List[(string, Column[m])] =
   if eq(len(specs), zero_i64()) then acc else {
     spec = index(specs, zero_i64())
     col_name = spec.0
@@ -122,21 +115,18 @@ def build_spec_pairs[n, m](df_pairs: List[(string, Column[n])], groups: List[Lis
     }
     build_spec_pairs(extraction.1, groups, drop(specs, one_i64()), append(acc, next_pair))
   }
-}
-def extract_pair_by_name[n](pairs: List[(string, Column[n])], target: string, acc: List[(string, Column[n])]) -> (Column[n], List[(string, Column[n])]) = {
+def extract_pair_by_name[n](pairs: List[(string, Column[n])], target: string, acc: List[(string, Column[n])]) -> (Column[n], List[(string, Column[n])]) =
   if eq(len(pairs), zero_i64()) then fail("agg: column not found") else {
     head_pair = index(pairs, zero_i64())
     if eq(head_pair.0, target) then (head_pair.1, prepend_pair_local_acc(drop(pairs, one_i64()), acc)) else extract_pair_by_name(drop(pairs, one_i64()), target, append(acc, head_pair))
   }
-}
-def apply_op_to_col[n, m](col: Column[n], groups: List[List[int64]], op: AggFn) -> Column[m] = {
+def apply_op_to_col[n, m](col: Column[n], groups: List[List[int64]], op: AggFn) -> Column[m] =
   match col with {
     | FloatCol(xs) => apply_op_float(to_list(xs), groups, op)
     | IntCol(xs, mask) => apply_op_int(to_list(xs), to_list(mask), groups, op)
     | _ => fail("agg: only float and int columns are supported")
   }
-}
-def apply_op_float[n](xs: List[f32], groups: List[List[int64]], op: AggFn) -> Column[n] = {
+def apply_op_float[n](xs: List[f32], groups: List[List[int64]], op: AggFn) -> Column[n] =
   match op with {
     | AggCount => {
     counts = to_tensor(map(fn (rows: List[int64]) -> len(rows), groups))
@@ -144,7 +134,6 @@ def apply_op_float[n](xs: List[f32], groups: List[List[int64]], op: AggFn) -> Co
   }
     | _ => FloatCol(to_tensor(map(fn (rows: List[int64]) -> float_op_on_rows(xs, rows, op), groups)))
   }
-}
 def float_op_on_rows(xs: List[f32], rows: List[int64], op: AggFn) -> f32 = {
   selected = select_float_rows(xs, rows)
   match op with {
@@ -155,7 +144,7 @@ def float_op_on_rows(xs: List[f32], rows: List[int64], op: AggFn) -> f32 = {
     | AggCount => cast(len(rows), f32)
   }
 }
-def apply_op_int[n](xs: List[int64], mask: List[bool], groups: List[List[int64]], op: AggFn) -> Column[n] = {
+def apply_op_int[n](xs: List[int64], mask: List[bool], groups: List[List[int64]], op: AggFn) -> Column[n] =
   match op with {
     | AggCount => {
     counts = to_tensor(map(fn (rows: List[int64]) -> len(rows), groups))
@@ -167,7 +156,6 @@ def apply_op_int[n](xs: List[int64], mask: List[bool], groups: List[List[int64]]
     IntCol(vals, all_false_mask(vals))
   }
   }
-}
 def int_op_on_rows(xs: List[int64], mask: List[bool], rows: List[int64], op: AggFn) -> int64 = {
   selected = select_int_rows(xs, filter_unmasked_rows(mask, rows))
   match op with {
@@ -182,8 +170,8 @@ def value_counts[n, m](df: Frame[n], col_name: string) -> Frame[m] = {
   agg_count(gf)
 }
 def merge_agg[m](base: Frame[m], extra: Frame[m], name: string) -> Frame[m] = with_column(base, name, get_column(extra, name))
-def group_keys(keys: List[KeyValue], seen_keys: List[KeyValue], groups: List[List[int64]]) -> (List[KeyValue], List[List[int64]]) = { group_keys_from(keys, seen_keys, groups, zero_i64()) }
-def group_keys_from(keys: List[KeyValue], seen_keys: List[KeyValue], groups: List[List[int64]], idx: int64) -> (List[KeyValue], List[List[int64]]) = {
+def group_keys(keys: List[KeyValue], seen_keys: List[KeyValue], groups: List[List[int64]]) -> (List[KeyValue], List[List[int64]]) = group_keys_from(keys, seen_keys, groups, zero_i64())
+def group_keys_from(keys: List[KeyValue], seen_keys: List[KeyValue], groups: List[List[int64]], idx: int64) -> (List[KeyValue], List[List[int64]]) =
   if gte(idx, len(keys)) then (seen_keys, groups) else {
     key = index(keys, idx)
     match find_key_index(seen_keys, key, zero_i64()) with {
@@ -191,19 +179,17 @@ def group_keys_from(keys: List[KeyValue], seen_keys: List[KeyValue], groups: Lis
       | None => group_keys_from(keys, append(seen_keys, key), append(groups, [idx]), add(idx, one_i64()))
     }
   }
-}
-def find_key_index(keys: List[KeyValue], key: KeyValue, idx: int64) -> Option[int64] = { if gte(idx, len(keys)) then None else if eq(key_id(index(keys, idx)), key_id(key)) then Some(idx) else find_key_index(keys, key, add(idx, one_i64())) }
+def find_key_index(keys: List[KeyValue], key: KeyValue, idx: int64) -> Option[int64] = if gte(idx, len(keys)) then None else if eq(key_id(index(keys, idx)), key_id(key)) then Some(idx) else find_key_index(keys, key, add(idx, one_i64()))
 def append_row(groups: List[List[int64]], target: int64, row: int64) -> List[List[int64]] = append_row_from(groups, target, row, zero_i64(), [])
-def append_row_from(groups: List[List[int64]], target: int64, row: int64, idx: int64, acc: List[List[int64]]) -> List[List[int64]] = {
+def append_row_from(groups: List[List[int64]], target: int64, row: int64, idx: int64, acc: List[List[int64]]) -> List[List[int64]] =
   if eq(len(groups), zero_i64()) then acc else {
     current = index(groups, zero_i64())
     next = if eq(idx, target) then append(acc, append(current, row)) else append(acc, current)
     append_row_from(drop(groups, one_i64()), target, row, add(idx, one_i64()), next)
   }
-}
 def select_float_rows(values: List[f32], rows: List[int64]) -> List[f32] = map(fn (row: int64) -> index(values, row), rows)
 def select_int_rows(values: List[int64], rows: List[int64]) -> List[int64] = map(fn (row: int64) -> index(values, row), rows)
-def filter_unmasked_rows(masks: List[bool], rows: List[int64]) -> List[int64] = { fold(fn (acc: List[int64], row: int64) -> if index(masks, row) then acc else append(acc, row), [], rows) }
+def filter_unmasked_rows(masks: List[bool], rows: List[int64]) -> List[int64] = fold(fn (acc: List[int64], row: int64) -> if index(masks, row) then acc else append(acc, row), [], rows)
 def sum_f32(values: List[f32]) -> f32 = fold(fn (acc: f32, value: f32) -> add(acc, value), cast(0.0, f32), values)
 def sum_i64(values: List[int64]) -> int64 = fold(fn (acc: int64, value: int64) -> add(acc, value), cast(0, int64), values)
 def mean_f32(values: List[f32]) -> f32 = div(sum_f32(values), cast(len(values), f32))

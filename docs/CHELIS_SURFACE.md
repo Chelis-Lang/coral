@@ -1,6 +1,6 @@
 # Chelis Capability Surface (this shell)
 
-<!-- BEGIN CHELIS MANAGED BLOCK: chelis-surface-header chelis@0.18.3 (sha256:28011bed9ccb5778) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: chelis-surface-header chelis@0.18.4 (sha256:28011bed9ccb5778) -->
 This file is a domain-scoped view of the canonical Chelis capability surface,
 generated for the pinned toolchain. Each capability row is marked `@pin` (usable
 at the current pin) or `@upstream` (lands at the next bump). **Read it before
@@ -14,13 +14,13 @@ in `Chelis-Lang/chelis`.
 
 | Item | Value |
 |---|---|
-| Validated manifest | Coral `0.7.37`; `reef.toml` pins compiler `=0.18.3`, `chelis-std 0.4.0`, and Nautilus `0.7.40` |
-| Published compiler | official `chelis 0.18.3` at tag commit `29700dd73c0e35b672bdd384493054b3107ce308`; Darwin arm64 archive SHA-256 `cc8737adf8c21040432d94b96635ef48895bd7ac8cdf94bd7696046c44bc7371`; extracted binary SHA-256 `3a14b0d7e0a46a49c9b25f3dc61573d5972a91b411021672e09b8e3e0e9e1eba` (the glibc-2.31 archive for the same tag is SHA-256 `36789e3a260c61b5082bc8842ba7b975899796ddf17c7b971815a2ed112904a3`, extracted binary `ea0ba326b190366f905445b4996c3993fe6c5cc7214f14cf5d862a615b78badf`, verified against its sidecar but exercised by CI rather than this gate run) |
-| Reef dependency | official `nautilus 0.7.40` at tag commit `c8466b29ffbe4ebc4126363db8c62a06a5b10e7f`; its sidecar-verified CHB has SHA-256 `2ba0d478f55d5b270801ada1b51d8dbc75a4d721a24bb8aa42f6f663b0e19bad` and its archive has SHA-256 `a881f0b96a908a8356b720bfe21e6bde724bea204310e51957b452ad3740a47c`. These are byte-identical to the pre-release build this change set was first validated against, confirming the reef build is reproducible |
-| Last refreshed | 2026-08-04 |
+| Validated manifest | Coral `0.7.38`; `reef.toml` pins compiler `=0.18.4`, `chelis-std 0.4.0`, and Nautilus `0.7.41` |
+| Published compiler | official `chelis 0.18.4` at tag commit `c0138c828bf2c42e1c8941e824f16616bd974fd5`; Darwin arm64 archive SHA-256 `ac905d2a2d471ff09a46e39c7ae78ede85aab2f97515553b445ffd0dc0d29fea`; extracted binary SHA-256 `b6b80d65bf1822f6ad926915b4c5d4b3c94e414a9afcafa0bc02f9fc29a48037` (the glibc-2.31 archive for the same tag is SHA-256 `c31b59a830ca232fa4e0a454e1314810026b5ec4f2b1a6e54d024eb049f65902`, extracted binary `314e840b7bf483caae985e663d27d0d2ccab85c003776bdd7689c5832cb3addf`, verified against its sidecar but exercised by CI rather than this gate run) |
+| Reef dependency | official `nautilus 0.7.41` at tag commit `5bf6fd11ea4faa5bec0ca79e8974653b5e3158f8`; its sidecar-verified CHB has SHA-256 `e92a47020f5691b49e5b39aba0094c7e1ed2e39d9dce55a9a135fd34480cc083` and its archive has SHA-256 `1bba785ccead8c38275f8daa111a27516b4f21d16eb3223c23dbb7bcb6a0a6f3`, taken from the published sidecar per chelis#1002 |
+| Last refreshed | 2026-08-05 |
 
 `@pin` means the row describes behavior available (or a limitation verified)
-on the exact official 0.18.3 / 0.7.40 chain. `@upstream` means the capability
+on the exact official 0.18.4 / 0.7.41 chain. `@upstream` means the capability
 is unavailable at that validated pin and must be re-probed before de-narrowing.
 
 This is the Coral-scoped view of the
@@ -39,16 +39,16 @@ re-probe records cited in [`docs/UPSTREAM_BUGS.md`](UPSTREAM_BUGS.md).
 | Literals, casts, and promotion | Unsuffixed floats default to `f32` and integers to `int32`; there is no implicit promotion — `cast` is explicit everywhere Coral crosses widths (`cast(0, int32)` axis args, `cast(x, int64)` counts, `cast(v, f32)` payloads). | `@pin` |
 | Algebraic data types and match | `Column` / `Frame` / `KeyValue` / `Json` are ADTs consumed by exhaustive `match`. This is the backbone of every per-column-type dispatch in `frame.ch`, `groupby.ch`, `join.ch`, `reshape.ch`, and `io.ch`. | `@pin` |
 | Symbolic dimensions | `Column[n]` / `Frame[n]` / `tensor[n, f32]` carry a symbolic row count through the whole public API; call sites instantiate `n` by unification, and shape changes (`head`, `tail`, `slice`, joins, reshape) introduce fresh dims (`Column[k]`). | `@pin` |
-| Borrowing and linearity | v0.14.0 enforces left-to-right evaluation order for linearity: consuming reads (`index(xs, i)`) must be bound with `let` before a `drop(xs, ...)` in the same expression. `src/` was rewritten for this at the 0.14.0 bump and stays clean on the 0.18.3 release. | `@pin` |
+| Borrowing and linearity | v0.14.0 enforces left-to-right evaluation order for linearity: consuming reads (`index(xs, i)`) must be bound with `let` before a `drop(xs, ...)` in the same expression. `src/` was rewritten for this at the 0.14.0 bump and stays clean on the 0.18.4 release. | `@pin` |
 
 ### Primitive and builtin families used by Coral
 
 | Family touched by `src/` | Names used by Coral | Lane and architectural consequence | Status |
 |---|---|---|---|
 | Elementwise arithmetic | `add`, `sub`, `mul`, `div` | Aggregations, window recurrences (rolling/ewm), and describe statistics. Float `div` follows IEEE-754; Coral manufactures NaN as `div(0.0, 0.0)` (`nan_f32`). | `@pin` |
-| Comparisons and logic | `eq`, `neq`, `lt`, `lte`, `gt`, `gte`, `and`, `or`, `not` | Row filtering, join keys, sort comparators, NaN detection. The 0.18.3 pin supports tensor-bool `not`, but float tensor `neq` is still IEEE-wrong for NaN in native C and borrowed/borrowed `neq` still selects the f32 overload. Float `is_nan` therefore uses an O(n) scalar host-map (`chelis#630`); integer masks and mask inversion use tensor `not` directly. | `@pin` |
+| Comparisons and logic | `eq`, `neq`, `lt`, `lte`, `gt`, `gte`, `and`, `or`, `not` | Row filtering, join keys, sort comparators, NaN detection. The 0.18.4 pin supports tensor-bool `not`, but float tensor `neq` is still IEEE-wrong for NaN in native C and borrowed/borrowed `neq` still selects the f32 overload. Float `is_nan` therefore uses an O(n) scalar host-map (`chelis#630`); integer masks and mask inversion use tensor `not` directly. | `@pin` |
 | Host-list operations | `len`, `index`, `append`, `drop`, `range`, `map`, `fold`, `filter` | Coral's Frame algorithms are host-list-first; tensors are used for bulk payloads. Host lists retain `len`; tensor row counts use O(1) `numel`. | `@pin` |
-| Tensor/host bridges and queries | `to_tensor`, `to_list`, `numel` | Column payloads round-trip between tensors (storage/gather) and host lists (algorithms). Empty-tensor `numel` correctly returns zero on 0.18.3, so Frame and IO row counts use it directly. Valid on eval, package, and bare-C lanes. | `@pin` |
+| Tensor/host bridges and queries | `to_tensor`, `to_list`, `numel` | Column payloads round-trip between tensors (storage/gather) and host lists (algorithms). Empty-tensor `numel` correctly returns zero on 0.18.4, so Frame and IO row counts use it directly. Valid on eval, package, and bare-C lanes. | `@pin` |
 | Tensor movement | `gather`, `sort` | Row selection (`head`/`tail`/`slice`, sort-permutation application) and sort-by. **Bare-lane constraint**: the axis argument must be a syntactic literal or inline `cast(<int>, int32)`; a helper call defeats rank monomorphization in bare `chelis build` (`UPSTREAM_BUGS` §Tracking) — which is why `frame.ch` inlines `cast(0, int32)` at every axis site. Package/test lanes are indifferent. | `@pin` |
 | String ordering | `str_lt`, `str_lt_pos`, `str_char_lt` | Lexicographic sort-by on `StringCol` and stable key ordering in GroupBy/Join. | `@pin` |
 | Failure | `fail` | Guard rails for schema mismatches and the intentional Parquet stubs (`read_parquet_frame` / `write_parquet_frame`). | `@pin` |

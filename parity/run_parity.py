@@ -219,23 +219,21 @@ def window_program(fixture: dict) -> str:
     # fixed upstream (still live on 0.18.1), keep every `else` on the same
     # line as its preceding branch
     # (this is also the canonical form `chelis fmt` emits). Do not reintroduce a
-    # newline before `else` inside a block.
+    # newline before `else` inside a block. Canonical Surf v0.19 (chelis#1031)
+    # additionally rejects one-expression `{ }` blocks, so a def whose body is
+    # a bare `if` chain must not wrap it in braces.
     return f"""
 def rt_abs_f32(x: f32) -> f32 = if lt(x, cast(0.0, f32)) then neg(x) else x
 
 def rt_max_f32(lhs: f32, rhs: f32) -> f32 = if gt(lhs, rhs) then lhs else rhs
 
-def rt_approx_eq(actual: f32, expected: f32, abs_tol: f32, rel_tol: f32) -> bool = {{
-  if and(neq(actual, actual), neq(expected, expected)) then true else if or(neq(actual, actual), neq(expected, expected)) then false else {{
-    diff = rt_abs_f32(sub(actual, expected))
-    bound = rt_max_f32(abs_tol, mul(rel_tol, rt_abs_f32(expected)))
-    lte(diff, bound)
-  }}
+def rt_approx_eq(actual: f32, expected: f32, abs_tol: f32, rel_tol: f32) -> bool = if and(neq(actual, actual), neq(expected, expected)) then true else if or(neq(actual, actual), neq(expected, expected)) then false else {{
+  diff = rt_abs_f32(sub(actual, expected))
+  bound = rt_max_f32(abs_tol, mul(rel_tol, rt_abs_f32(expected)))
+  lte(diff, bound)
 }}
 
-def rt_float_list_eq(actual: List[f32], expected: List[f32], abs_tol: f32, rel_tol: f32) -> bool = {{
-  if neq(len(actual), len(expected)) then false else if eq(len(actual), cast(0, int64)) then true else if not(rt_approx_eq(index(actual, cast(0, int64)), index(expected, cast(0, int64)), abs_tol, rel_tol)) then false else rt_float_list_eq(drop(actual, cast(1, int64)), drop(expected, cast(1, int64)), abs_tol, rel_tol)
-}}
+def rt_float_list_eq(actual: List[f32], expected: List[f32], abs_tol: f32, rel_tol: f32) -> bool = if neq(len(actual), len(expected)) then false else if eq(len(actual), cast(0, int64)) then true else if not(rt_approx_eq(index(actual, cast(0, int64)), index(expected, cast(0, int64)), abs_tol, rel_tol)) then false else rt_float_list_eq(drop(actual, cast(1, int64)), drop(expected, cast(1, int64)), abs_tol, rel_tol)
 
 def rt_window_call(values: tensor[{extent}, f32]) -> tensor[{extent}, f32] = {call_body}
 

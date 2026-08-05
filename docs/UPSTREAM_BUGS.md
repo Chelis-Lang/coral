@@ -44,6 +44,31 @@ concrete need; archived items are historical.
 
 ## Actively blocking
 
+**Re-probe cadence:** at every compiler pin bump and before every Coral
+release.
+
+- **`_ = f(x)` marks `x` consumed when `f` destructures a record parameter
+  (0.18.4 regression)** -- `chelis#1200`
+  ([Chelis-Lang/chelis#1200](https://github.com/Chelis-Lang/chelis/issues/1200)).
+  A `_ =` wildcard discard desugars with the `destructure: true` marker,
+  opening the Linearity-F2 destructure-consume scope over the rest of the
+  enclosing body; any later reuse of a variable that a record-destructuring
+  callee consumed is a hard `UseAfterConsume` instead of receiving the
+  implicit Copy a named binding gets. Surfaced at the 0.18.4 bump as
+  74 -> 17 passing (7 test files failed to compile).
+    - **Minimal reproducer:** `tests_blocked/linearity/wildcard_discard_consume.ch`.
+    - **Affected Coral surface:** every test that discarded an assertion or
+      IO-setup result with `_ =` and then touched a Frame again -- the
+      consuming callees observed were `Frame.nrows`/`ncols`,
+      `Frame.get_float_col`/`get_bool_col`/`get_int_col`, and `Reshape.melt`.
+    - **Workaround:** bind, do not discard. 84 sites across seven test files
+      rewritten to `asserted_N`/`bound_N` bindings, each carrying a
+      `-- chelis#1200:` citation. `src/` needed no change.
+    - **Re-probe trigger:** every pin bump and the release resolving
+      chelis#1200. On pass, revert the cited bindings to `_ =` where the
+      name is unused and archive this entry.
+
+
 ## Tracking
 
 - **Block `if` with `else` on a later line rejected at parse time (chelis 0.17.1 regression, [chelis#849](https://github.com/Chelis-Lang/chelis/issues/849)).**

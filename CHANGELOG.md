@@ -4,7 +4,43 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.7.37] - Unreleased
+## [0.7.38] - 2026-08-05
+
+Compiler-pin, grammar-migration, and chelis#1200-workaround release for
+Chelis v0.18.4, on Nautilus 0.7.41. `chelis reef conform bump 0.18.4`
+advanced the compiler pin and all workflow audit mirrors; the Nautilus
+dependency advanced 0.7.40 -> 0.7.41 (the 0.18.4-pinning Nautilus release);
+the Coral package version advanced from 0.7.37 to 0.7.38.
+
+**The entire Surf corpus migrated to canonical Surf v0.19 (chelis#1031).**
+The migration and the pin bump are one atomic change: v0.19-canonical source
+fails the 0.18.3 style gate and pre-v0.19 source fails the 0.18.4 one. Most
+of the rewrite is `chelis migrate surf --from 0.18` output, driven per file
+(chelis#1197); the residue was repaired from the compiler's own diagnostics.
+
+**chelis#1200 workaround.** On 0.18.4 a `_ =` wildcard discard opens the
+Linearity-F2 destructure-consume scope over the rest of the enclosing body,
+so any later reuse of a variable consumed by a record-destructuring callee
+fails to compile. This regressed the suite to 17 passed / 7 files failing.
+84 discard sites across the seven affected test files are rewritten to named
+`asserted_N`/`bound_N` bindings, each citing chelis#1200 at the site;
+`tests_blocked/linearity/wildcard_discard_consume.ch` pins the reproducer.
+`src/` needed no change. With the workaround the suite is fully restored:
+**74 passed, 0 failed** -- identical to the 0.18.3 baseline.
+
+The official chelis Darwin arm64 asset was verified at SHA-256
+`ac905d2a2d471ff09a46e39c7ae78ede85aab2f97515553b445ffd0dc0d29fea`
+(installed payload `b6b80d65bf1822f6ad926915b4c5d4b3c94e414a9afcafa0bc02f9fc29a48037`,
+byte-identical to the release tarball; upstream source commit
+`c0138c828bf2c42e1c8941e824f16616bd974fd5`). Nautilus 0.7.41 was consumed at
+its published sidecar hashes (CHB
+`e92a47020f5691b49e5b39aba0094c7e1ed2e39d9dce55a9a135fd34480cc083`).
+
+**Validation on 0.18.4:** conform audit conformant, no MUST failures;
+74 passed, 0 failed; 4 negative sidecars ok; 3 blocked probes ok (the two
+carried probes plus the new chelis#1200 reproducer).
+
+## [0.7.37] - 2026-08-04
 
 Compiler-pin and de-narrowing change set for the published Chelis 0.18.3 /
 Nautilus 0.7.40 cascade. `chelis reef conform bump 0.18.3` advanced the compiler

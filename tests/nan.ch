@@ -46,7 +46,7 @@ def test_fill_nan_all_nan_replaces_all() -> unit ! { Test } = {
   __borrow_migration_out_3 = assert_close(index(vals, cast(2, int64)), cast(7.0, f32), cast(0.00001, f32), "idx 2 filled 7.0")
   __borrow_migration_out_3
 }
-def any_nan_scalar(values: List[f32]) -> bool = { fold(fn (acc: bool, x: f32) -> or(acc, neq(x, x)), false, values) }
+def any_nan_scalar(values: List[f32]) -> bool = fold(fn (acc: bool, x: f32) -> or(acc, neq(x, x)), false, values)
 def test_any_nan_true_when_present() -> unit ! { Test } = {
   with_nan = to_tensor([cast(1.0, f32), nan_f32(), cast(2.0, f32)])
   without_nan = to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)])
@@ -54,7 +54,7 @@ def test_any_nan_true_when_present() -> unit ! { Test } = {
   __borrow_migration_out_4 = assert_false(any_nan_scalar(to_list(without_nan)), "any NaN: false when absent")
   __borrow_migration_out_4
 }
-def count_nan_scalar(values: List[f32]) -> int64 = { fold(fn (acc: int64, x: f32) -> if neq(x, x) then add(acc, one_i64()) else acc, zero_i64(), values) }
+def count_nan_scalar(values: List[f32]) -> int64 = fold(fn (acc: int64, x: f32) -> if neq(x, x) then add(acc, one_i64()) else acc, zero_i64(), values)
 def test_count_nan_counts_nans() -> unit ! { Test } = {
   t = to_tensor([nan_f32(), cast(1.0, f32), nan_f32(), cast(2.0, f32)])
   c = count_nan_scalar(to_list(t))

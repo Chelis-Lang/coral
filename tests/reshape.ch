@@ -3,8 +3,8 @@ import Std.Test (assert_eq_int, assert_close)
 import Coral.Frame (Column, FloatCol, StringCol, Frame, from_pairs, nrows, ncols, get_float_col, get_string_col)
 import Coral.Reshape (pivot, melt, stack, unstack)
 def zero_i64() -> int64 = cast(0, int64)
-def tensor_sum_f32[n](t: tensor[n, f32]) -> f32 = { fold(fn (acc: f32, v: f32) -> add(acc, v), cast(0.0, f32), to_list(t)) }
-def tensor_sum_skip_nan[n](t: tensor[n, f32]) -> f32 = { fold(fn (acc: f32, v: f32) -> if neq(v, v) then acc else add(acc, v), cast(0.0, f32), to_list(t)) }
+def tensor_sum_f32[n](t: tensor[n, f32]) -> f32 = fold(fn (acc: f32, v: f32) -> add(acc, v), cast(0.0, f32), to_list(t))
+def tensor_sum_skip_nan[n](t: tensor[n, f32]) -> f32 = fold(fn (acc: f32, v: f32) -> if neq(v, v) then acc else add(acc, v), cast(0.0, f32), to_list(t))
 def test_melt_doubles_rows() -> unit ! { Test } = {
   df = from_pairs([("city", StringCol(["a", "b", "c"])), ("qty", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)]))), ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.0, f32), cast(30.0, f32)])))])
   result = melt(df, ["city"], ["qty", "price"])

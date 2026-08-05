@@ -4,7 +4,7 @@ import Coral.Frame (Column, FloatCol, StringCol, ColumnType, Frame, from_pairs, 
 import Coral.GroupBy (group_by, agg_sum, agg_mean, agg_min, agg_max, agg_count, value_counts)
 def zero_i64() -> int64 = cast(0, int64)
 def one_i64() -> int64 = cast(1, int64)
-def tensor_sum_f32[n](t: tensor[n, f32]) -> f32 = { fold(fn (acc: f32, v: f32) -> add(acc, v), cast(0.0, f32), to_list(t)) }
+def tensor_sum_f32[n](t: tensor[n, f32]) -> f32 = fold(fn (acc: f32, v: f32) -> add(acc, v), cast(0.0, f32), to_list(t))
 def tensor_min_f32[n](t: tensor[n, f32]) -> f32 = {
   values = to_list(t)
   fold(fn (acc: f32, v: f32) -> if lt(v, acc) then v else acc, index(values, zero_i64()), drop(values, one_i64()))

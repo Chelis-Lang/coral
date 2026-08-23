@@ -1,10 +1,33 @@
 #!/usr/bin/env python3
-"""Mechanical chelis#941 probe for an invoked native `drop_nan` path.
+"""Mechanical probe for an invoked native `drop_nan` path.
 
 Unlike the trivial-entry stripped-module smoke probe, this program constructs
-a real Frame and invokes Coral.Frame.drop_nan. The pinned compiler must reject
-the recursive generic HAMT specialization with its branded diagnostic. A
-successful build is FIX-DETECTED and requires de-narrowing this limitation.
+a real Frame and invokes Coral.Frame.drop_nan. The pinned compiler must still
+reject it. A successful build is FIX-DETECTED and requires de-narrowing this
+limitation.
+
+History of the boundary this probe measures:
+
+- through chelis 0.18.4 the rejection was the branded chelis#941 / [05-UNS-1]
+  recursive generic host call on `hamt__from_pairs_rec`;
+- chelis 0.18.5 lands bounded memoized monomorphization (chelis#1158), the
+  non-recursive inlining fix (chelis#1201), and recursive dimension-generic
+  monomorphization (chelis#1216). `from_pairs_rec` no longer rejects, so the
+  0.18.4 diagnostic is gone and the probe reported DRIFTED at that pin bump.
+  The path now stops one layer later, at a match on the dim-generic `Column`
+  whose applied dimension did not survive the `Option[Column[n]]` round trip
+  out of the HAMT.
+
+The 0.18.5 diagnostic carries no issue number of its own, unlike its sibling
+`generic host call ... (chelis#1226; [05-UNS-1])` residue that
+`repro_package_frame_build.py --target nrows` pins. chelis#1226 is the live
+standing [05-UNS-5] authority for the class and is what `UPSTREAM_BUGS` cites;
+chelis#1260 asks for this diagnostic to be branded the same way.
+
+This probe drives the bare concatenated-module lane. The package lane -- the
+one downstream projects actually use, and the one coral#26 reports against --
+is measured separately by `repro_package_frame_build.py`, which reproduces the
+same residue on the same `drop_nan` shape.
 """
 from __future__ import annotations
 
@@ -16,7 +39,7 @@ from pathlib import Path
 from repro_multimodule_bare_build import CHELIS, MODULE_PRESETS, build_prefixed_modules
 
 
-EXPECTED = "recursive generic host call `hamt__from_pairs_rec` requires bounded monomorphized symbols (chelis#941; [05-UNS-1])"
+EXPECTED = "is not concretely instantiated: generic ADT `Column` has no applied type arguments"
 
 
 def main() -> int:
@@ -46,13 +69,13 @@ def main() -> int64 = {
         build = subprocess.run([CHELIS, "build", str(main_ch), "-o", str(out_dir)], capture_output=True, text=True)
         output = (build.stdout or "") + (build.stderr or "")
         if build.returncode == 0:
-            print("FIX-DETECTED: production drop_nan now builds natively; de-narrow chelis#941")
+            print("FIX-DETECTED: production drop_nan now builds natively; de-narrow the UPSTREAM_BUGS entry")
             return 1
         if EXPECTED not in output:
             print(output.strip())
             print("native drop_nan blocker probe: failure diagnostic drifted")
             return 1
-        print("expected blocked: production drop_nan reaches chelis#941 recursive generic HAMT boundary")
+        print("expected blocked: production drop_nan reaches the unresolved dim-generic `Column` match boundary (chelis#1226 class; diagnostic uncited, chelis#1260)")
         return 0
     finally:
         shutil.rmtree(workdir, ignore_errors=True)

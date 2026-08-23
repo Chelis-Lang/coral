@@ -17,10 +17,8 @@ def test_agg_sum_groups_correctly() -> unit ! { Test } = {
   df = from_pairs([("city", StringCol(["a", "a", "b"])), ("qty", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)])))])
   result = agg_sum(group_by(df, "city"), "qty")
   total = tensor_sum_f32(get_float_col(result, "qty_sum"))
-  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
-  asserted_1 = assert_eq_int(nrows(result), cast(2, int64), "agg_sum nrows == 2")
-  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
-  asserted_2 = assert_eq_int(ncols(result), cast(2, int64), "agg_sum ncols == 2")
+  _ = assert_eq_int(nrows(result), cast(2, int64), "agg_sum nrows == 2")
+  _ = assert_eq_int(ncols(result), cast(2, int64), "agg_sum ncols == 2")
   assert_close(total, cast(6.0, f32), cast(0.00001, f32), "sum of group sums == 6.0")
 }
 def test_agg_min_max() -> unit ! { Test } = {
@@ -29,20 +27,16 @@ def test_agg_min_max() -> unit ! { Test } = {
   max_result = agg_max(group_by(df, "city"), "qty")
   min_val = tensor_min_f32(get_float_col(min_result, "qty_min"))
   max_val = tensor_max_f32(get_float_col(max_result, "qty_max"))
-  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
-  asserted_3 = assert_eq_int(nrows(min_result), cast(1, int64), "agg_min nrows == 1")
-  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
-  bound_10 = assert_close(min_val, cast(2.0, f32), cast(0.00001, f32), "min == 2.0")
-  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
-  asserted_4 = assert_eq_int(nrows(max_result), cast(1, int64), "agg_max nrows == 1")
+  _ = assert_eq_int(nrows(min_result), cast(1, int64), "agg_min nrows == 1")
+  _ = assert_close(min_val, cast(2.0, f32), cast(0.00001, f32), "min == 2.0")
+  _ = assert_eq_int(nrows(max_result), cast(1, int64), "agg_max nrows == 1")
   assert_close(max_val, cast(8.0, f32), cast(0.00001, f32), "max == 8.0")
 }
 def test_agg_mean_floats() -> unit ! { Test } = {
   df = from_pairs([("city", StringCol(["g", "g", "g"])), ("price", FloatCol(to_tensor([cast(2.0, f32), cast(4.0, f32), cast(6.0, f32)])))])
   result = agg_mean(group_by(df, "city"), "price")
   v = index(to_list(get_float_col(result, "price_mean")), zero_i64())
-  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
-  asserted_5 = assert_eq_int(nrows(result), cast(1, int64), "agg_mean nrows == 1")
+  _ = assert_eq_int(nrows(result), cast(1, int64), "agg_mean nrows == 1")
   assert_close(v, cast(4.0, f32), cast(0.00001, f32), "mean of [2,4,6] == 4")
 }
 def test_agg_sum_returns_2_columns() -> unit ! { Test } = {
@@ -56,10 +50,8 @@ def test_agg_sum_distinct_groups_partition() -> unit ! { Test } = {
   vs = get_float_col(result, "qty_sum")
   vmin = tensor_min_f32(vs)
   vmax = tensor_max_f32(vs)
-  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
-  asserted_6 = assert_eq_int(nrows(result), cast(2, int64), "two distinct groups")
-  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
-  bound_11 = assert_close(vmin, cast(101.0, f32), cast(0.001, f32), "min group sum == 101 (a)")
+  _ = assert_eq_int(nrows(result), cast(2, int64), "two distinct groups")
+  _ = assert_close(vmin, cast(101.0, f32), cast(0.001, f32), "min group sum == 101 (a)")
   assert_close(vmax, cast(1010.0, f32), cast(0.001, f32), "max group sum == 1010 (b)")
 }
 def test_agg_mean_two_groups() -> unit ! { Test } = {
@@ -68,10 +60,8 @@ def test_agg_mean_two_groups() -> unit ! { Test } = {
   vs = get_float_col(result, "price_mean")
   vmin = tensor_min_f32(vs)
   vmax = tensor_max_f32(vs)
-  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
-  asserted_7 = assert_eq_int(nrows(result), cast(2, int64), "two groups")
-  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
-  bound_12 = assert_close(vmin, cast(3.0, f32), cast(0.00001, f32), "min group mean == 3 (a)")
+  _ = assert_eq_int(nrows(result), cast(2, int64), "two groups")
+  _ = assert_close(vmin, cast(3.0, f32), cast(0.00001, f32), "min group mean == 3 (a)")
   assert_close(vmax, cast(15.0, f32), cast(0.00001, f32), "max group mean == 15 (b)")
 }
 def test_agg_count_per_group() -> unit ! { Test } = {
@@ -81,12 +71,9 @@ def test_agg_count_per_group() -> unit ! { Test } = {
   cmin = fold(fn (acc: int64, v: int64) -> if lt(v, acc) then v else acc, index(counts, zero_i64()), drop(counts, one_i64()))
   cmax = fold(fn (acc: int64, v: int64) -> if gt(v, acc) then v else acc, index(counts, zero_i64()), drop(counts, one_i64()))
   csum = fold(fn (acc: int64, v: int64) -> add(acc, v), zero_i64(), counts)
-  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
-  asserted_8 = assert_eq_int(nrows(result), cast(2, int64), "two groups")
-  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
-  bound_13 = assert_eq_int(cmin, cast(1, int64), "smallest group has 1 element")
-  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
-  bound_14 = assert_eq_int(cmax, cast(2, int64), "largest group has 2 elements")
+  _ = assert_eq_int(nrows(result), cast(2, int64), "two groups")
+  _ = assert_eq_int(cmin, cast(1, int64), "smallest group has 1 element")
+  _ = assert_eq_int(cmax, cast(2, int64), "largest group has 2 elements")
   assert_eq_int(csum, cast(3, int64), "counts sum to total rows")
 }
 def test_value_counts_distinct_keys() -> unit ! { Test } = {
@@ -95,9 +82,7 @@ def test_value_counts_distinct_keys() -> unit ! { Test } = {
   counts = to_list(get_int_col(result, "count"))
   cmax = fold(fn (acc: int64, v: int64) -> if gt(v, acc) then v else acc, index(counts, zero_i64()), drop(counts, one_i64()))
   csum = fold(fn (acc: int64, v: int64) -> add(acc, v), zero_i64(), counts)
-  -- chelis#1200: bind, not discard -- `_ = f(x)` marks x consumed when f destructures a record
-  asserted_9 = assert_eq_int(nrows(result), cast(3, int64), "three unique keys")
-  -- chelis#1200: bind, not discard -- a `_ =` wildcard opens the destructure-consume scope for the rest of the body
-  bound_15 = assert_eq_int(cmax, cast(3, int64), "most frequent has 3 occurrences")
+  _ = assert_eq_int(nrows(result), cast(3, int64), "three unique keys")
+  _ = assert_eq_int(cmax, cast(3, int64), "most frequent has 3 occurrences")
   assert_eq_int(csum, cast(5, int64), "counts sum to total rows")
 }

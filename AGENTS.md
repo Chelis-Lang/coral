@@ -5,7 +5,7 @@ to this file so Claude-style and Codex-style entry points do not drift.
 
 ## Repo Identity
 
-<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.18.4 (sha256:758a5eb9aefb5c7e) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.18.5 (sha256:758a5eb9aefb5c7e) -->
 This repository is a downstream **shell** of the Chelis compiler. Its upstream
 of truth is `Chelis-Lang/chelis`: the monorepo `AGENTS.md` applies verbatim
 (machine-local environment sections excepted), and
@@ -33,25 +33,28 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
   Chelis release by default. Treat stale pins as drift, not as a reason
   to stay on an older compiler.
 - `reef.toml` should pin the currently validated release exactly. The
-  `release/v0.7.37` candidate targets `chelis 0.18.3` and `nautilus 0.7.40`.
-  Chelis 0.18.3 is published at commit
-  `29700dd73c0e35b672bdd384493054b3107ce308`; its
+  `0.7.39` candidate targets `chelis 0.18.5` and `nautilus 0.7.42`.
+  Chelis 0.18.5 is published at commit
+  `6602f01719f55b8d4c7f52ee70e7c7b58f136107`; its
   publisher-checksummed Darwin arm64 archive SHA-256 is
-  `cc8737adf8c21040432d94b96635ef48895bd7ac8cdf94bd7696046c44bc7371`
+  `0ff7b4e168d8b51277e05d44bfa658364630176d56d79c9cf8aceaea15335551`
   and its extracted binary SHA-256 is
-  `3a14b0d7e0a46a49c9b25f3dc61573d5972a91b411021672e09b8e3e0e9e1eba`.
-  Nautilus 0.7.40 is published from commit
-  `c8466b29ffbe4ebc4126363db8c62a06a5b10e7f`; its CHB SHA-256 is
-  `2ba0d478f55d5b270801ada1b51d8dbc75a4d721a24bb8aa42f6f663b0e19bad`
-  and its archive SHA-256 is
-  `a881f0b96a908a8356b720bfe21e6bde724bea204310e51957b452ad3740a47c`.
-  This exact chain passed Coral's complete local release gate on 2026-08-04;
-  the published assets are byte-identical to the pre-release build it was
-  first validated against.
-  Note that 0.18.2 is skipped — see `CHANGELOG.md` for why the 0.7.36
-  candidate was never published.
+  `bcf8da8bd2df9acb8816194f9251b26e23ec57527d4fc928bea6e1f6120628b2`.
   Bumps cascade in dependency order (`nautilus` first, then coral) via the Pin
   Bump Checklist below — never edit the pin directly on `main`.
+- **Nautilus 0.7.42 is staged, not published, so this candidate cannot go
+  green yet.** It is the version
+  [nautilus#43](https://github.com/Chelis-Lang/nautilus/pull/43) declares,
+  moving the package version and the `=0.18.5` compiler pin in one manifest.
+  Pinning it now is deliberate: reef enforces exact compiler-pin equality on
+  dependencies, so the previous release (0.7.41, declaring `=0.18.4`) is
+  refused at coral's new pin and would need a follow-up edit anyway. Both
+  choices are equally red today; only one is correct the moment the cascade
+  tags. This gate was validated against an artifact built from that PR's head
+  `c060cb921ddfa8e5b907709fecd581f520097610` into a private registry, so what
+  is outstanding is a Nautilus release, not a Nautilus change. When v0.7.42 is
+  tagged, refresh the sidecar hashes in `docs/CHELIS_SURFACE.md` and re-run
+  the gate.
 - Do not vendor or build the Chelis compiler from source inside this
   repo. Consume the released tarball from the private
   `Chelis-Lang/chelis` releases. CI authenticates via the repo secret

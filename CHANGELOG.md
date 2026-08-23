@@ -4,6 +4,71 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.39] - 2026-08-22
+
+Compiler-pin and de-narrowing change set for Chelis v0.18.5.
+`chelis reef conform bump 0.18.5` advanced the compiler pin and every workflow
+audit mirror; the Coral package version advanced from 0.7.38 to 0.7.39.
+`chelis reef conform sync` produced no content delta beyond the version stamps
+the bump had already written.
+
+**Not releasable yet: the Nautilus dependency is staged, not published.** Reef
+enforces exact compiler-pin equality on dependencies, and the last published
+Nautilus (0.7.41) declares `=0.18.4`, so `chelis reef build` refuses it at
+coral's `=0.18.5` pin with `error: package.compiler must be `=0.18.5` in
+`nautilus``. The dependency advances 0.7.41 -> **0.7.42**, the version
+nautilus#43 stages by moving the package version and the compiler pin in one
+manifest. Both are red until that release is tagged, but only 0.7.42 is
+correct as written when it is. Every gate below ran against a Nautilus
+artifact built from nautilus#43's head
+`c060cb921ddfa8e5b907709fecd581f520097610` into a private registry; Nautilus
+needed no source change for 0.18.5, so the outstanding work is a release
+rather than a fix.
+
+**chelis#1200 is fixed and its narrowing is retired.** chelis PR #1208 stops a
+`_ =` wildcard discard from opening the Linearity-F2 destructure-consume scope
+over the rest of the enclosing body. The pinned reproducer no longer fails to
+compile, so all **84** bind-not-discard sites across the seven affected test
+files are back to `_ =`, every `-- chelis#1200:` citation is gone, and the
+reproducer is promoted from `tests_blocked/linearity/` to the executed
+regression `tests/linearity.ch`. The suite is **75 passed, 0 failed** -- the
+74-test pre-regression baseline plus that promoted test.
+
+**The Frame build lane partly de-narrows (coral#26).** chelis#1158, #1201, and
+#1216 retire the chelis#941 recursive-generic HAMT boundary, so a real `Frame`
+can now be constructed in the build lane: a package-lane entry calling
+`from_pairs` and reading `ncols` builds, links, runs, and returns the same
+value as `chelis eval`. Through 0.18.4 that program could not be compiled at
+all. Frame *reads* that pull a column back out of the HAMT still do not lower
+-- `nrows` stops at `column_len` (chelis#1226) and `drop_nan` at an unresolved
+`Column` match -- so coral#26 is partially, not fully, resolved.
+`scripts/repro_package_frame_build.py` pins both directions;
+`scripts/repro_native_drop_nan_blocked.py` moves off its retired chelis#941
+diagnostic onto the surviving one. The match residue carries no issue citation
+of its own, which is filed upstream as chelis#1260.
+
+**Missing `Coral.Internal.Hamt` imports declared.** `hamt_entries` was used in
+`frame.ch`, `groupby.ch`, `join.ch`, and `reshape.ch` without being imported.
+`chelis check` scored 1.0 with an empty `unresolved_names` list and the suite
+passed, but the newly reachable build lane rejected it with `unbound variable:
+hamt_entries`. No behavior change on the eval lane. The checker gap that hid it
+is filed upstream as chelis#1264.
+
+The official chelis Darwin arm64 asset was verified at SHA-256
+`0ff7b4e168d8b51277e05d44bfa658364630176d56d79c9cf8aceaea15335551`
+(installed payload `bcf8da8bd2df9acb8816194f9251b26e23ec57527d4fc928bea6e1f6120628b2`,
+byte-identical to the release tarball; upstream source commit
+`6602f01719f55b8d4c7f52ee70e7c7b58f136107`).
+
+**Validation on 0.18.5:** conform audit conformant, no MUST failures;
+75 passed, 0 failed; 4 negative sidecars ok; 2 blocked probes ok (chelis#849
+and the borrowed/borrowed `neq` residue); all three bare-build targets and the
+native NaN regression compile, link, and run; the strict pandas parity gate,
+static checks, 11/11 SKILL examples, and 8/8 mdBook examples all pass. The
+three 0.18.5 BREAKING changes -- polymorphic recursion rejected at check,
+integer literals in bare type positions, and left-to-right `>` operand
+evaluation -- have no exposure in this corpus.
+
 ## [0.7.38] - 2026-08-05
 
 Compiler-pin, grammar-migration, and chelis#1200-workaround release for

@@ -1,9 +1,0 @@
-was already consumed by call to
-Blocker: chelis#1200. On 0.18.4 a `_ =` wildcard discard desugars with the
-`destructure: true` marker, opening the Linearity-F2 destructure-consume
-scope over the rest of the enclosing body; any later reuse of a variable a
-record-destructuring callee consumed is then a hard UseAfterConsume instead
-of receiving the implicit Copy a named binding gets. The caller-side
-workaround (bind, not discard) is cited at every rewritten site. On pass:
-drop the `-- chelis#1200:` bound_/asserted_ rewrites in tests/ back to
-`_ =` discards where the name is unused, and archive this entry.

@@ -7,66 +7,61 @@ tracking-but-not-blocking gets re-probed when upstream signals movement; parked
 items get re-probed only when their gating phase ships or when Coral has a new
 concrete need; archived items are historical.
 
-> **0.18.3 validation status (2026-08-04):** the annotated Chelis v0.18.3
-> tag resolves to commit `29700dd73c0e35b672bdd384493054b3107ce308`; its
+> **0.18.5 validation status (2026-08-22):** the annotated Chelis v0.18.5
+> tag resolves to commit `6602f01719f55b8d4c7f52ee70e7c7b58f136107`; its
 > publisher-checksummed Darwin arm64 archive and extracted binary have SHA-256
-> `cc8737adf8c21040432d94b96635ef48895bd7ac8cdf94bd7696046c44bc7371`
-> and `3a14b0d7e0a46a49c9b25f3dc61573d5972a91b411021672e09b8e3e0e9e1eba`,
+> `0ff7b4e168d8b51277e05d44bfa658364630176d56d79c9cf8aceaea15335551`
+> and `bcf8da8bd2df9acb8816194f9251b26e23ec57527d4fc928bea6e1f6120628b2`,
 > respectively; the glibc-2.31 archive and binary for the same tag are
-> `36789e3a260c61b5082bc8842ba7b975899796ddf17c7b971815a2ed112904a3` and
-> `ea0ba326b190366f905445b4996c3993fe6c5cc7214f14cf5d862a615b78badf`, verified
-> against their sidecars but exercised by CI rather than this gate run.
+> `6b9b944ccd96b0053fc071de0ecfbb9e80e02a07a6a176e87056267ae8e0c26a` and
+> `fc544b9362c9ff0c244c03216a6e44fbf4d36665802d11b5cf3514d017c1e29a`, verified
+> against their sidecars but exercised by CI rather than this gate run. Every
+> command in this gate run ran on the Darwin arm64 binary at that exact hash.
 >
-> **This bump skips 0.18.2 entirely: 0.18.1 → 0.18.3.** The 0.7.36 / 0.18.2
-> candidate was never published — it failed `scripts/repro_native_nan.py` with
-> `unsupported: builtin 'floor' on 'chelis build' host emission (codegen:c)`,
-> because Nautilus 0.7.39 worked the chelis#759 float-to-integer trap around
-> with `floor(...)` and `floor` has no compiled-lane expression identity.
-> Chelis 0.18.3 ships `cast_trunc` ([05-OP-6]) on the Surf, eval, and
-> compiled-C surfaces; Nautilus 0.7.40 moves those five sites onto it, and the
-> native NaN regression is green again at this pin.
+> **This bump carries a cross-repo ordering debt.** Reef enforces exact
+> compiler-pin equality on dependencies, so `chelis reef build` refuses
+> Nautilus 0.7.41 (which declares `=0.18.4`) at coral's new `=0.18.5` pin:
 >
-> Nautilus 0.7.40 is published from commit
-> `c8466b29ffbe4ebc4126363db8c62a06a5b10e7f`; its sidecar verifies CHB
-> `2ba0d478f55d5b270801ada1b51d8dbc75a4d721a24bb8aa42f6f663b0e19bad`
-> and archive
-> `a881f0b96a908a8356b720bfe21e6bde724bea204310e51957b452ad3740a47c`. Those
-> are byte-identical to the pre-release build this change set was first
-> validated against, so the reef build is confirmed reproducible across the
-> branch and the release tag.
+> ```
+> error: package.compiler must be `=0.18.5` in `nautilus`
+> ```
 >
-> **Re-probe results at this pin:** no §Tracking entry moved. chelis#849
-> (block `if`/`else` newline) and the borrowed/borrowed float tensor `neq`
-> residue both stay blocked under `chelis test tests_blocked/ --expect blocked`
-> (2 ok); chelis#941 stays blocked under
-> `scripts/repro_native_drop_nan_blocked.py`. The empty-tensor `numel` and
-> tensor-bool `not` de-narrowings from 0.18.1 remain archived below.
+> No Nautilus release declaring `=0.18.5` exists yet. Coral keeps the 0.7.41
+> pin rather than naming a version that has not been published. Nautilus
+> `main` at 0.7.41 (commit `5bf6fd11ea4faa5bec0ca79e8974653b5e3158f8`, CHB
+> SHA-256 `e92a47020f5691b49e5b39aba0094c7e1ed2e39d9dce55a9a135fd34480cc083`,
+> archive SHA-256
+> `1bba785ccead8c38275f8daa111a27516b4f21d16eb3223c23dbb7bcb6a0a6f3`) builds
+> clean at `=0.18.5` from unmodified source with only the pin flipped, so this
+> is a re-cut of the artifact, not a source problem. Every gate command below
+> ran against a locally rebuilt Nautilus in a private registry to prove that.
+>
+> **Re-probe results at this pin:**
+>
+> - chelis#1200 is **fixed** and its narrowing is retired: the probe failed to
+>   fail, the 84 bind-not-discard sites went back to `_ =`, and the reproducer
+>   is now the executed regression `tests/linearity.ch`.
+> - The chelis#941 recursive-generic HAMT boundary is **gone**, so the
+>   `drop_nan` blocked probe reported **DRIFTED** rather than FIX-DETECTED. The
+>   `Coral.Frame` build-lane limitation survives one layer later; the §Tracking
+>   entry below records the new boundary and the part that de-narrowed.
+> - chelis#849 (block `if`/`else` newline) and the borrowed/borrowed float
+>   tensor `neq` residue both stay blocked under
+>   `chelis test tests_blocked/ --expect blocked` (2 ok).
+> - chelis#741 stays narrowed: all three
+>   `scripts/repro_multimodule_bare_build.py` targets build, link, and run with
+>   the inline `cast(0, int32)` axis form.
+> - The empty-tensor `numel` and tensor-bool `not` de-narrowings from 0.18.1
+>   remain archived below.
 
 ## Actively blocking
 
 **Re-probe cadence:** at every compiler pin bump and before every Coral
 release.
 
-- **`_ = f(x)` marks `x` consumed when `f` destructures a record parameter
-  (0.18.4 regression)** -- `chelis#1200`
-  ([Chelis-Lang/chelis#1200](https://github.com/Chelis-Lang/chelis/issues/1200)).
-  A `_ =` wildcard discard desugars with the `destructure: true` marker,
-  opening the Linearity-F2 destructure-consume scope over the rest of the
-  enclosing body; any later reuse of a variable that a record-destructuring
-  callee consumed is a hard `UseAfterConsume` instead of receiving the
-  implicit Copy a named binding gets. Surfaced at the 0.18.4 bump as
-  74 -> 17 passing (7 test files failed to compile).
-    - **Minimal reproducer:** `tests_blocked/linearity/wildcard_discard_consume.ch`.
-    - **Affected Coral surface:** every test that discarded an assertion or
-      IO-setup result with `_ =` and then touched a Frame again -- the
-      consuming callees observed were `Frame.nrows`/`ncols`,
-      `Frame.get_float_col`/`get_bool_col`/`get_int_col`, and `Reshape.melt`.
-    - **Workaround:** bind, do not discard. 84 sites across seven test files
-      rewritten to `asserted_N`/`bound_N` bindings, each carrying a
-      `-- chelis#1200:` citation. `src/` needed no change.
-    - **Re-probe trigger:** every pin bump and the release resolving
-      chelis#1200. On pass, revert the cited bindings to `_ =` where the
-      name is unused and archive this entry.
+None at the 0.18.5 pin. The section is deliberately empty rather than
+deleted: chelis#1200 vacated it at this bump (see §Archived), and an
+actively-blocking entry is the shape a future compiler regression takes.
 
 
 ## Tracking
@@ -106,19 +101,44 @@ release.
   infers `tensor[n, bool]`; `tests_blocked/types/tensor_neq_borrowed.ch`
   enforces the typing trigger.
 
-- **Invoked native Frame operations still hit the recursive generic HAMT
-  boundary ([chelis#941](https://github.com/Chelis-Lang/chelis/issues/941)).**
-  The issue intentionally permits a branded unsupported boundary until bounded
-  monomorphized symbols exist. On the exact 0.18.1 binary, a program that
-  constructs a real `Frame` and calls production `drop_nan` fails `chelis
-  build` at `hamt__from_pairs_rec` with `recursive generic host call ...
-  requires bounded monomorphized symbols (chelis#941; [05-UNS-1])`. The
-  trivial-entry Frame/GroupBy/Join harness proves stripped modules generate,
-  link, and start; it does not prove invoked recursive generic Frame APIs.
-  `scripts/repro_native_drop_nan_blocked.py` is the mechanical expected-failure
-  probe. Re-probe on the next compiler release or any chelis#941 follow-up;
-  promote the actual full-drop compile-link-run only when that probe reports
-  `FIX-DETECTED`.
+- **Frame reads are still build-lane-blocked; Frame construction no longer is
+  ([chelis#1226](https://github.com/Chelis-Lang/chelis/issues/1226),
+  [coral#26](https://github.com/Chelis-Lang/coral/issues/26); successor to the
+  retired chelis#941 boundary).** 0.18.5 lands bounded memoized
+  monomorphization (chelis#1158), the non-recursive inlining fix
+  (chelis#1201), and recursive dimension-generic monomorphization
+  (chelis#1216). Measured on the exact 0.18.5 binary in the package lane:
+    - **De-narrowed.** Constructing a real `Frame` and reading `ncols` builds,
+      links, runs, and returns the same value as `chelis eval`. Through 0.18.4
+      this was impossible -- `from_pairs` rejected at `hamt__from_pairs_rec`
+      with the branded chelis#941 diagnostic, so a `Frame` could not be built
+      at all. `scripts/repro_package_frame_build.py --target construct` pins
+      the new capability.
+    - **Still blocked.** Any read that pulls a column back out of the HAMT
+      does not lower. `nrows` fails with `generic host call
+      `pkg__coral__Coral__Frame__column_len` has no concrete checked type
+      application to specialize (chelis#1226; [05-UNS-1])`, and `drop_nan`
+      fails one layer further in on a `match` over `Column`'s constructors
+      with `generic ADT `Column` has no applied type arguments`. Both come from
+      the same round trip: `hamt_get[a](Hamt[a], string) -> Option[a]`
+      instantiated at `a = Column[n]` does not carry the dimension back out.
+      chelis#1226 is the live standing [05-UNS-5] authority for the class.
+    - **Citation gap.** The `match` residue carries no issue number of its own,
+      unlike the `column_len` one. Filed as
+      [chelis#1260](https://github.com/Chelis-Lang/chelis/issues/1260) so a
+      downstream probe has something live to cite.
+    - **Probes.** `scripts/repro_package_frame_build.py` (both targets, package
+      lane) and `scripts/repro_native_drop_nan_blocked.py` (bare concatenated
+      lane). Re-probe at every pin bump; promote the full compile-link-run of
+      an invoked Frame read only when `--target nrows` reports `FIX-DETECTED`.
+    - **Coral-side fix landed with this measurement.** `hamt_entries` was used
+      in `frame.ch`, `groupby.ch`, `join.ch`, and `reshape.ch` without being
+      imported. `chelis check` scored 1.0 with an empty `unresolved_names` list
+      and `chelis test` passed, but a build-lane entry that reaches those
+      functions failed with `unbound variable: hamt_entries`. The imports are
+      now declared. The checker asymmetry is the chelis#850 class (a score-1.0
+      check that does not survive lowering) applied to an unimported
+      same-package name.
 
 - **HAMT native-evaluator overhead (chelis v0.7.7, [chelis#828](https://github.com/Chelis-Lang/chelis/issues/828)).** `chelis test`
   on a 100-key HAMT (`/tmp/coral-redteam/03_hamt_collisions.ch`)
@@ -203,6 +223,27 @@ release.
   signals movement** or at the next major coral release, not on patches.
 
 ## Archived
+
+- **`_ = f(x)` marked `x` consumed when `f` destructured a record parameter
+  ([chelis#1200](https://github.com/Chelis-Lang/chelis/issues/1200); RESOLVED
+  on 0.18.5 by chelis PR #1208).** A 0.18.4 regression: a `_ =` wildcard
+  discard desugared with the `destructure: true` marker, opening the
+  Linearity-F2 destructure-consume scope over the rest of the enclosing body,
+  so any later reuse of a variable a record-destructuring callee had touched
+  was a hard `UseAfterConsume` instead of receiving the implicit Copy a named
+  binding gets. It took Coral from 74 passing to 17 with seven test files
+  failing to compile, and was worked around by binding instead of discarding at
+  84 sites. On 0.18.5 the pinned reproducer no longer fails to compile; all 84
+  sites are back to `_ =`, and the reproducer is the executed regression
+  `tests/linearity.ch`.
+
+- **Invoked recursive generic Frame operations hit the HAMT boundary
+  ([chelis#941](https://github.com/Chelis-Lang/chelis/issues/941), successor
+  [chelis#1158](https://github.com/Chelis-Lang/chelis/issues/1158); both
+  CLOSED, boundary retired on 0.18.5).** `chelis build` no longer rejects
+  `hamt__from_pairs_rec`, so a real `Frame` can be constructed in the build
+  lane. The remaining Frame-read limitation is a different boundary and is
+  tracked above under chelis#1226 rather than here.
 
 - **Empty tensor `numel` ([chelis#646](https://github.com/Chelis-Lang/chelis/issues/646); RESOLVED on 0.18.1).**
   Live eval on the publisher-checksummed 0.18.1 binary returns `0` for both

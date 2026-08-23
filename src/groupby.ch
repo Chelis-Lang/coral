@@ -1,4 +1,5 @@
 module Coral.GroupBy
+import Coral.Internal.Hamt (hamt_entries)
 import Coral.Frame (Column, IntCol, FloatCol, Frame, KeyValue, key_id, key_values, key_values_to_column_like, get_column, get_float_col, get_int_col, with_column, from_pairs)
 export (AggFn, GroupedFrame, group_by, agg_sum, agg_mean, agg_count, agg_min, agg_max, agg, value_counts)
 type AggFn =

@@ -1,4 +1,5 @@
 module Coral.Join
+import Coral.Internal.Hamt (hamt_entries)
 import Coral.Frame (Column, IntCol, FloatCol, StringCol, BoolCol, Frame, KeyValue, KeyIntValue, KeyFloatValue, KeyStringValue, KeyBoolValue, columns, from_pairs, get_column, key_id, key_values, nrows)
 export (inner_join, left_join, outer_join)
 def zero_i64() -> int64 = cast(0, int64)

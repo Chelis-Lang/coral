@@ -1,4 +1,5 @@
 module Coral.Reshape
+import Coral.Internal.Hamt (hamt_entries)
 import Coral.Frame (Column, FloatCol, StringCol, Frame, columns, from_pairs, get_column, key_id, key_values, nrows, with_column, get_float_col, get_string_col, drop_column)
 export (pivot, melt, stack, unstack)
 def zero_i64() -> int64 = cast(0, int64)

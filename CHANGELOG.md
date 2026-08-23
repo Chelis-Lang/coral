@@ -51,7 +51,8 @@ of its own, which is filed upstream as chelis#1260.
 `frame.ch`, `groupby.ch`, `join.ch`, and `reshape.ch` without being imported.
 `chelis check` scored 1.0 with an empty `unresolved_names` list and the suite
 passed, but the newly reachable build lane rejected it with `unbound variable:
-hamt_entries`. No behavior change on the eval lane.
+hamt_entries`. No behavior change on the eval lane. The checker gap that hid it
+is filed upstream as chelis#1264.
 
 The official chelis Darwin arm64 asset was verified at SHA-256
 `0ff7b4e168d8b51277e05d44bfa658364630176d56d79c9cf8aceaea15335551`

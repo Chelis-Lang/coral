@@ -144,9 +144,14 @@ actively-blocking entry is the shape a future compiler regression takes.
       imported. `chelis check` scored 1.0 with an empty `unresolved_names` list
       and `chelis test` passed, but a build-lane entry that reaches those
       functions failed with `unbound variable: hamt_entries`. The imports are
-      now declared. The checker asymmetry is the chelis#850 class (a score-1.0
-      check that does not survive lowering) applied to an unimported
-      same-package name.
+      now declared, so Coral carries no workaround here and needs no narrowing
+      citation. The checker gap that hid it is filed as
+      [chelis#1264](https://github.com/Chelis-Lang/chelis/issues/1264) with a
+      three-module reproducer: `chelis check` resolves a name the module never
+      imported, reporting score 1.0 and an empty `unresolved_names` list, while
+      `eval` and `build` both reject the same program. Sibling of the
+      chelis#850 class (a score-1.0 check that does not survive the other
+      lanes), different mechanism.
 
 - **HAMT native-evaluator overhead (chelis v0.7.7, [chelis#828](https://github.com/Chelis-Lang/chelis/issues/828)).** `chelis test`
   on a 100-key HAMT (`/tmp/coral-redteam/03_hamt_collisions.ch`)

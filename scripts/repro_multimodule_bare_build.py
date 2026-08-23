@@ -32,6 +32,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -50,6 +51,23 @@ from scripts.chelis_toolchain import resolve_chelis_bin
 CHELIS = resolve_chelis_bin()
 
 
+def _registry_root() -> Path:
+    """Where reef keeps installed packages, honouring the same overrides reef does.
+
+    A pin bump that lands ahead of its sibling's release has to resolve the
+    dependency out of a scoped registry rather than the shared one, so this
+    probe has to agree with `chelis reef build` about which registry is in
+    play instead of hardcoding the default.
+    """
+    reef_home = os.environ.get("CHELIS_REEF_HOME")
+    if reef_home:
+        return Path(reef_home)
+    chelis_home = os.environ.get("CHELIS_HOME")
+    if chelis_home:
+        return Path(chelis_home) / "reef"
+    return Path.home() / ".chelis" / "reef"
+
+
 def _nautilus_tarball() -> Path:
     reef_toml = REPO / "reef.toml"
     with open(reef_toml, "rb") as f:
@@ -57,7 +75,7 @@ def _nautilus_tarball() -> Path:
     nautilus_version = deps.get("nautilus", {}).get("version", "")
     if not nautilus_version:
         raise RuntimeError("nautilus dependency not found in reef.toml")
-    tarball = Path.home() / ".chelis" / "reef" / "packages" / "nautilus" / nautilus_version / f"nautilus-{nautilus_version}.tar.zst"
+    tarball = _registry_root() / "packages" / "nautilus" / nautilus_version / f"nautilus-{nautilus_version}.tar.zst"
     if not tarball.exists():
         raise RuntimeError(f"nautilus {nautilus_version} not found in local reef registry: {tarball}")
     return tarball

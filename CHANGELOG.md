@@ -12,15 +12,18 @@ audit mirror; the Coral package version advanced from 0.7.38 to 0.7.39.
 `chelis reef conform sync` produced no content delta beyond the version stamps
 the bump had already written.
 
-**Not releasable yet: the Nautilus dependency needs a re-cut.** Reef enforces
-exact compiler-pin equality on dependencies, and the published Nautilus 0.7.41
-artifact declares `=0.18.4`, so `chelis reef build` refuses it at coral's
-`=0.18.5` pin with `error: package.compiler must be `=0.18.5` in `nautilus``.
-Coral keeps the 0.7.41 pin rather than naming a version that does not exist.
-Nautilus source at that commit builds clean at `=0.18.5` with only its pin
-flipped, and every gate below ran against such a rebuild in a private
-registry, so the outstanding work is a Nautilus release rather than a Nautilus
-change.
+**Not releasable yet: the Nautilus dependency is staged, not published.** Reef
+enforces exact compiler-pin equality on dependencies, and the last published
+Nautilus (0.7.41) declares `=0.18.4`, so `chelis reef build` refuses it at
+coral's `=0.18.5` pin with `error: package.compiler must be `=0.18.5` in
+`nautilus``. The dependency advances 0.7.41 -> **0.7.42**, the version
+nautilus#43 stages by moving the package version and the compiler pin in one
+manifest. Both are red until that release is tagged, but only 0.7.42 is
+correct as written when it is. Every gate below ran against a Nautilus
+artifact built from nautilus#43's head
+`c060cb921ddfa8e5b907709fecd581f520097610` into a private registry; Nautilus
+needed no source change for 0.18.5, so the outstanding work is a release
+rather than a fix.
 
 **chelis#1200 is fixed and its narrowing is retired.** chelis PR #1208 stops a
 `_ =` wildcard discard from opening the Linearity-F2 destructure-consume scope

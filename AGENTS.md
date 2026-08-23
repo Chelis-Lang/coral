@@ -33,28 +33,28 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
   Chelis release by default. Treat stale pins as drift, not as a reason
   to stay on an older compiler.
 - `reef.toml` should pin the currently validated release exactly. The
-  `0.7.39` candidate targets `chelis 0.18.5` and `nautilus 0.7.41`.
+  `0.7.39` candidate targets `chelis 0.18.5` and `nautilus 0.7.42`.
   Chelis 0.18.5 is published at commit
   `6602f01719f55b8d4c7f52ee70e7c7b58f136107`; its
   publisher-checksummed Darwin arm64 archive SHA-256 is
   `0ff7b4e168d8b51277e05d44bfa658364630176d56d79c9cf8aceaea15335551`
   and its extracted binary SHA-256 is
   `bcf8da8bd2df9acb8816194f9251b26e23ec57527d4fc928bea6e1f6120628b2`.
-  Nautilus 0.7.41 is published from commit
-  `5bf6fd11ea4faa5bec0ca79e8974653b5e3158f8`; its CHB SHA-256 is
-  `e92a47020f5691b49e5b39aba0094c7e1ed2e39d9dce55a9a135fd34480cc083`
-  and its archive SHA-256 is
-  `1bba785ccead8c38275f8daa111a27516b4f21d16eb3223c23dbb7bcb6a0a6f3`.
   Bumps cascade in dependency order (`nautilus` first, then coral) via the Pin
   Bump Checklist below — never edit the pin directly on `main`.
-- **The 0.7.39 candidate is not releasable until Nautilus is re-cut.** Reef
-  enforces exact compiler-pin equality on dependencies, and the published
-  Nautilus 0.7.41 artifact declares `=0.18.4`, so `chelis reef build` refuses
-  it at coral's `=0.18.5` pin. Coral keeps the 0.7.41 pin rather than naming an
-  unpublished version. Nautilus source at that commit builds clean at
-  `=0.18.5` with only its pin flipped, so what is outstanding is a Nautilus
-  release, not a Nautilus change. Advance both the `nautilus` dependency and
-  `NAUTILUS_TAG` as soon as that release exists.
+- **Nautilus 0.7.42 is staged, not published, so this candidate cannot go
+  green yet.** It is the version
+  [nautilus#43](https://github.com/Chelis-Lang/nautilus/pull/43) declares,
+  moving the package version and the `=0.18.5` compiler pin in one manifest.
+  Pinning it now is deliberate: reef enforces exact compiler-pin equality on
+  dependencies, so the previous release (0.7.41, declaring `=0.18.4`) is
+  refused at coral's new pin and would need a follow-up edit anyway. Both
+  choices are equally red today; only one is correct the moment the cascade
+  tags. This gate was validated against an artifact built from that PR's head
+  `c060cb921ddfa8e5b907709fecd581f520097610` into a private registry, so what
+  is outstanding is a Nautilus release, not a Nautilus change. When v0.7.42 is
+  tagged, refresh the sidecar hashes in `docs/CHELIS_SURFACE.md` and re-run
+  the gate.
 - Do not vendor or build the Chelis compiler from source inside this
   repo. Consume the released tarball from the private
   `Chelis-Lang/chelis` releases. CI authenticates via the repo secret

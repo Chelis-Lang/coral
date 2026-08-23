@@ -14,13 +14,13 @@ in `Chelis-Lang/chelis`.
 
 | Item | Value |
 |---|---|
-| Validated manifest | Coral `0.7.39`; `reef.toml` pins compiler `=0.18.5`, `chelis-std 0.4.0`, and Nautilus `0.7.41` |
+| Validated manifest | Coral `0.7.39`; `reef.toml` pins compiler `=0.18.5`, `chelis-std 0.4.0`, and Nautilus `0.7.42` |
 | Published compiler | official `chelis 0.18.5` at tag commit `6602f01719f55b8d4c7f52ee70e7c7b58f136107`; Darwin arm64 archive SHA-256 `0ff7b4e168d8b51277e05d44bfa658364630176d56d79c9cf8aceaea15335551`; extracted binary SHA-256 `bcf8da8bd2df9acb8816194f9251b26e23ec57527d4fc928bea6e1f6120628b2` (the glibc-2.31 archive for the same tag is SHA-256 `6b9b944ccd96b0053fc071de0ecfbb9e80e02a07a6a176e87056267ae8e0c26a`, extracted binary `fc544b9362c9ff0c244c03216a6e44fbf4d36665802d11b5cf3514d017c1e29a`, verified against its sidecar but exercised by CI rather than this gate run) |
-| Reef dependency | official `nautilus 0.7.41` at tag commit `5bf6fd11ea4faa5bec0ca79e8974653b5e3158f8`; its sidecar-verified CHB has SHA-256 `e92a47020f5691b49e5b39aba0094c7e1ed2e39d9dce55a9a135fd34480cc083` and its archive has SHA-256 `1bba785ccead8c38275f8daa111a27516b4f21d16eb3223c23dbb7bcb6a0a6f3`, taken from the published sidecar per chelis#1002. **That artifact declares `compiler = "=0.18.4"`, so reef's exact-pin equality check refuses it at coral's `=0.18.5` pin.** Nautilus source at the same commit builds clean at `=0.18.5` with only the pin flipped; this gate ran against such a rebuild in a private registry, and a re-cut Nautilus release is the only thing outstanding |
+| Reef dependency | `nautilus 0.7.42`, **staged, not yet published**. It is the version [nautilus#43](https://github.com/Chelis-Lang/nautilus/pull/43) declares (that PR moves the package version and the compiler pin in one manifest), so pinning it now makes this change set correct as written the moment the cascade tags. Until then reef has nothing to resolve and `chelis reef build` fails in CI. Validated here against an artifact built from that PR's head `c060cb921ddfa8e5b907709fecd581f520097610` into a private registry: CHB SHA-256 `f5ed24c05c4e20fdf6c72601e2e9dd68cf46a63730eb79d9189adc493704f028`, archive SHA-256 `fcdf32e581d95a43b0c37d672ff241348f75f308179d0b03f6f79a5247506f95`. Those are local-build hashes and carry no publisher checksum; replace them with the release sidecar values when v0.7.42 is tagged |
 | Last refreshed | 2026-08-22 |
 
 `@pin` means the row describes behavior available (or a limitation verified)
-on the exact official 0.18.5 / 0.7.41 chain. `@upstream` means the capability
+on the exact 0.18.5 / 0.7.42 chain. `@upstream` means the capability
 is unavailable at that validated pin and must be re-probed before de-narrowing.
 
 This is the Coral-scoped view of the

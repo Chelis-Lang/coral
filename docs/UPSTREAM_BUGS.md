@@ -19,22 +19,30 @@ concrete need; archived items are historical.
 > command in this gate run ran on the Darwin arm64 binary at that exact hash.
 >
 > **This bump carries a cross-repo ordering debt.** Reef enforces exact
-> compiler-pin equality on dependencies, so `chelis reef build` refuses
-> Nautilus 0.7.41 (which declares `=0.18.4`) at coral's new `=0.18.5` pin:
+> compiler-pin equality on dependencies, so `chelis reef build` refuses the
+> last published Nautilus (0.7.41, declaring `=0.18.4`) at coral's new
+> `=0.18.5` pin:
 >
 > ```
 > error: package.compiler must be `=0.18.5` in `nautilus`
 > ```
 >
-> No Nautilus release declaring `=0.18.5` exists yet. Coral keeps the 0.7.41
-> pin rather than naming a version that has not been published. Nautilus
-> `main` at 0.7.41 (commit `5bf6fd11ea4faa5bec0ca79e8974653b5e3158f8`, CHB
-> SHA-256 `e92a47020f5691b49e5b39aba0094c7e1ed2e39d9dce55a9a135fd34480cc083`,
-> archive SHA-256
-> `1bba785ccead8c38275f8daa111a27516b4f21d16eb3223c23dbb7bcb6a0a6f3`) builds
-> clean at `=0.18.5` from unmodified source with only the pin flipped, so this
-> is a re-cut of the artifact, not a source problem. Every gate command below
-> ran against a locally rebuilt Nautilus in a private registry to prove that.
+> No Nautilus release declaring `=0.18.5` exists yet. The dependency is pinned
+> to **0.7.42**, the version
+> [nautilus#43](https://github.com/Chelis-Lang/nautilus/pull/43) stages: that
+> PR moves the package version and the compiler pin in one manifest, so 0.7.42
+> is what the eventual release will declare. Pinning a staged version is
+> deliberate. Both 0.7.41 and 0.7.42 are red today, but only 0.7.42 is correct
+> as written when the cascade tags; 0.7.41 would need a second edit.
+>
+> Every gate result below was produced against a Nautilus artifact built from
+> that PR's head `c060cb921ddfa8e5b907709fecd581f520097610` into a private
+> registry (CHB SHA-256
+> `f5ed24c05c4e20fdf6c72601e2e9dd68cf46a63730eb79d9189adc493704f028`, archive
+> SHA-256
+> `fcdf32e581d95a43b0c37d672ff241348f75f308179d0b03f6f79a5247506f95`; local
+> build hashes, no publisher checksum). Nautilus needed no source change for
+> 0.18.5, so what is outstanding is a release, not a fix.
 >
 > **Re-probe results at this pin:**
 >

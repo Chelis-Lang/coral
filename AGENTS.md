@@ -40,6 +40,11 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
   `08580435570c6fd44716f4d5c64117e973e379808cefeaaa97c8faefa2588f6c`
   and its extracted binary SHA-256 is
   `1c88c737d7d3740eb4adbe7b50ea31d29ee64498b9d74b35664255ca16aea8d4`.
+  Validate against the **installed** toolchain, not a from-source build:
+  `chelisup install <version>`, then `chelis +<version> ...` or
+  `$CHELIS_HOME/toolchains/<version>/bin/chelis`. Inside this repo the shim
+  also resolves off `reef.toml`'s `compiler` pin, which is the resolution CI
+  performs.
   Bumps cascade in dependency order (`nautilus` first, then coral) via the Pin
   Bump Checklist below — never edit the pin directly on `main`.
 - **Nautilus 0.7.43 is staged, not published, so this candidate cannot go

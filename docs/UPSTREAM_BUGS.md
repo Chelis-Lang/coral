@@ -19,11 +19,22 @@ every citation in it.
 > publisher-checksummed Darwin arm64 archive and extracted binary have SHA-256
 > `08580435570c6fd44716f4d5c64117e973e379808cefeaaa97c8faefa2588f6c`
 > and `1c88c737d7d3740eb4adbe7b50ea31d29ee64498b9d74b35664255ca16aea8d4`,
-> respectively; the glibc-2.31 archive and binary for the same tag are
-> `fb9ef6701fbf0ef2532bcbafb213ca80c21d7b13da0b341b55c64ba89aa8e8fa` and
-> `289cd344849bf902f993ec38dfd4473cd1e06bfa4e6fb139db9977eb2ff2b06e`, verified
-> against their sidecars but exercised by CI rather than this gate run. Every
-> command in this gate run ran on the Darwin arm64 binary at that exact hash.
+> respectively. Every command in this gate run ran on the **installed**
+> toolchain at `$CHELIS_HOME/toolchains/0.18.6/bin/chelis`, whose payload is
+> byte-identical to that archive's `bin/chelis` at the hash above, so the
+> evidence is against the shipped artifact rather than a local build. Inside
+> this worktree the `chelis` shim resolves to 0.18.6 off `reef.toml`'s
+> `compiler` pin, which is the same resolution CI performs.
+>
+> The two Linux assets for the same tag were verified against their sidecars
+> but are exercised by CI rather than by this gate run: glibc-2.31 archive
+> `fb9ef6701fbf0ef2532bcbafb213ca80c21d7b13da0b341b55c64ba89aa8e8fa`
+> (binary `289cd344849bf902f993ec38dfd4473cd1e06bfa4e6fb139db9977eb2ff2b06e`),
+> which is what `.github/actions/install-chelis` defaults to and what
+> `release.yml` names explicitly, and the plain `linux-x86_64` archive
+> `c9ed1239ea51a02899a9c6d6cfac0580b8708602d72e9a2b7618037c31720b1a`
+> (binary `71d70b920af38d4024fb3d313440c369a9c96c5a9433cf8d2e84aa679eebba01`),
+> which no Coral workflow currently consumes.
 >
 > **This bump carries a cross-repo ordering debt.** Reef enforces exact
 > compiler-pin equality on dependencies, so `chelis reef build` refuses the
@@ -43,15 +54,19 @@ every citation in it.
 > cascade tags; 0.7.42 would need a second edit.
 >
 > Every gate result below was produced against a Nautilus artifact built from
-> the `chore/chelis-0.18.6` working tree at base commit
-> `f209413cba4b10e43014ae61f402b69ee84c04b2` and published into a private
-> registry (`CHELIS_REEF_HOME`), so the shared registry other shells resolve
-> against was never touched. CHB SHA-256
+> that shell's committed bump head `7acc00c9602cb44236ee55a63baf90475041c910`
+> (Nautilus PR 50) and published into a private registry
+> (`CHELIS_REEF_HOME`), so the shared registry other shells resolve against was
+> never touched. CHB SHA-256
 > `99cfc7e0700cdf7f884a71a2752e8916fe3255836b92c698eb9fe26513e27cb3`,
 > archive SHA-256
 > `884f582328667a1617ad7b7aa371d96b6f99279e7e4c20700591dfde4d9fa306`; local
-> build hashes, no publisher checksum. Nautilus needed no source change for
-> 0.18.6, so what is outstanding is a release, not a fix.
+> build hashes, no publisher checksum. Those two values reproduced identically
+> across three independent builds -- the pre-release local compiler, the
+> published archive, and the installed toolchain -- so they are a stable
+> identity for the artifact rather than an accident of one build. Nautilus
+> needed no source change for 0.18.6, so what is outstanding is a release, not
+> a fix.
 >
 > **Re-probe results at this pin:**
 >

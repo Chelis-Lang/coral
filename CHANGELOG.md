@@ -27,11 +27,24 @@ rather than a fix.
 
 The official chelis Darwin arm64 asset was verified at SHA-256
 `08580435570c6fd44716f4d5c64117e973e379808cefeaaa97c8faefa2588f6c`
-(installed payload `1c88c737d7d3740eb4adbe7b50ea31d29ee64498b9d74b35664255ca16aea8d4`;
-upstream source commit `cf49f85bf0d1bca2c87c88a3e459c446912189c0`). The whole
-gate below was re-run end to end on that binary after v0.18.6 published; the
-private-registry Nautilus 0.7.43 artifact rebuilt to byte-identical CHB and
-archive hashes under both the local and the published compiler.
+(installed payload `1c88c737d7d3740eb4adbe7b50ea31d29ee64498b9d74b35664255ca16aea8d4`,
+byte-identical to the release tarball; upstream source commit
+`cf49f85bf0d1bca2c87c88a3e459c446912189c0`). The whole gate below was re-run
+end to end on the installed toolchain after v0.18.6 published. The
+private-registry Nautilus 0.7.43 artifact reproduced byte-identical CHB and
+archive hashes across three independent builds -- the pre-release local
+compiler, the published archive, and the installed toolchain.
+
+**`conform audit` on `origin/main` at the 0.18.6 conform version fails
+independently of this bump**, measured in a throwaway worktree at
+`8da830d`: `vendored-skills (§8)` FAILs there with `redteam-exec:
+forked/stale` and `upstream-bugs (§4)` reports MANUAL. This change set turns
+both green -- the bump's own restamp re-materializes the skill, and the
+`docs/UPSTREAM_BUGS.md` §Actively blocking restructure below makes the §4
+citation rule machine-checkable. `staleness-audit (§4)` PASSes in both
+states: chelis#1270 widened the §4 grammar so a sibling `<repo>#NNN` also
+counts as a citation owing coverage, and Coral's only such reference is
+`coral#26` inside a Tracking entry that already owns two live probes.
 
 **The removed `Std.Test` assertion aliases forced a suite-wide migration.**
 0.18.6 deletes `assert_eq_int`, `assert_eq_bool`, and `assert_eq_string` and

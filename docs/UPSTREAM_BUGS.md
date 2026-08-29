@@ -15,18 +15,15 @@ section holds only entries, so `chelis reef conform audit` can machine-check
 every citation in it.
 
 > **0.18.6 validation status (2026-08-29):** the annotated Chelis v0.18.6
-> tag resolves to commit `cf49f85bf0d1bca2c87c88a3e459c446912189c0`. The
-> release workflow for that tag was still running when this gate was
-> produced, so **no publisher-checksummed archive exists yet and none is
-> quoted here.** Every command below ran on a `chelis 0.18.6` binary built
-> from the release branch head
-> `1186231f96e8b3c491f576c07fd0e4d5709772df`, whose tree is byte-identical
-> to the tag commit (`git diff cf49f85b 1186231f` is empty); that binary has
-> SHA-256
-> `ab979f8c064bd0c25a15ed757ca2a0dda8241b82a7b0f1b8144e5062ebf52e00`. It is
-> a local build and carries no publisher checksum. Replace this paragraph
-> with the release sidecar identities once v0.18.6 publishes, and re-run the
-> gate against the official binary before tagging Coral 0.7.40.
+> tag resolves to commit `cf49f85bf0d1bca2c87c88a3e459c446912189c0`; its
+> publisher-checksummed Darwin arm64 archive and extracted binary have SHA-256
+> `08580435570c6fd44716f4d5c64117e973e379808cefeaaa97c8faefa2588f6c`
+> and `1c88c737d7d3740eb4adbe7b50ea31d29ee64498b9d74b35664255ca16aea8d4`,
+> respectively; the glibc-2.31 archive and binary for the same tag are
+> `fb9ef6701fbf0ef2532bcbafb213ca80c21d7b13da0b341b55c64ba89aa8e8fa` and
+> `289cd344849bf902f993ec38dfd4473cd1e06bfa4e6fb139db9977eb2ff2b06e`, verified
+> against their sidecars but exercised by CI rather than this gate run. Every
+> command in this gate run ran on the Darwin arm64 binary at that exact hash.
 >
 > **This bump carries a cross-repo ordering debt.** Reef enforces exact
 > compiler-pin equality on dependencies, so `chelis reef build` refuses the

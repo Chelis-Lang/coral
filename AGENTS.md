@@ -33,15 +33,13 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
   Chelis release by default. Treat stale pins as drift, not as a reason
   to stay on an older compiler.
 - `reef.toml` should pin the currently validated release exactly. The
-  `0.7.40` candidate targets `chelis 0.18.6` and `nautilus 0.7.43`. The
-  annotated `v0.18.6` tag resolves to commit
-  `cf49f85bf0d1bca2c87c88a3e459c446912189c0`, but **that release had not
-  finished publishing when this candidate was validated**, so there is no
-  publisher checksum to quote yet: the gate ran on a locally built binary
-  whose tree is byte-identical to the tag commit (SHA-256
-  `ab979f8c064bd0c25a15ed757ca2a0dda8241b82a7b0f1b8144e5062ebf52e00`).
-  Re-run the gate against the official archive and record its sidecar
-  identities in `docs/CHELIS_SURFACE.md` before tagging Coral `0.7.40`.
+  `0.7.40` candidate targets `chelis 0.18.6` and `nautilus 0.7.43`.
+  Chelis 0.18.6 is published at commit
+  `cf49f85bf0d1bca2c87c88a3e459c446912189c0`; its
+  publisher-checksummed Darwin arm64 archive SHA-256 is
+  `08580435570c6fd44716f4d5c64117e973e379808cefeaaa97c8faefa2588f6c`
+  and its extracted binary SHA-256 is
+  `1c88c737d7d3740eb4adbe7b50ea31d29ee64498b9d74b35664255ca16aea8d4`.
   Bumps cascade in dependency order (`nautilus` first, then coral) via the Pin
   Bump Checklist below — never edit the pin directly on `main`.
 - **Nautilus 0.7.43 is staged, not published, so this candidate cannot go

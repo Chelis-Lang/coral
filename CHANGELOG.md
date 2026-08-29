@@ -13,20 +13,25 @@ workflow audit mirrors, and the managed blocks in `AGENTS.md`,
 advanced from 0.7.39 to 0.7.40. Unlike the last two bumps this one required
 real source edits: 0.18.6 is the largest breaking cut since 0.18.0.
 
-**Not releasable yet, for two independent reasons.** The Nautilus dependency
-advances 0.7.42 -> **0.7.43**, which is staged rather than published: reef
-enforces exact compiler-pin equality, so `chelis reef build` refuses the last
-published Nautilus (0.7.42, declaring `=0.18.5`) at coral's `=0.18.6` pin.
-Both versions are red today and only 0.7.43 is correct as written when the
-cascade tags. Separately, the Chelis `v0.18.6` release workflow was still
-running when this change set was validated, so **no publisher-checksummed
-toolchain archive exists yet** and none is quoted. Every gate below ran on a
-`chelis 0.18.6` binary built from the release branch head
-`1186231f96e8b3c491f576c07fd0e4d5709772df`, whose tree is byte-identical to
-the tag commit `cf49f85bf0d1bca2c87c88a3e459c446912189c0`, and against a
-Nautilus artifact built from its bump branch into a private registry
-(`CHELIS_REEF_HOME`), so the shared registry was never touched. Re-run the
-gate against the official archives before tagging.
+**Not releasable yet: the Nautilus dependency is staged, not published.**
+Reef enforces exact compiler-pin equality, so `chelis reef build` refuses the
+last published Nautilus (0.7.42, declaring `=0.18.5`) at coral's `=0.18.6`
+pin. The dependency advances 0.7.42 -> **0.7.43**, the version the Nautilus
+0.18.6 bump stages by moving the package version and the compiler pin in one
+manifest. Both are red until that release is tagged, but only 0.7.43 is
+correct as written when it is. Every gate below ran against a Nautilus
+artifact built from that bump branch into a private registry
+(`CHELIS_REEF_HOME`), so the shared registry was never touched; Nautilus
+needed no source change for 0.18.6, so the outstanding work is a release
+rather than a fix.
+
+The official chelis Darwin arm64 asset was verified at SHA-256
+`08580435570c6fd44716f4d5c64117e973e379808cefeaaa97c8faefa2588f6c`
+(installed payload `1c88c737d7d3740eb4adbe7b50ea31d29ee64498b9d74b35664255ca16aea8d4`;
+upstream source commit `cf49f85bf0d1bca2c87c88a3e459c446912189c0`). The whole
+gate below was re-run end to end on that binary after v0.18.6 published; the
+private-registry Nautilus 0.7.43 artifact rebuilt to byte-identical CHB and
+archive hashes under both the local and the published compiler.
 
 **The removed `Std.Test` assertion aliases forced a suite-wide migration.**
 0.18.6 deletes `assert_eq_int`, `assert_eq_bool`, and `assert_eq_string` and

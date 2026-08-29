@@ -1,5 +1,5 @@
 module Coral.Tests.Reshape
-import Std.Test (assert_eq_int, assert_close)
+import Std.Test (assert_eq, assert_close)
 import Coral.Frame (Column, FloatCol, StringCol, Frame, from_pairs, nrows, ncols, get_float_col, get_string_col)
 import Coral.Reshape (pivot, melt, stack, unstack)
 def zero_i64() -> int64 = cast(0, int64)
@@ -9,8 +9,8 @@ def test_melt_doubles_rows() -> unit ! { Test } = {
   df = from_pairs([("city", StringCol(["a", "b", "c"])), ("qty", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)]))), ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.0, f32), cast(30.0, f32)])))])
   result = melt(df, ["city"], ["qty", "price"])
   value_total = tensor_sum_f32(get_float_col(result, "value"))
-  _ = assert_eq_int(nrows(result), cast(6, int64), "melt: 3 rows * 2 value cols == 6")
-  _ = assert_eq_int(ncols(result), cast(3, int64), "melt: city + variable + value == 3 cols")
+  _ = assert_eq(nrows(result), cast(6, int64), "melt: 3 rows * 2 value cols == 6")
+  _ = assert_eq(ncols(result), cast(3, int64), "melt: city + variable + value == 3 cols")
   assert_close(value_total, cast(66.0, f32), cast(0.001, f32), "melt preserves sum of values")
 }
 def test_pivot_basic_shape() -> unit ! { Test } = {
@@ -18,8 +18,8 @@ def test_pivot_basic_shape() -> unit ! { Test } = {
   result = pivot(df, "city", "product", "price")
   x_sum = tensor_sum_skip_nan(get_float_col(result, "x"))
   y_sum = tensor_sum_skip_nan(get_float_col(result, "y"))
-  _ = assert_eq_int(nrows(result), cast(2, int64), "pivot: 2 distinct cities")
-  _ = assert_eq_int(ncols(result), cast(3, int64), "pivot: city + product 'x' + product 'y'")
+  _ = assert_eq(nrows(result), cast(2, int64), "pivot: 2 distinct cities")
+  _ = assert_eq(ncols(result), cast(3, int64), "pivot: city + product 'x' + product 'y'")
   _ = assert_close(x_sum, cast(4.0, f32), cast(0.00001, f32), "x column sum: 1 + 3 == 4")
   assert_close(y_sum, cast(2.0, f32), cast(0.00001, f32), "y column sum: just 2")
 }
@@ -28,16 +28,16 @@ def test_pivot_then_melt_roundtrips_shape() -> unit ! { Test } = {
   pivoted = pivot(df, "city", "product", "price")
   remelted = melt(pivoted, ["city"], ["x", "y"])
   total = tensor_sum_f32(get_float_col(remelted, "value"))
-  _ = assert_eq_int(nrows(pivoted), cast(2, int64), "pivot -> 2 rows")
-  _ = assert_eq_int(ncols(pivoted), cast(3, int64), "pivot -> city + x + y")
-  _ = assert_eq_int(nrows(remelted), cast(4, int64), "remelt -> 2 cities * 2 products")
+  _ = assert_eq(nrows(pivoted), cast(2, int64), "pivot -> 2 rows")
+  _ = assert_eq(ncols(pivoted), cast(3, int64), "pivot -> city + x + y")
+  _ = assert_eq(nrows(remelted), cast(4, int64), "remelt -> 2 cities * 2 products")
   assert_close(total, cast(10.0, f32), cast(0.00001, f32), "pivot+melt preserves total = 10")
 }
 def test_stack_increases_rows() -> unit ! { Test } = {
   df = from_pairs([("a", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)]))), ("b", FloatCol(to_tensor([cast(4.0, f32), cast(5.0, f32), cast(6.0, f32)])))])
   result = stack(df)
   value_total = tensor_sum_f32(get_float_col(result, "value"))
-  _ = assert_eq_int(nrows(result), cast(6, int64), "stack: 3 rows * 2 cols == 6")
+  _ = assert_eq(nrows(result), cast(6, int64), "stack: 3 rows * 2 cols == 6")
   assert_close(value_total, cast(21.0, f32), cast(0.00001, f32), "stack preserves total = 21")
 }
 def test_unstack_recovers_shape() -> unit ! { Test } = {
@@ -45,8 +45,8 @@ def test_unstack_recovers_shape() -> unit ! { Test } = {
   result = unstack(long_df, "city")
   x_sum = tensor_sum_skip_nan(get_float_col(result, "x"))
   y_sum = tensor_sum_skip_nan(get_float_col(result, "y"))
-  _ = assert_eq_int(nrows(result), cast(2, int64), "unstack: 2 distinct cities")
-  _ = assert_eq_int(ncols(result), cast(3, int64), "unstack: city + x + y")
+  _ = assert_eq(nrows(result), cast(2, int64), "unstack: 2 distinct cities")
+  _ = assert_eq(ncols(result), cast(3, int64), "unstack: city + x + y")
   _ = assert_close(x_sum, cast(4.0, f32), cast(0.00001, f32), "x column sum: 1 + 3 == 4")
   assert_close(y_sum, cast(6.0, f32), cast(0.00001, f32), "y column sum: 2 + 4 == 6")
 }

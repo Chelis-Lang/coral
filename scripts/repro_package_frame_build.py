@@ -26,6 +26,12 @@ lowering with no concrete checked type application. That residue is the open
 chelis#1226 class. A clean build here is FIX-DETECTED and de-narrows the
 `UPSTREAM_BUGS` entry.
 
+chelis 0.18.6 emits its own `main` for the C target, so the native lane is
+built with the compile command the compiler prints and its value is read off
+the compiled program's `main = <value>` observation line -- the same line
+shape `chelis eval` prints, which is what makes the two lanes directly
+comparable.
+
 Exit codes:
 - 0: every selected target matched its expected outcome
 - 1: an outcome changed (either lane) or the probe could not run
@@ -44,7 +50,11 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
 from scripts.chelis_toolchain import resolve_chelis_bin
-from scripts.repro_multimodule_bare_build import native_link_cmd
+from scripts.repro_multimodule_bare_build import (
+    compiled_binary_path,
+    emitted_compile_cmd,
+    observed_root,
+)
 
 
 CHELIS = resolve_chelis_bin()
@@ -53,7 +63,6 @@ CHELIS = resolve_chelis_bin()
 # separator: `Coral.ProbeFrameBuild` -> `coral.probeframebuild`.
 ENTRY_STEM = "probeframebuild"
 ENTRY_MODULE = "Coral.ProbeFrameBuild"
-ENTRY_SYMBOL = "pkg__coral__Coral__ProbeFrameBuild__main"
 
 TWO_COLUMNS = (
     '[("a", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)])))'
@@ -135,30 +144,27 @@ def _run_target(name: str, spec: dict) -> int:
             print(f"{name}: chelis eval did not produce an integer value")
             return 1
 
-        driver = workdir / "driver.c"
-        driver.write_text(
-            "#include <stdint.h>\n"
-            f"int64_t {ENTRY_SYMBOL}(void);\n"
-            f"int main(void){{ return (int){ENTRY_SYMBOL}(); }}\n"
-        )
-        binary = workdir / f"package-frame-{name}"
-        link = subprocess.run(
-            native_link_cmd(binary, [out_dir / f"{ENTRY_STEM}.c", driver], out_dir),
-            capture_output=True,
-            text=True,
-            timeout=900,
-        )
+        command = emitted_compile_cmd(output)
+        binary = compiled_binary_path(command)
+        link = subprocess.run(command, capture_output=True, text=True, timeout=900)
         if link.returncode != 0:
             print(link.stderr.strip())
             print(f"{name}: C compile/link failed")
             return 1
 
         run = subprocess.run([str(binary)], capture_output=True, text=True, timeout=60)
-        if run.returncode != evaluated:
-            print(f"{name}: native returned {run.returncode}, eval returned {evaluated}")
+        if run.returncode != 0:
+            print(run.stderr.strip())
+            print(f"{name}: compiled program exited rc={run.returncode}")
             return 1
-        if run.returncode != spec["expect_value"]:
-            print(f"{name}: expected {spec['expect_value']}, got {run.returncode}")
+
+        native = observed_root(run.stdout, "main")
+        if native is None or int(native) != evaluated:
+            print(run.stdout.strip())
+            print(f"{name}: native observed {native!r}, eval returned {evaluated}")
+            return 1
+        if int(native) != spec["expect_value"]:
+            print(f"{name}: expected {spec['expect_value']}, got {native}")
             return 1
         print(f"{name}: build, link, and run OK -- native and eval both {evaluated}")
         return 0

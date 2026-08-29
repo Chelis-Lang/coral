@@ -47,10 +47,10 @@ every citation in it.
 > archive SHA-256
 > `970fb4ff51e6dfdce3043bb6ad772a7df74fd4c05a0be2723d451b35ef7ddd05`. **Every
 > gate result below was produced against those exact published bytes**,
-> installed through `chelis reef install --from-github
-> Chelis-Lang/nautilus@v0.7.43` -- the same code path CI uses -- into a
-> registry root scoped by `CHELIS_REEF_HOME`, so the shared registry was not
-> mutated. The resulting Coral artifacts are CHB SHA-256
+> installed with `chelis reef install --from-github
+> Chelis-Lang/nautilus@v0.7.43` -- the same code path CI uses -- into the
+> default registry, with **no `CHELIS_REEF_HOME` override in play**. The
+> resulting Coral artifacts are CHB SHA-256
 > `672297eb6bafcffb8f3c4ad867f59aecece8cf114747fbfe2a112f3346edc2f1` and
 > archive SHA-256
 > `a6416fa595b092b34f1d5483429f65b4e19927db833288a18919d5b497ecc08f`.
@@ -65,7 +65,10 @@ every citation in it.
 > carries Nautilus PR 49, adding 117 lines across 20 `src/` modules that the
 > local build did not contain, so the byte difference is a real content
 > difference rather than a packaging artifact. The published-artifact numbers
-> above are the final ones.
+> above are the final ones. The Coral artifact hashes are identical whether the
+> dependency resolves from the default registry or from an override-scoped one,
+> so the earlier scoped runs and this one agree byte for byte on Coral's own
+> output.
 >
 > **Re-probe results at this pin:**
 >

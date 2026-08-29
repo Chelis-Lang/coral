@@ -22,12 +22,15 @@ verified against the sidecar -- CHB SHA-256
 `c3e6fb6e2c3a397726df0cc53587d854ac48cab416c9dea80c9df717bfe0ef4d`, archive
 SHA-256 `970fb4ff51e6dfdce3043bb6ad772a7df74fd4c05a0be2723d451b35ef7ddd05` --
 and every gate below ran against those exact published bytes, installed with
-`chelis reef install --from-github Chelis-Lang/nautilus@v0.7.43` into a
-registry root scoped by `CHELIS_REEF_HOME`. The resulting Coral artifacts are
+`chelis reef install --from-github Chelis-Lang/nautilus@v0.7.43` into the
+default registry, with no `CHELIS_REEF_HOME` override in play. The resulting
+Coral artifacts are
 CHB SHA-256
 `672297eb6bafcffb8f3c4ad867f59aecece8cf114747fbfe2a112f3346edc2f1` and
 archive SHA-256
-`a6416fa595b092b34f1d5483429f65b4e19927db833288a18919d5b497ecc08f`.
+`a6416fa595b092b34f1d5483429f65b4e19927db833288a18919d5b497ecc08f`. Both are
+byte-identical to the published `v0.7.40` release assets and verify against
+that release's sidecar, so this gate ran on the bytes the release ships.
 
 An earlier round of the same gate ran against a locally built Nautilus
 artifact from that shell's bump branch head (CHB

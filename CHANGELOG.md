@@ -22,8 +22,9 @@ verified against the sidecar -- CHB SHA-256
 `c3e6fb6e2c3a397726df0cc53587d854ac48cab416c9dea80c9df717bfe0ef4d`, archive
 SHA-256 `970fb4ff51e6dfdce3043bb6ad772a7df74fd4c05a0be2723d451b35ef7ddd05` --
 and every gate below ran against those exact published bytes, installed with
-`chelis reef install --from-github Chelis-Lang/nautilus@v0.7.43` into a
-registry root scoped by `CHELIS_REEF_HOME`. The resulting Coral artifacts are
+`chelis reef install --from-github Chelis-Lang/nautilus@v0.7.43` into the
+default registry, with no `CHELIS_REEF_HOME` override in play. The resulting
+Coral artifacts are
 CHB SHA-256
 `672297eb6bafcffb8f3c4ad867f59aecece8cf114747fbfe2a112f3346edc2f1` and
 archive SHA-256

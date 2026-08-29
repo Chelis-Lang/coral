@@ -53,7 +53,11 @@ every citation in it.
 > resulting Coral artifacts are CHB SHA-256
 > `672297eb6bafcffb8f3c4ad867f59aecece8cf114747fbfe2a112f3346edc2f1` and
 > archive SHA-256
-> `a6416fa595b092b34f1d5483429f65b4e19927db833288a18919d5b497ecc08f`.
+> `a6416fa595b092b34f1d5483429f65b4e19927db833288a18919d5b497ecc08f`, which
+> are **byte-identical to the published Coral v0.7.40 release assets**: both
+> match that release's `coral-0.7.40.sha256` sidecar exactly. The gate
+> therefore ran against the same bytes the release ships, not merely against
+> an equivalent build.
 >
 > An earlier round of this same gate ran against a Nautilus artifact built
 > locally from that shell's bump branch head

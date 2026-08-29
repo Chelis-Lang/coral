@@ -28,7 +28,9 @@ Coral artifacts are
 CHB SHA-256
 `672297eb6bafcffb8f3c4ad867f59aecece8cf114747fbfe2a112f3346edc2f1` and
 archive SHA-256
-`a6416fa595b092b34f1d5483429f65b4e19927db833288a18919d5b497ecc08f`.
+`a6416fa595b092b34f1d5483429f65b4e19927db833288a18919d5b497ecc08f`. Both are
+byte-identical to the published `v0.7.40` release assets and verify against
+that release's sidecar, so this gate ran on the bytes the release ships.
 
 An earlier round of the same gate ran against a locally built Nautilus
 artifact from that shell's bump branch head (CHB

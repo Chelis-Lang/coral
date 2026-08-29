@@ -36,37 +36,36 @@ every citation in it.
 > (binary `71d70b920af38d4024fb3d313440c369a9c96c5a9433cf8d2e84aa679eebba01`),
 > which no Coral workflow currently consumes.
 >
-> **This bump carries a cross-repo ordering debt.** Reef enforces exact
-> compiler-pin equality on dependencies, so `chelis reef build` refuses the
-> last published Nautilus (0.7.42, declaring `=0.18.5`) at coral's new
-> `=0.18.6` pin:
->
-> ```
-> error: package.compiler must be `=0.18.6` in `nautilus`
-> ```
->
-> No Nautilus release declaring `=0.18.6` exists yet. The dependency is pinned
-> to **0.7.43**, the version the Nautilus 0.18.6 bump stages: that change
-> moves the package version and the compiler pin in one manifest, so 0.7.43
-> is what the eventual release will declare. Pinning a staged version is
-> deliberate, and it is the same call the 0.18.5 bump made. Both 0.7.42 and
-> 0.7.43 are red today, but only 0.7.43 is correct as written when the
-> cascade tags; 0.7.42 would need a second edit.
->
-> Every gate result below was produced against a Nautilus artifact built from
-> that shell's committed bump head `7acc00c9602cb44236ee55a63baf90475041c910`
-> (Nautilus PR 50) and published into a private registry
-> (`CHELIS_REEF_HOME`), so the shared registry other shells resolve against was
-> never touched. CHB SHA-256
-> `99cfc7e0700cdf7f884a71a2752e8916fe3255836b92c698eb9fe26513e27cb3`,
+> **The Nautilus cascade has cleared.** Reef enforces exact compiler-pin
+> equality on dependencies, so through most of this bump `chelis reef build`
+> refused the last published Nautilus (0.7.42, declaring `=0.18.5`) at coral's
+> new `=0.18.6` pin with `error: package.compiler must be `=0.18.6` in
+> `nautilus``. Nautilus **v0.7.43 is now published** at source commit
+> `7e3451b4977922d0bda80883ba385c7da211fc9e`, and its release assets carry
+> publisher checksums verified against the release sidecar: CHB SHA-256
+> `c3e6fb6e2c3a397726df0cc53587d854ac48cab416c9dea80c9df717bfe0ef4d`,
 > archive SHA-256
+> `970fb4ff51e6dfdce3043bb6ad772a7df74fd4c05a0be2723d451b35ef7ddd05`. **Every
+> gate result below was produced against those exact published bytes**,
+> installed through `chelis reef install --from-github
+> Chelis-Lang/nautilus@v0.7.43` -- the same code path CI uses -- into a
+> registry root scoped by `CHELIS_REEF_HOME`, so the shared registry was not
+> mutated. The resulting Coral artifacts are CHB SHA-256
+> `672297eb6bafcffb8f3c4ad867f59aecece8cf114747fbfe2a112f3346edc2f1` and
+> archive SHA-256
+> `a6416fa595b092b34f1d5483429f65b4e19927db833288a18919d5b497ecc08f`.
+>
+> An earlier round of this same gate ran against a Nautilus artifact built
+> locally from that shell's bump branch head
+> `7acc00c9602cb44236ee55a63baf90475041c910` (CHB
+> `99cfc7e0700cdf7f884a71a2752e8916fe3255836b92c698eb9fe26513e27cb3`, archive
 > `884f582328667a1617ad7b7aa371d96b6f99279e7e4c20700591dfde4d9fa306`; local
-> build hashes, no publisher checksum. Those two values reproduced identically
-> across three independent builds -- the pre-release local compiler, the
-> published archive, and the installed toolchain -- so they are a stable
-> identity for the artifact rather than an accident of one build. Nautilus
-> needed no source change for 0.18.6, so what is outstanding is a release, not
-> a fix.
+> build, no publisher checksum). **Those are superseded and are not the same
+> package.** The published release descends from a different commit that also
+> carries Nautilus PR 49, adding 117 lines across 20 `src/` modules that the
+> local build did not contain, so the byte difference is a real content
+> difference rather than a packaging artifact. The published-artifact numbers
+> above are the final ones.
 >
 > **Re-probe results at this pin:**
 >

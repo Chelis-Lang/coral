@@ -13,17 +13,30 @@ workflow audit mirrors, and the managed blocks in `AGENTS.md`,
 advanced from 0.7.39 to 0.7.40. Unlike the last two bumps this one required
 real source edits: 0.18.6 is the largest breaking cut since 0.18.0.
 
-**Not releasable yet: the Nautilus dependency is staged, not published.**
-Reef enforces exact compiler-pin equality, so `chelis reef build` refuses the
-last published Nautilus (0.7.42, declaring `=0.18.5`) at coral's `=0.18.6`
-pin. The dependency advances 0.7.42 -> **0.7.43**, the version the Nautilus
-0.18.6 bump stages by moving the package version and the compiler pin in one
-manifest. Both are red until that release is tagged, but only 0.7.43 is
-correct as written when it is. Every gate below ran against a Nautilus
-artifact built from that bump branch into a private registry
-(`CHELIS_REEF_HOME`), so the shared registry was never touched; Nautilus
-needed no source change for 0.18.6, so the outstanding work is a release
-rather than a fix.
+**The Nautilus cascade has cleared.** Reef enforces exact compiler-pin
+equality, so `chelis reef build` refused the last published Nautilus (0.7.42,
+declaring `=0.18.5`) at coral's `=0.18.6` pin for most of this bump. The
+dependency advances 0.7.42 -> **0.7.43**, which is now published at source
+commit `7e3451b4977922d0bda80883ba385c7da211fc9e`. Its release assets were
+verified against the sidecar -- CHB SHA-256
+`c3e6fb6e2c3a397726df0cc53587d854ac48cab416c9dea80c9df717bfe0ef4d`, archive
+SHA-256 `970fb4ff51e6dfdce3043bb6ad772a7df74fd4c05a0be2723d451b35ef7ddd05` --
+and every gate below ran against those exact published bytes, installed with
+`chelis reef install --from-github Chelis-Lang/nautilus@v0.7.43` into a
+registry root scoped by `CHELIS_REEF_HOME`. The resulting Coral artifacts are
+CHB SHA-256
+`672297eb6bafcffb8f3c4ad867f59aecece8cf114747fbfe2a112f3346edc2f1` and
+archive SHA-256
+`a6416fa595b092b34f1d5483429f65b4e19927db833288a18919d5b497ecc08f`.
+
+An earlier round of the same gate ran against a locally built Nautilus
+artifact from that shell's bump branch head (CHB
+`99cfc7e0700cdf7f884a71a2752e8916fe3255836b92c698eb9fe26513e27cb3`, archive
+`884f582328667a1617ad7b7aa371d96b6f99279e7e4c20700591dfde4d9fa306`). Those
+values are superseded and describe a different package: the published release
+descends from a commit that also carries Nautilus PR 49, adding 117 lines
+across 20 `src/` modules the local build lacked. Coral's results are identical
+on both.
 
 The official chelis Darwin arm64 asset was verified at SHA-256
 `08580435570c6fd44716f4d5c64117e973e379808cefeaaa97c8faefa2588f6c`

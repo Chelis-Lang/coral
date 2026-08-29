@@ -4,6 +4,11 @@
 `chelis test` exercises the evaluator. This regression separately protects
 the released C backend, where chelis#630 can otherwise make a tensor `neq`
 mask evaluator-correct but IEEE-wrong after native lowering.
+
+chelis 0.18.6 emits its own `main` for the C target and observes every
+effect-free nullary definition, so the verdict is read off the compiled
+program's `main = <value>` observation line rather than its exit status,
+which the emitted entry always sets to zero.
 """
 from __future__ import annotations
 
@@ -16,7 +21,9 @@ from repro_multimodule_bare_build import (
     CHELIS,
     MODULE_PRESETS,
     build_prefixed_modules,
-    native_link_cmd,
+    compiled_binary_path,
+    emitted_compile_cmd,
+    observed_root,
 )
 
 
@@ -51,36 +58,30 @@ def main() -> int64 = {
 
         out_dir = workdir / "out"
         build = subprocess.run([CHELIS, "build", str(main_ch), "-o", str(out_dir)], capture_output=True, text=True)
+        build_output = (build.stdout or "") + (build.stderr or "")
         if build.returncode != 0:
-            print((build.stdout + build.stderr).strip())
+            print(build_output.strip())
             print("native NaN regression: chelis build failed")
             return 1
 
-        c_file = out_dir / "main.c"
-        h_file = out_dir / "main.h"
-        c_file.write_text(c_file.read_text().replace("int64_t main__main", "int64_t chelis_entry__main"))
-        if h_file.exists():
-            h_file.write_text(h_file.read_text().replace("int64_t main__main", "int64_t chelis_entry__main"))
-
-        driver = workdir / "driver.c"
-        driver.write_text(
-            "#include <stdint.h>\n"
-            "int64_t chelis_entry__main(void);\n"
-            "int main(void){ return (int)chelis_entry__main(); }\n"
-        )
-        link = subprocess.run(
-            native_link_cmd(workdir / "native-nan", [c_file, driver], out_dir),
-            capture_output=True,
-            text=True,
-        )
+        command = emitted_compile_cmd(build_output)
+        binary = compiled_binary_path(command)
+        link = subprocess.run(command, capture_output=True, text=True)
         if link.returncode != 0:
             print(link.stderr.strip())
             print("native NaN regression: C compile/link failed")
             return 1
 
-        run = subprocess.run([str(workdir / "native-nan")], capture_output=True, text=True, timeout=10)
+        run = subprocess.run([str(binary)], capture_output=True, text=True, timeout=60)
         if run.returncode != 0:
-            print(f"native NaN regression: helper verdict failed (rc={run.returncode})")
+            print(run.stderr.strip())
+            print(f"native NaN regression: compiled program exited rc={run.returncode}")
+            return 1
+
+        verdict = observed_root(run.stdout, "main")
+        if verdict != "0":
+            print(run.stdout.strip())
+            print(f"native NaN regression: helper verdict observed as {verdict!r}, expected '0'")
             return 1
         print("native NaN regression OK: mask/drop/count/any agree after compile-link-run")
         return 0

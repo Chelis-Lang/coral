@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -195,32 +196,47 @@ def build_prefixed_modules(specs: list[tuple[str, str]]) -> str:
     return "\n".join(parts)
 
 
-def _compiler_supports_fopenmp() -> bool:
-    # macOS aliases `gcc` to clang, which rejects -fopenmp without libomp.
-    probe = subprocess.run(
-        ["gcc", "-fopenmp", "-x", "c", "-", "-o", "/dev/null"],
-        input=b"int main(void){return 0;}",
-        capture_output=True,
+COMPILE_PREFIX = "Compile: "
+
+
+def emitted_compile_cmd(build_output: str) -> list[str]:
+    """The native compile command `chelis build` printed for its own output.
+
+    chelis 0.18.6 emits a complete executable: the generated `main` evaluates
+    every effect-free nullary definition and prints one `<name> = <value>`
+    line per observed root. A hand-maintained link line went stale with that
+    change (the emitted program now references the platform vector-math
+    library through nautilus's tensor specializations), so the probe uses the
+    command the compiler itself reports instead of restating one.
+    """
+    for line in build_output.splitlines():
+        stripped = line.strip()
+        if stripped.startswith(COMPILE_PREFIX):
+            return shlex.split(stripped[len(COMPILE_PREFIX) :])
+    raise RuntimeError(
+        "`chelis build` printed no `Compile:` line; the native lane cannot be "
+        "reproduced without the compiler's own compile command"
     )
-    return probe.returncode == 0
 
 
-def native_link_cmd(binary: Path, sources: list[Path], out_dir: Path) -> list[str]:
-    return [
-        "gcc",
-        "-O2",
-        *(["-fopenmp"] if _compiler_supports_fopenmp() else []),
-        "-o",
-        str(binary),
-        *(str(source) for source in sources),
-        "-I",
-        str(out_dir),
-        "-L",
-        str(out_dir),
-        "-lchelis_runtime",
-        "-lm",
-        "-lpthread",
-    ]
+def compiled_binary_path(command: list[str]) -> Path:
+    """The `-o` target of an emitted compile command."""
+    if "-o" not in command:
+        raise RuntimeError(f"emitted compile command names no output: {command}")
+    return Path(command[command.index("-o") + 1])
+
+
+def observed_root(stdout: str, name: str) -> str | None:
+    """Read one `<name> = <value>` observation out of a compiled run.
+
+    The compiled program and `chelis eval` print observed roots in the same
+    form, so a probe can compare the two lanes line for line.
+    """
+    prefix = f"{name} = "
+    for line in stdout.splitlines():
+        if line.startswith(prefix):
+            return line[len(prefix) :].strip()
+    return None
 
 
 def main() -> int:
@@ -253,37 +269,27 @@ def main() -> int:
             print("regression: Phase 0e RISC DAG panic reappeared in chelis build output")
             return 1
 
-        c_file = out_dir / "main.c"
-        h_file = out_dir / "main.h"
-        # The `main` entry returns f32, which chelis emits as a C `float`
-        # `main__main`. Rename it out of the way of the driver's own `main`.
-        c_file.write_text(c_file.read_text().replace("float main", "float chelis_entry"))
-        if h_file.exists():
-            h_file.write_text(h_file.read_text().replace("float main", "float chelis_entry"))
-
-        driver = workdir / "driver.c"
-        driver.write_text(
-            "#include <stdio.h>\n"
-            "float chelis_entry__main(void);\n"
-            "int main(){ printf(\"%.6f\\n\", (double)chelis_entry__main()); return 0; }\n"
-        )
-
-        link = subprocess.run(
-            native_link_cmd(workdir / "repro", [c_file, driver], out_dir),
-            capture_output=True,
-            text=True,
-        )
+        command = emitted_compile_cmd(build_output)
+        binary = compiled_binary_path(command)
+        link = subprocess.run(command, capture_output=True, text=True)
         if link.returncode != 0:
             print(link.stderr.strip())
             print("regression: native compile/link failed (invalid-C regression?)")
             return 1
 
-        run = subprocess.run([str(workdir / "repro")], capture_output=True, text=True, timeout=10)
+        run = subprocess.run([str(binary)], capture_output=True, text=True, timeout=60)
         if run.returncode != 0:
+            print(run.stderr.strip())
             print(f"regression: binary exited with rc={run.returncode}")
             return 1
 
-        print(f"trivial-entry stripped multi-module smoke OK: build clean, link OK, run OK (output={run.stdout.strip()!r})")
+        entry_value = observed_root(run.stdout, "main")
+        if entry_value is None or float(entry_value) != 1.0:
+            print(run.stdout.strip())
+            print(f"regression: entry observed as {entry_value!r}, expected 1.0")
+            return 1
+
+        print(f"trivial-entry stripped multi-module smoke OK: build clean, link OK, run OK (main = {entry_value})")
         return 0
     finally:
         shutil.rmtree(workdir, ignore_errors=True)

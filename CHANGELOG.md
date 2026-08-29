@@ -4,6 +4,108 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.40] - 2026-08-29
+
+Compiler-pin, stdlib-migration, and de-narrowing change set for Chelis
+v0.18.6. `chelis reef conform bump 0.18.6` advanced the compiler pin, both
+workflow audit mirrors, and the managed blocks in `AGENTS.md`,
+`docs/CHELIS_SURFACE.md`, and `agent-skills/`; the Coral package version
+advanced from 0.7.39 to 0.7.40. Unlike the last two bumps this one required
+real source edits: 0.18.6 is the largest breaking cut since 0.18.0.
+
+**Not releasable yet, for two independent reasons.** The Nautilus dependency
+advances 0.7.42 -> **0.7.43**, which is staged rather than published: reef
+enforces exact compiler-pin equality, so `chelis reef build` refuses the last
+published Nautilus (0.7.42, declaring `=0.18.5`) at coral's `=0.18.6` pin.
+Both versions are red today and only 0.7.43 is correct as written when the
+cascade tags. Separately, the Chelis `v0.18.6` release workflow was still
+running when this change set was validated, so **no publisher-checksummed
+toolchain archive exists yet** and none is quoted. Every gate below ran on a
+`chelis 0.18.6` binary built from the release branch head
+`1186231f96e8b3c491f576c07fd0e4d5709772df`, whose tree is byte-identical to
+the tag commit `cf49f85bf0d1bca2c87c88a3e459c446912189c0`, and against a
+Nautilus artifact built from its bump branch into a private registry
+(`CHELIS_REEF_HOME`), so the shared registry was never touched. Re-run the
+gate against the official archives before tagging.
+
+**The removed `Std.Test` assertion aliases forced a suite-wide migration.**
+0.18.6 deletes `assert_eq_int`, `assert_eq_bool`, and `assert_eq_string` and
+makes `assert_eq[q]` generic, with no alias to fall back on; every one of the
+eight `tests/*.ch` files failed to compile at the new pin. All **119** call
+sites and the eight import lists now use `assert_eq`. `assert_close` also
+acquired the `[p_float]` active-float restriction, which Coral's f32-only
+tolerances already satisfy.
+
+**`JsonBigInt` was silently emptying out-of-`int64` JSON cells.**
+0.18.6 adds `JsonBigInt(string)` to the `Json` ADT (chelis#1314), so an
+integer token outside `int64` range now parses -- carrying its exact decimal
+spelling -- where it previously trapped `Overflow`. `Coral.Io`'s
+`render_json_value` ended in a `| _ => ""` wildcard, so those cells silently
+became empty strings and their whole column re-inferred as text or NaN. The
+match now enumerates all eight variants explicitly, with `JsonBigInt(digits)
+=> digits`: the exact digits reach column inference, the same value ingests
+identically through the JSON and CSV paths, and adding a ninth variant
+upstream is a compile error here instead of another silent cell.
+`tests/io.ch` pins both the exact-digit passthrough and the numeric-column
+inference; both fail against the previous wildcard.
+
+**chelis#630's typing residue is fixed and de-narrowed.**
+`neq(&tensor[n, f32], &tensor[n, f32])` now infers `tensor[n, bool]`, so
+`tests_blocked/types/tensor_neq_borrowed.ch` stopped failing and is promoted,
+per its own `.expect` instruction, to the executed regression
+`tests/types.ch`. The **native** IEEE residue is unchanged -- compiled C still
+reports the NaN lane equal because it derives `neq` from two ordered `<`
+comparisons -- so `Coral.Frame.is_nan` keeps its scalar host-map. That
+narrowing would otherwise have been left with no live trigger, so the new
+`scripts/repro_native_neq_blocked.py` takes over the blocked half: it compares
+the two lanes on one source (eval `1`, native `0`) and reports FIX-DETECTED
+when they agree. It is a script rather than a `tests_blocked/` entry because
+the residue is a wrong runtime answer, not a rejected program.
+
+**Four native-lane probe harnesses had to change shape.** chelis#1079/#1082/
+#1083 make `chelis build` emit its own `int main(void)` that evaluates every
+effect-free nullary definition and prints one `<name> = <value>` observation
+line. The old technique -- rename the entry symbol, supply a driver `main`,
+read the exit code -- now collides with that emitted `main`
+(`duplicate symbol '_main'`) or leaves the renamed symbol undeclared
+(`call to undeclared function 'main__main'`). This is a harness
+incompatibility, not a Coral source defect: the generated C is valid and the
+same programs build, link, and run. `scripts/repro_multimodule_bare_build.py`
+now owns three shared helpers (`emitted_compile_cmd`, `compiled_binary_path`,
+`observed_root`) and `scripts/repro_native_nan.py`,
+`scripts/repro_package_frame_build.py`, and `parity/run_parity.py`'s
+window-runtime lane consume them. Each probe runs the compile command
+`chelis build` itself prints -- which also supplies the platform vector-math
+library the emitted `main` newly pulls in through Nautilus's tensor
+specializations -- and reads the entry's observation line, the same line shape
+`chelis eval` prints. The emitted entry always exits zero, so an exit-code
+verdict is no longer available.
+
+**Re-probed and unchanged:** chelis#849 (block `if`/`else` newline) still
+compile-fails with the pinned diagnostic; chelis#741 stays narrowed, with the
+`zero_i32()` helper axis still rejected A/B against a building inline
+`cast(0, int32)` control; the chelis#1226 Frame-read boundary is unchanged in
+both the package and bare lanes. The 0.18.6 breaking surfaces that do **not**
+reach this corpus were checked directly rather than inferred from a green
+suite: Coral calls no `diagonal`/`trace` (the chelis#1349 out-of-bounds fix),
+no `assert_close_tensor` or `assert_eq_tensor`, no `init/xavier::sample`, no
+prelude JSON or legacy JSON builtin aliases; it does not target HIP or Metal,
+does not link the C ABI directly, and does not speak WireDag. The new `count`
+reduction does not collide with Coral's `count` parameters, bindings, or
+column names.
+
+**Validation on 0.18.6:** conform audit conformant, no MUST failures (15
+PASS, 2 MANUAL, 1 NA); `chelis reef build` produces `coral-0.7.40.chb` and
+`.tar.zst`; **78 passed, 0 failed** (75 baseline plus two `JsonBigInt`
+regressions and the promoted typing regression); 4 negative sidecars ok; 1
+blocked probe ok; per-file `chelis fmt --check` clean over all 25 files in
+`src`, `tests`, and `tests_neg`; `chelis lint --check .` exits 0 with no
+blocking issues; all three bare-build targets, the native NaN regression, the
+native `neq` blocker probe, both package-frame targets, and the bare
+`drop_nan` blocker probe behave as documented; the strict pandas parity gate,
+static checks, the parity generator contract, the release-workflow contract,
+11/11 SKILL examples, and 8/8 mdBook examples all pass.
+
 ## [0.7.39] - 2026-08-22
 
 Compiler-pin and de-narrowing change set for Chelis v0.18.5.

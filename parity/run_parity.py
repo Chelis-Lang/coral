@@ -30,6 +30,11 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
 from scripts.chelis_toolchain import resolve_chelis_bin
+from scripts.repro_multimodule_bare_build import (
+    compiled_binary_path,
+    emitted_compile_cmd,
+    observed_root,
+)
 
 
 CHELIS = resolve_chelis_bin()
@@ -112,44 +117,6 @@ def run(*args: str) -> int:
     except json.JSONDecodeError:
         return 0
     return 1 if data.get("errors") else 0
-
-
-def native_link_cmd(binary: Path, sources: list[Path], out_dir: Path) -> list[str]:
-    cc_env = os.environ.get("CC")
-    if cc_env:
-        prefix = [cc_env, "-O2"]
-    elif sys.platform == "darwin":
-        libomp = Path("/opt/homebrew/opt/libomp")
-        if libomp.exists():
-            prefix = [
-                "clang",
-                "-O2",
-                "-Xpreprocessor",
-                "-fopenmp",
-                f"-I{libomp / 'include'}",
-                f"-L{libomp / 'lib'}",
-            ]
-        else:
-            prefix = ["clang", "-O2"]
-    else:
-        prefix = ["gcc", "-O2", "-fopenmp"]
-
-    cmd = [
-        *prefix,
-        "-o",
-        str(binary),
-        *(str(source) for source in sources),
-        "-I",
-        str(out_dir),
-        "-L",
-        str(out_dir),
-        "-lchelis_runtime",
-        "-lm",
-        "-lpthread",
-    ]
-    if sys.platform == "darwin" and Path("/opt/homebrew/opt/libomp").exists() and "clang" in prefix[0]:
-        cmd.append("-lomp")
-    return cmd
 
 
 def validate_checked_in_goldens(base_dir: Path, required: list[str], label: str) -> int:
@@ -260,31 +227,24 @@ def run_window_runtime_fixture(fixture_name: str) -> int:
             return 1
         out_dir = workdir / "out"
         build = subprocess.run([CHELIS, "build", str(main_ch), "-o", str(out_dir)], capture_output=True, text=True)
+        build_output = (build.stdout or "") + (build.stderr or "")
         if build.returncode != 0:
-            print(f"window runtime build failed for {fixture_name}: {(build.stdout + build.stderr).strip()}")
+            print(f"window runtime build failed for {fixture_name}: {build_output.strip()}")
             return 1
-        c_file = out_dir / "main.c"
-        h_file = out_dir / "main.h"
-        # The `main` entry returns f32, which chelis emits as a C `float`
-        # `main__main`. Rename it out of the way of the driver's own `main`.
-        c_file.write_text(c_file.read_text().replace("float main", "float chelis_entry"))
-        if h_file.exists():
-            h_file.write_text(h_file.read_text().replace("float main", "float chelis_entry"))
-        driver = workdir / "driver.c"
-        driver.write_text(
-            "#include <stdio.h>\n"
-            "float chelis_entry__main(void);\n"
-            "int main(){ printf(\"%.6f\\n\", (double)chelis_entry__main()); return 0; }\n"
-        )
-        binary = workdir / "window_check"
-        link = subprocess.run(native_link_cmd(binary, [c_file, driver], out_dir), capture_output=True, text=True)
+        # chelis 0.18.6 emits its own `main` for the C target and prints one
+        # `<name> = <value>` line per observed root, so the verdict is read off
+        # that observation and the program is built with the compile command
+        # the compiler itself reports.
+        command = emitted_compile_cmd(build_output)
+        binary = compiled_binary_path(command)
+        link = subprocess.run(command, capture_output=True, text=True)
         if link.returncode != 0:
             print(f"window runtime link failed for {fixture_name}: {link.stderr.strip()}")
             return 1
         run_bin = subprocess.run([str(binary)], capture_output=True, text=True)
-        output = run_bin.stdout.strip()
-        if run_bin.returncode != 0 or output not in {"1", "1.000000"}:
-            print(f"window runtime mismatch for {fixture_name}: rc={run_bin.returncode}, stdout={output!r}, stderr={run_bin.stderr.strip()!r}")
+        verdict = observed_root(run_bin.stdout, "main")
+        if run_bin.returncode != 0 or verdict is None or float(verdict) != 1.0:
+            print(f"window runtime mismatch for {fixture_name}: rc={run_bin.returncode}, main={verdict!r}, stderr={run_bin.stderr.strip()!r}")
             return 1
         print(f"window runtime OK: {fixture_name}")
         return 0

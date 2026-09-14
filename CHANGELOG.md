@@ -6,17 +6,45 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [0.7.41] - 2026-09-14
 
-- Prepare the Chelis 0.18.9 / Nautilus 0.7.44 dependency release wave for
-  C Note, regenerating compiler-bound package artifacts and shell scaffolding.
-- Export/import the existing `char_code` and `column_len` helpers explicitly
-  for their cross-module consumers, repairing coral#32. Add populated and
-  empty cases for all four Column variants and retain scalar rejection.
-- Express the threshold-test mask with an explicit elementwise predicate,
-  preserving the selected rows and sum under the compiler's tensor/scalar
-  comparison rules. Record mixed-operand rejection and refresh the example.
-  This repairs coral#33.
-- Final published dependency checks and artifact identities are recorded in
-  `docs/chelis-0.18.9-migration.md` before publication.
+Compiler-pin and package-boundary change set for Chelis v0.18.9, the
+2026-09-14 dependency wave consumed by C Note. The compiler pin advances
+`=0.18.6` -> `=0.18.9` in `reef.toml`, both workflow pin mirrors, and the
+managed blocks in `AGENTS.md`, `docs/CHELIS_SURFACE.md`, and `agent-skills/`;
+the Coral package version advances from 0.7.40 to 0.7.41. Chelis 0.18.7 and
+0.18.8 are skipped: 0.18.7 was published but its full native suite did not
+complete, and 0.18.8 was never published, so 0.18.9 is the first release this
+shell validates end to end.
+
+**The Nautilus cascade advances 0.7.43 -> 0.7.44.** Reef enforces exact
+compiler-pin equality on dependencies, so the previous release (declaring
+`=0.18.6`) is refused at coral's `=0.18.9` pin. CI installs the dependency
+with `chelis reef install --from-github Chelis-Lang/nautilus@v0.7.44`, and
+this entry stays red until both Chelis v0.18.9 and Nautilus v0.7.44 publish.
+
+**Explicit package boundaries (coral#32).** 0.18.9 enforces in-package
+exports, which exposed two cross-module dependencies that previously resolved
+implicitly: `Coral.Frame` uses `Coral.Internal.Hamt.char_code`, and
+`Coral.Reshape` uses `Coral.Frame.column_len`. The owning modules now export
+those helpers and the consumers import them explicitly. `tests/column_length.ch`
+adds populated and empty column-length cases for all four `Column` variants
+(float, integer, string, boolean), and
+`tests_neg/frame/column_length_scalar_neg.ch` retains scalar rejection.
+
+**Threshold fixture (coral#33).** Tensor comparison operands must have
+matching shapes under spec [05-OP-36], so the threshold-filter test builds its
+mask by mapping an explicit elementwise predicate over the column and
+converting the boolean list to a tensor. The fixture's oracle is unchanged:
+the same three rows are selected and their sum is 600.
+`tests_neg/frame/tensor_scalar_gt_neg.ch` pins the direct `gt(tensor, scalar)`
+rejection, and `SKILL.md` / `docs/status.md` describe the current rule instead
+of the historical v0.3.1 broadcast behavior.
+
+**Validation status.** The repaired compiler candidate passes all 80 native
+tests; the strict pandas parity gate, the focused column-length and threshold
+cases, and their negative controls pass on published 0.18.7. The final gate on
+published 0.18.9 / Nautilus 0.7.44 and the resulting artifact hashes are
+pending and are tracked in `docs/chelis-0.18.9-migration.md`; do not publish
+the release until that record replaces the pending marker.
 
 ## [0.7.40] - 2026-08-29
 

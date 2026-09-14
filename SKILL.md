@@ -186,7 +186,7 @@ def main() -> int64 = {
 - `Coral.Window` and `Coral.Frame` both have an executed runtime parity lane: pandas goldens + runtime build/link/execute lane (in `parity/run_parity.py`). GroupBy, Join, and IO are fixture-backed plus compile-checked.
 - Stripped Frame/GroupBy/Join bare builds are clean on the official Chelis
   0.18.1 / Nautilus 0.7.38 chain after chelis#935.
-- The 74 tests in `tests/*.ch` run via `chelis test tests/ --jobs auto` and assert mathematical identities, hand-computed values, structural properties, and round-trip identities. Pandas comparison work lives in `parity/`.
+- The 80 tests in `tests/*.ch` run via `chelis test tests/ --jobs auto` and assert mathematical identities, hand-computed values, structural properties, and round-trip identities. Pandas comparison work lives in `parity/`.
 - Tensor comparison operands require matching shapes. To compare a column with a scalar threshold, map the scalar predicate over its elements and convert the resulting boolean list to a tensor. The threshold-filter test retains three rows with sum 600; a negative fixture rejects direct `gt(tensor, scalar)`.
 
 ## 5. API Surface

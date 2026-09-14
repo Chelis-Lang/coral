@@ -51,12 +51,14 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
   Bumps cascade in dependency order (`nautilus` first, then coral) via the Pin
   Bump Checklist below — never edit the pin directly on `main`.
 - **Nautilus 0.7.43 is published**, at source commit
-  `7e3451b4977922d0bda80883ba385c7da211fc9e`, so this candidate's cascade is
-  clear. Reef enforces exact compiler-pin equality on dependencies, which is
-  why the bump order is Nautilus first: the previous release (0.7.42,
-  declaring `=0.18.5`) is refused at coral's `=0.18.6` pin. Resolve the
+  `7e3451b4977922d0bda80883ba385c7da211fc9e`, and closes the last fully
+  validated chain (0.18.6 / 0.7.43). This candidate's cascade depends on
+  **Nautilus 0.7.44**, which is still pending publication, so the cascade is
+  not yet clear. Reef enforces exact compiler-pin equality on dependencies,
+  which is why the bump order is Nautilus first: the previous release (0.7.43,
+  declaring `=0.18.6`) is refused at coral's `=0.18.9` pin. Resolve the
   dependency with `chelis reef install --from-github
-  Chelis-Lang/nautilus@v0.7.43`, the same path CI uses. While a sibling
+  Chelis-Lang/nautilus@v0.7.44`, the same path CI uses. While a sibling
   release is still outstanding, validate against an artifact built into a
   registry scoped by `CHELIS_REEF_HOME` rather than the shared one, and treat
   those hashes as provisional until the release publishes.

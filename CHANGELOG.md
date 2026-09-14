@@ -9,8 +9,10 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 Compiler-pin and package-boundary change set for Chelis v0.18.9, the
 2026-09-14 dependency wave consumed by C Note. The compiler pin advances
 `=0.18.6` -> `=0.18.9` in `reef.toml`, both workflow pin mirrors, and the
-managed blocks in `AGENTS.md`, `docs/CHELIS_SURFACE.md`, and `agent-skills/`;
-the Coral package version advances from 0.7.40 to 0.7.41. Chelis 0.18.7 and
+managed blocks in `AGENTS.md` and `docs/CHELIS_SURFACE.md`; the four
+`agent-skills/*/SKILL.md` files were resynced verbatim from the Chelis
+monorepo and are byte-identical to its `release/0.18.9-nn-cascade` branch.
+The Coral package version advances from 0.7.40 to 0.7.41. Chelis 0.18.7 and
 0.18.8 are skipped: 0.18.7 was published but its full native suite did not
 complete, and 0.18.8 was never published, so 0.18.9 is the first release this
 shell validates end to end.

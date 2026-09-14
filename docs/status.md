@@ -33,7 +33,7 @@ Known deferred items:
 Test harness layout (Phase 3t):
 
 - `tests/*.ch` — Chelis-native tests run via
-  `chelis test tests/ --jobs auto`. 74 tests across as-of, frame, window,
+  `chelis test tests/ --jobs auto`. 80 tests across as-of, frame, window,
   groupby, join, reshape, io, nan, and internal modules. All expected values are
   mathematical identities, hand-computed from inputs, structural
   assertions, or round-trip identities — never pandas-derived.

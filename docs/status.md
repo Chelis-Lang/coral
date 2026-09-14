@@ -33,7 +33,7 @@ Known deferred items:
 Test harness layout (Phase 3t):
 
 - `tests/*.ch` — Chelis-native tests run via
-  `chelis test tests/ --jobs auto`. 74 tests across as-of, frame, window,
+  `chelis test tests/ --jobs auto`. 80 tests across as-of, frame, window,
   groupby, join, reshape, io, nan, and internal modules. All expected values are
   mathematical identities, hand-computed from inputs, structural
   assertions, or round-trip identities — never pandas-derived.
@@ -120,14 +120,10 @@ What is not yet proven:
   specialization under chelis#941/[05-UNS-1]. The positive native regression
   covers mask creation, `any_nan`, `count_nan`, and the exact
   mask-to-index/gather drop core, not full Frame reconstruction.
-- (resolved in v0.3.1, moved out of "not yet proven") The prior
-  `chelis test` evaluator gap is fully closed: tensor-tensor
-  `eq`/`neq`/`lt`/`gt` (v0.2.5), `to_tensor([bool, ...])`, and
-  tensor-scalar `gt(tensor, scalar)` (v0.3.1) all work. Coral's
-  IntCol, `is_nan`/`count_nan`/`any_nan` tensor exports, `agg_count`,
-  `value_counts`, int CSV round-trip, and bool CSV/JSON round-trips
-  are all exercised under `chelis test`. Window/Frame runtime parity
-  still covers the `chelis build`-target path independently.
+- Tensor comparison operands require matching shapes. The threshold-filter
+  fixture maps a scalar predicate over column elements before forming its
+  boolean mask. Direct tensor/scalar comparison is a type error under
+  spec [05-OP-36]; the historical v0.3.1 broadcast behavior is not current.
 - pandas-equivalent sort semantics for NaN-bearing columns
 - negative-test coverage for the full frame error surface
 - runtime parity for GroupBy, Join, and IO module families against

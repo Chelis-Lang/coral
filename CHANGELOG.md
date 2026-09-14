@@ -4,6 +4,64 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.41] - 2026-09-14
+
+Compiler-pin and package-boundary change set for Chelis v0.18.9, the
+2026-09-14 dependency wave consumed by C Note. The compiler pin advances
+`=0.18.6` -> `=0.18.9` in `reef.toml`, both workflow pin mirrors, and the
+managed blocks in `AGENTS.md` and `docs/CHELIS_SURFACE.md`; the four
+`agent-skills/*/SKILL.md` files were resynced verbatim from the Chelis
+monorepo and are byte-identical to its `release/0.18.9-nn-cascade` branch.
+The Coral package version advances from 0.7.40 to 0.7.41. Chelis 0.18.7 and
+0.18.8 are skipped: 0.18.7 was published but its full native suite did not
+complete, and 0.18.8 was never published, so 0.18.9 is the first release this
+shell validates end to end.
+
+**The Nautilus cascade advances 0.7.43 -> 0.7.44.** Reef enforces exact
+compiler-pin equality on dependencies, so the previous release (declaring
+`=0.18.6`) is refused at coral's `=0.18.9` pin. CI installs the dependency
+with `chelis reef install --from-github Chelis-Lang/nautilus@v0.7.44`. Both
+Chelis v0.18.9 and Nautilus v0.7.44 are now published, and the regenerated
+local `reef.lock` binds `nautilus` and `chelis-std 0.4.0` to compiler
+`=0.18.9`.
+
+**Explicit package boundaries (coral#32).** 0.18.9 enforces in-package
+exports, which exposed two cross-module dependencies that previously resolved
+implicitly: `Coral.Frame` uses `Coral.Internal.Hamt.char_code`, and
+`Coral.Reshape` uses `Coral.Frame.column_len`. The owning modules now export
+those helpers and the consumers import them explicitly. `tests/column_length.ch`
+adds populated and empty column-length cases for all four `Column` variants
+(float, integer, string, boolean), and
+`tests_neg/frame/column_length_scalar_neg.ch` retains scalar rejection.
+
+**Threshold fixture (coral#33).** Tensor comparison operands must have
+matching shapes under spec [05-OP-36], so the threshold-filter test builds its
+mask by mapping an explicit elementwise predicate over the column and
+converting the boolean list to a tensor. The fixture's oracle is unchanged:
+the same three rows are selected and their sum is 600.
+`tests_neg/frame/tensor_scalar_gt_neg.ch` pins the direct `gt(tensor, scalar)`
+rejection, and `SKILL.md` / `docs/status.md` describe the current rule instead
+of the historical v0.3.1 broadcast behavior.
+
+**Validation status.** Locked against the published toolchain. On the
+published Chelis 0.18.9 Darwin arm64 binary with Nautilus 0.7.44, the native
+suite passes 80 of 80 tests in 50.16 s, and `fmt --check`, `lint --check .`,
+`reef build`, the negative and blocked-probe suites, the strict pandas parity
+gate, `run_static_checks.py`, `run_skill_checks.py` (11 of 11),
+`validate_book_examples.py` (8 of 8), `reef conform audit`, and
+`reef conform bump-check --base origin/main` are all clean. The
+`tests_blocked/parser/if_else_newline.ch` probe stays blocked with its
+diagnostic re-cited for 0.18.9, and the `Coral.Frame.concat` book example now
+stacks two equal-length frames to satisfy 0.18.9's type-level row-count
+tracking. Published hashes and the sonar gate receipt are recorded in
+`docs/chelis-0.18.9-migration.md`. The non-shipping native bare-build
+multimodule probe hits a Nautilus `special__airy_gg` native-lowering error
+under 0.18.9 (the C-backend liveness regression chelis#2068); it is not a
+shipping lane and is not a CI gate. The required `native float NaN regression`
+CI step (`scripts/repro_native_nan.py`) was narrowed to natively compile only
+Coral's own frame NaN path so it no longer drags airy/betacf through the C
+backend; the chelis#630 guard is unchanged. See `docs/UPSTREAM_BUGS.md`.
+
 ## [0.7.40] - 2026-08-29
 
 Compiler-pin, stdlib-migration, and de-narrowing change set for Chelis

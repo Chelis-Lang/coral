@@ -24,6 +24,14 @@ The 0.18.5 diagnostic carries no issue number of its own, unlike its sibling
 standing [05-UNS-5] authority for the class and is what `UPSTREAM_BUGS` cites;
 chelis#1260 asks for this diagnostic to be branded the same way.
 
+- chelis 0.18.9 drifts this diagnostic again. The invoked generic `drop_nan`
+  Frame read is still build-lane-blocked, but the compiler now stops one step
+  earlier, in host inference: the host type does not resolve before the
+  code-generation boundary, reported as an unresolved host inference variable
+  ([05-UNS-1]; now cited as chelis#730). Same boundary class, new wording; the
+  `.expect` substring is re-cited to the stable phrase below (the volatile
+  inference-variable id is excluded from the pin).
+
 This probe drives the bare concatenated-module lane. The package lane -- the
 one downstream projects actually use, and the one coral#26 reports against --
 is measured separately by `repro_package_frame_build.py`, which reproduces the
@@ -39,7 +47,10 @@ from pathlib import Path
 from repro_multimodule_bare_build import CHELIS, MODULE_PRESETS, build_prefixed_modules
 
 
-EXPECTED = "is not concretely instantiated: generic ADT `Column` has no applied type arguments"
+# chelis 0.18.9 boundary diagnostic. The trailing inference-variable id is
+# volatile, so the pin is the stable descriptive phrase (see the module
+# docstring for the 0.18.6 -> 0.18.9 drift).
+EXPECTED = "host type did not resolve before the code-generation boundary"
 
 
 def main() -> int:
@@ -75,7 +86,7 @@ def main() -> int64 = {
             print(output.strip())
             print("native drop_nan blocker probe: failure diagnostic drifted")
             return 1
-        print("expected blocked: production drop_nan reaches the unresolved dim-generic `Column` match boundary (chelis#1226 class; diagnostic uncited, chelis#1260)")
+        print("expected blocked: production drop_nan still does not lower; the host type does not resolve before the code-generation boundary ([05-UNS-1]; chelis#730, drifted on 0.18.9 from the 0.18.6 dim-generic `Column` match, chelis#1226 class)")
         return 0
     finally:
         shutil.rmtree(workdir, ignore_errors=True)

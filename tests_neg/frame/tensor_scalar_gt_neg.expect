@@ -1,0 +1,4 @@
+`gt` does not admit a scalar beside a tensor
+
+Assumption: comparison operands must have matching scalar/tensor surfaces.
+A threshold filter constructs its per-element scalar predicate explicitly.

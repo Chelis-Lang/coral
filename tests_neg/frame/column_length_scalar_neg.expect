@@ -1,0 +1,4 @@
+type mismatch:
+
+Assumption: column_len accepts a Column variant. A scalar f32 must be rejected
+by the type checker instead of being coerced into a one-element column.

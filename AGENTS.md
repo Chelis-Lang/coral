@@ -5,7 +5,7 @@ to this file so Claude-style and Codex-style entry points do not drift.
 
 ## Repo Identity
 
-<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.18.6 (sha256:758a5eb9aefb5c7e) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.18.9 (sha256:758a5eb9aefb5c7e) -->
 This repository is a downstream **shell** of the Chelis compiler. Its upstream
 of truth is `Chelis-Lang/chelis`: the monorepo `AGENTS.md` applies verbatim
 (machine-local environment sections excepted), and
@@ -33,7 +33,10 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
   Chelis release by default. Treat stale pins as drift, not as a reason
   to stay on an older compiler.
 - `reef.toml` should pin the currently validated release exactly. The
-  `0.7.40` candidate targets `chelis 0.18.6` and `nautilus 0.7.43`.
+  `0.7.41` candidate targets `chelis 0.18.9` and `nautilus 0.7.44`; both are
+  pending publication, and the artifact identities below describe the last
+  fully validated chain (0.18.6 / 0.7.43) until
+  `docs/chelis-0.18.9-migration.md` records the published 0.18.9 gate.
   Chelis 0.18.6 is published at commit
   `cf49f85bf0d1bca2c87c88a3e459c446912189c0`; its
   publisher-checksummed Darwin arm64 archive SHA-256 is
@@ -48,12 +51,14 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
   Bumps cascade in dependency order (`nautilus` first, then coral) via the Pin
   Bump Checklist below — never edit the pin directly on `main`.
 - **Nautilus 0.7.43 is published**, at source commit
-  `7e3451b4977922d0bda80883ba385c7da211fc9e`, so this candidate's cascade is
-  clear. Reef enforces exact compiler-pin equality on dependencies, which is
-  why the bump order is Nautilus first: the previous release (0.7.42,
-  declaring `=0.18.5`) is refused at coral's `=0.18.6` pin. Resolve the
+  `7e3451b4977922d0bda80883ba385c7da211fc9e`, and closes the last fully
+  validated chain (0.18.6 / 0.7.43). This candidate's cascade depends on
+  **Nautilus 0.7.44**, which is still pending publication, so the cascade is
+  not yet clear. Reef enforces exact compiler-pin equality on dependencies,
+  which is why the bump order is Nautilus first: the previous release (0.7.43,
+  declaring `=0.18.6`) is refused at coral's `=0.18.9` pin. Resolve the
   dependency with `chelis reef install --from-github
-  Chelis-Lang/nautilus@v0.7.43`, the same path CI uses. While a sibling
+  Chelis-Lang/nautilus@v0.7.44`, the same path CI uses. While a sibling
   release is still outstanding, validate against an artifact built into a
   registry scoped by `CHELIS_REEF_HOME` rather than the shared one, and treat
   those hashes as provisional until the release publishes.

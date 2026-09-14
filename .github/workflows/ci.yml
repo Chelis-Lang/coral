@@ -14,10 +14,10 @@ concurrency:
 env:
   # AUTO-SYNC: must match reef.toml. The pin-consistency-guard job
   # below fails immediately if these drift from reef.toml.
-  CHELIS_TAG: v0.18.6
-  CHELIS_VERSION: 0.18.6
-  NAUTILUS_TAG: v0.7.43
-  CORAL_VERSION: 0.7.40
+  CHELIS_TAG: v0.18.9
+  CHELIS_VERSION: 0.18.9
+  NAUTILUS_TAG: v0.7.44
+  CORAL_VERSION: 0.7.41
 
 jobs:
   pin-consistency-guard:

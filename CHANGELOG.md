@@ -54,9 +54,13 @@ gate, `run_static_checks.py`, `run_skill_checks.py` (11 of 11),
 diagnostic re-cited for 0.18.9, and the `Coral.Frame.concat` book example now
 stacks two equal-length frames to satisfy 0.18.9's type-level row-count
 tracking. Published hashes and the sonar gate receipt are recorded in
-`docs/chelis_0_18_9_migration.md`. The non-shipping native bare-build
+`docs/chelis-0.18.9-migration.md`. The non-shipping native bare-build
 multimodule probe hits a Nautilus `special__airy_gg` native-lowering error
-under 0.18.9; it is not a shipping lane and is not a CI gate.
+under 0.18.9 (the C-backend liveness regression chelis#2068); it is not a
+shipping lane and is not a CI gate. The required `native float NaN regression`
+CI step (`scripts/repro_native_nan.py`) was narrowed to natively compile only
+Coral's own frame NaN path so it no longer drags airy/betacf through the C
+backend; the chelis#630 guard is unchanged. See `docs/UPSTREAM_BUGS.md`.
 
 ## [0.7.40] - 2026-08-29
 

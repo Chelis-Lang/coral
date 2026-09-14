@@ -9,6 +9,18 @@ chelis 0.18.6 emits its own `main` for the C target and observes every
 effect-free nullary definition, so the verdict is read off the compiled
 program's `main = <value>` observation line rather than its exit status,
 which the emitted entry always sets to zero.
+
+Scope note (chelis#2068): this probe extracts only Coral's own frame NaN
+helpers -- `is_nan` (the chelis#630 scalar host-map), `any_nan`, `count_nan`,
+`mask_to_index_list`, and their `zero_i64`/`one_i64` helpers -- instead of
+flat-pasting `MODULE_PRESETS["frame"]`. The full frame preset would also
+natively compile the transitive Nautilus `special.ch`/`distributions.ch`
+functions (`airy_gg`, `betacf`), which trip the chelis#2068 C-backend liveness
+regression on the `--target c` lane, even though Coral never calls them. The
+extracted slice is the exact code chelis#630 narrows, so the guard is
+unchanged: it still natively compiles `is_nan`'s per-element `neq(x, x)` host
+map and asserts the NaN observation is IEEE-correct. Revert to the full preset
+when chelis#2068 is fixed. See docs/UPSTREAM_BUGS.md.
 """
 from __future__ import annotations
 
@@ -19,16 +31,30 @@ from pathlib import Path
 
 from repro_multimodule_bare_build import (
     CHELIS,
-    MODULE_PRESETS,
-    build_prefixed_modules,
+    REPO,
     compiled_binary_path,
     emitted_compile_cmd,
+    extract_named_defs,
     observed_root,
+    prefix_defs,
+    strip_module_surface,
 )
+
+# Coral's own frame NaN surface and its genuine in-module dependencies. Only
+# these defs need to lower through the C backend to guard chelis#630; nothing
+# here reaches the Nautilus special/distributions chain.
+FRAME_NAN_DEFS = ["zero_i64", "one_i64", "is_nan", "any_nan", "count_nan", "mask_to_index_list"]
+
+
+def _frame_nan_slice() -> str:
+    frame_src = strip_module_surface((REPO / "src" / "frame.ch").read_text())
+    slice_src = extract_named_defs(frame_src, FRAME_NAN_DEFS)
+    prefixed, _ = prefix_defs(slice_src, "frame__")
+    return prefixed
 
 
 def main() -> int:
-    body = build_prefixed_modules(MODULE_PRESETS["frame"])
+    body = _frame_nan_slice()
     body += """
 
 def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))

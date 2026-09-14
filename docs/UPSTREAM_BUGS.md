@@ -167,6 +167,41 @@ every citation in it.
       works. Retire the host-map when the blocked probe reports
       FIX-DETECTED.
 
+- **Nautilus `special.ch` / `distributions.ch` native lowering trips a
+  C-backend by-value scalar liveness regression
+  ([chelis#2068](https://github.com/Chelis-Lang/chelis/issues/2068)).** On the
+  `--target c` lane a by-value scalar argument passed to two or more argument
+  slots of a tail-position user call is wrongly moved, so the later reads see
+  released storage and the native compile fails. It entered the compiler at
+  0.18.7 and is live on the pinned 0.18.9 binary. Nautilus's
+  `special.ch::airy_gg` and `distributions.ch::betacf` both hit it when
+  natively compiled. Coral never calls airy or betacf; the only exposure was in
+  a probe. `scripts/repro_native_nan.py` used to flat-paste
+  `MODULE_PRESETS["frame"]`, which drags the transitive Nautilus
+  `special`/`distributions`/`stats` chain into one native compile purely so the
+  concatenated `frame.ch` would type-check, then lowered the whole program --
+  airy_gg/betacf included -- to C, so the `native float NaN regression` CI step
+  failed even though the NaN mask path never touches those functions.
+    - **Narrowing.** The probe now extracts only Coral's own frame NaN defs
+      (`is_nan`, `any_nan`, `count_nan`, `mask_to_index_list`, and their
+      `zero_i64`/`one_i64` helpers) with the new
+      `repro_multimodule_bare_build.extract_named_defs` and natively compiles
+      that slice alone. No Nautilus special/distributions/stats code reaches the
+      C backend, so chelis#2068 is not exercised.
+    - **chelis#630 guard preserved.** The extracted slice is the exact code
+      chelis#630 narrows: `is_nan`'s per-element `neq(x, x)` scalar host-map.
+      The probe still compile-links-runs it and reads the IEEE-correct NaN
+      observation (`main = 0`); replacing the host-map with a NaN-blind mask or
+      the tensor-`neq` form still makes the probe fail (verified locally on the
+      0.18.9 binary). The blocked half of chelis#630 stays pinned separately by
+      `scripts/repro_native_neq_blocked.py`, which compiles a standalone source
+      and pulls in no Nautilus code.
+    - **Reverts when chelis#2068 is fixed.** Restore the full
+      `MODULE_PRESETS["frame"]` flat-paste in `scripts/repro_native_nan.py` once
+      the C-backend liveness regression is resolved, so the NaN path is again
+      exercised through the same module chain a real consumer's build links.
+      Re-probe: `CHELIS_BIN=<pin> python3 scripts/repro_native_nan.py`.
+
 - **Native-lane probe harnesses had to change shape for 0.18.6 (no upstream
   defect; recorded here because every re-probe result above depends on it).**
   chelis#1079/#1082/#1083 make `chelis build` emit its own `int main(void)`
@@ -218,6 +253,17 @@ every citation in it.
       lane) and `scripts/repro_native_drop_nan_blocked.py` (bare concatenated
       lane). Re-probe at every pin bump; promote the full compile-link-run of
       an invoked Frame read only when `--target nrows` reports `FIX-DETECTED`.
+    - **0.18.9 re-probe (bare lane).** Still blocked, diagnostic drifted.
+      `scripts/repro_native_drop_nan_blocked.py` no longer stops at the
+      dim-generic `Column` match; on the published 0.18.9 binary the invoked
+      `drop_nan` Frame read fails one step earlier, in host inference, with
+      `host type did not resolve before the code-generation boundary:
+      unresolved host inference variable ... ([05-UNS-1]; chelis#730)` (the
+      inference-variable id is volatile and is excluded from the pin). Same
+      [05-UNS-1] boundary class as chelis#1226; the probe's `.expect` substring
+      was re-cited to the stable phrase per AGENTS.md's DRIFTED-diagnostic rule.
+      The package-lane `--target nrows` diagnostic was not re-measured in this
+      change set.
     - **Coral-side fix landed with this measurement.** `hamt_entries` was used
       in `frame.ch`, `groupby.ch`, `join.ch`, and `reshape.ch` without being
       imported. `chelis check` scored 1.0 with an empty `unresolved_names` list

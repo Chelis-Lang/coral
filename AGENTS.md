@@ -36,7 +36,7 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
   `0.7.41` candidate targets `chelis 0.18.9` and `nautilus 0.7.44`; both are
   pending publication, and the artifact identities below describe the last
   fully validated chain (0.18.6 / 0.7.43) until
-  `docs/chelis_0_18_9_migration.md` records the published 0.18.9 gate.
+  `docs/chelis-0.18.9-migration.md` records the published 0.18.9 gate.
   Chelis 0.18.6 is published at commit
   `cf49f85bf0d1bca2c87c88a3e459c446912189c0`; its
   publisher-checksummed Darwin arm64 archive SHA-256 is

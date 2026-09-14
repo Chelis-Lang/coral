@@ -179,6 +179,32 @@ def prefix_defs(src: str, prefix: str) -> tuple[str, dict[str, str]]:
     return apply_name_map(src, mapping), mapping
 
 
+def extract_named_defs(src: str, names: list[str]) -> str:
+    """Return the source of the named top-level defs, in file order.
+
+    A top-level def runs from its `def <name>` header to the next top-level
+    `def ` (or end of file). This lets a probe natively compile a specific
+    slice of a module -- e.g. Coral's own frame NaN helpers -- without
+    flat-pasting the whole module chain the full file would otherwise drag in.
+    The caller must name every genuine dependency; a body that references a def
+    not in `names` (and not a builtin) would lower to an undeclared C call.
+    """
+    wanted = set(names)
+    headers = list(re.finditer(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)", src, flags=re.M))
+    present = {m.group(1) for m in headers}
+    missing = wanted - present
+    if missing:
+        raise RuntimeError(f"defs not found in module source: {sorted(missing)}")
+    blocks: list[str] = []
+    for idx, m in enumerate(headers):
+        if m.group(1) not in wanted:
+            continue
+        start = m.start()
+        end = headers[idx + 1].start() if idx + 1 < len(headers) else len(src)
+        blocks.append(src[start:end].rstrip())
+    return "\n".join(blocks)
+
+
 def build_prefixed_modules(specs: list[tuple[str, str]]) -> str:
     accumulated: dict[str, str] = {}
     parts: list[str] = []

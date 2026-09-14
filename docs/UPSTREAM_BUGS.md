@@ -128,7 +128,13 @@ every citation in it.
   `tests_blocked/parser/if_else_newline.ch` is the mechanical bump probe, and
   it still compile-fails with the pinned diagnostic on 0.18.6 -- note that
   chelis#1267 reworded three of the four v0.19 block-separator diagnostics in
-  that release without touching this one.
+  that release without touching this one. Re-probed on the published 0.18.9
+  binary: the source is still rejected, but the diagnostic finally drifted.
+  The braced one-expression body is now rejected first by chelis#1031's
+  one-expression-block rule, so the probe fails with `expected binding before
+  the tail expression; use `do` for sequencing` rather than `expected Else,
+  found Eof`. The `.expect` substring was re-cited to the new wording; the
+  block stays blocked and the workaround remains.
 
 - **Float tensor `neq`: one residue left, and it is the native one
   ([chelis#630](https://github.com/Chelis-Lang/chelis/issues/630)).** Two

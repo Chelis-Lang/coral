@@ -1,5 +1,8 @@
-expected Else, found Eof
-Blocker: chelis#849. Inside a block, a newline before an existing `else`
-still terminates the `if` expression early on the exact 0.18.1 release.
-On pass: remove the same-line workaround in parity/run_parity.py, promote
-this source to a parser regression test, and archive the tracking entry.
+expected binding before the tail expression; use `do` for sequencing
+Blocker: chelis#849 (newline before an existing `else` in a block) with
+chelis#1031 (one-expression `{ }` block rejection). On the published 0.18.9
+release the braced one-expression body is rejected first, so the pinned
+diagnostic drifted from `expected Else, found Eof` to the one above. The
+source is still rejected and the same-line workaround in
+parity/run_parity.py stays. On pass: remove that workaround, promote this
+source to a parser regression test, and archive the tracking entry.

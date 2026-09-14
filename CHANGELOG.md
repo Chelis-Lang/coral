@@ -20,8 +20,10 @@ shell validates end to end.
 **The Nautilus cascade advances 0.7.43 -> 0.7.44.** Reef enforces exact
 compiler-pin equality on dependencies, so the previous release (declaring
 `=0.18.6`) is refused at coral's `=0.18.9` pin. CI installs the dependency
-with `chelis reef install --from-github Chelis-Lang/nautilus@v0.7.44`, and
-this entry stays red until both Chelis v0.18.9 and Nautilus v0.7.44 publish.
+with `chelis reef install --from-github Chelis-Lang/nautilus@v0.7.44`. Both
+Chelis v0.18.9 and Nautilus v0.7.44 are now published, and the regenerated
+local `reef.lock` binds `nautilus` and `chelis-std 0.4.0` to compiler
+`=0.18.9`.
 
 **Explicit package boundaries (coral#32).** 0.18.9 enforces in-package
 exports, which exposed two cross-module dependencies that previously resolved
@@ -41,12 +43,20 @@ the same three rows are selected and their sum is 600.
 rejection, and `SKILL.md` / `docs/status.md` describe the current rule instead
 of the historical v0.3.1 broadcast behavior.
 
-**Validation status.** The repaired compiler candidate passes all 80 native
-tests; the strict pandas parity gate, the focused column-length and threshold
-cases, and their negative controls pass on published 0.18.7. The final gate on
-published 0.18.9 / Nautilus 0.7.44 and the resulting artifact hashes are
-pending and are tracked in `docs/chelis-0.18.9-migration.md`; do not publish
-the release until that record replaces the pending marker.
+**Validation status.** Locked against the published toolchain. On the
+published Chelis 0.18.9 Darwin arm64 binary with Nautilus 0.7.44, the native
+suite passes 80 of 80 tests in 50.16 s, and `fmt --check`, `lint --check .`,
+`reef build`, the negative and blocked-probe suites, the strict pandas parity
+gate, `run_static_checks.py`, `run_skill_checks.py` (11 of 11),
+`validate_book_examples.py` (8 of 8), `reef conform audit`, and
+`reef conform bump-check --base origin/main` are all clean. The
+`tests_blocked/parser/if_else_newline.ch` probe stays blocked with its
+diagnostic re-cited for 0.18.9, and the `Coral.Frame.concat` book example now
+stacks two equal-length frames to satisfy 0.18.9's type-level row-count
+tracking. Published hashes and the sonar gate receipt are recorded in
+`docs/chelis_0_18_9_migration.md`. The non-shipping native bare-build
+multimodule probe hits a Nautilus `special__airy_gg` native-lowering error
+under 0.18.9; it is not a shipping lane and is not a CI gate.
 
 ## [0.7.40] - 2026-08-29
 

@@ -83,9 +83,9 @@ def test_describe_returns_8_rows() -> unit ! { Test } = {
   d = describe(df)
   assert_eq(nrows(d), cast(8, int64), "describe always has 8 stat rows")
 }
-def test_filter_via_tensor_scalar_gt() -> unit ! { Test } = {
+def test_filter_via_elementwise_threshold() -> unit ! { Test } = {
   df = from_pairs([("price", FloatCol(to_tensor([cast(10.0, f32), cast(50.0, f32), cast(100.0, f32), cast(200.0, f32), cast(300.0, f32)])))])
-  mask = gt(get_float_col(df, "price"), cast(75.0, f32))
+  mask = to_tensor(map(fn (value: f32) -> gt(value, 75.0f32), to_list(get_float_col(df, "price"))))
   kept = filter(df, mask)
   total = fold(fn (acc: f32, v: f32) -> add(acc, v), cast(0.0, f32), to_list(get_float_col(kept, "price")))
   _ = assert_eq(nrows(kept), cast(3, int64), "filter keeps 3 rows above 75")

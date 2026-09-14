@@ -1,7 +1,7 @@
 module Coral.Frame
-import Coral.Internal.Hamt (Hamt, hamt_entries, hamt_from_pairs, hamt_get, hamt_put, hamt_remove)
+import Coral.Internal.Hamt (Hamt, hamt_entries, hamt_from_pairs, hamt_get, hamt_put, hamt_remove, char_code)
 import Nautilus.Stats (mean_vec, min_vec, max_vec, quantile_vec, std_vec)
-export (ColumnType, Column, KeyValue, Frame, from_columns, from_pairs, empty, get_column, get_float_col, get_int_col, get_string_col, get_bool_col, columns, column_type, nrows, ncols, filter, head, tail, slice, sort_by, with_column, mutate, rename, drop_column, is_nan, fill_nan, drop_nan, any_nan, count_nan, is_nan_col, fill_nan_col, drop_nan_col, any_nan_col, count_nan_col, concat, describe, key_id, key_values, key_values_to_column_like, int_col_of_list)
+export (ColumnType, Column, KeyValue, Frame, from_columns, from_pairs, empty, get_column, get_float_col, get_int_col, get_string_col, get_bool_col, columns, column_type, nrows, ncols, filter, head, tail, slice, sort_by, with_column, mutate, rename, drop_column, is_nan, fill_nan, drop_nan, any_nan, count_nan, is_nan_col, fill_nan_col, drop_nan_col, any_nan_col, count_nan_col, concat, describe, key_id, key_values, key_values_to_column_like, int_col_of_list, column_len)
 type ColumnType =
   | IntType
   | FloatType

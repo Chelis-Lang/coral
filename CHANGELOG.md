@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.41] - 2026-09-13
+
+- Prepare the Chelis 0.18.8 / Nautilus 0.7.44 dependency release wave for
+  C Note, regenerating compiler-bound package artifacts and shell scaffolding.
+- Export/import the existing `char_code` and `column_len` helpers explicitly
+  for their cross-module consumers, repairing coral#32. Add populated and
+  empty cases for all four Column variants and retain scalar rejection.
+- Express the threshold-test mask with an explicit elementwise predicate,
+  preserving the selected rows and sum under the compiler's tensor/scalar
+  comparison rules. Record mixed-operand rejection and refresh the example.
+  This repairs coral#33.
+- Final published dependency checks and artifact identities are recorded in
+  `docs/chelis-0.18.8-migration.md` before publication.
+
 ## [0.7.40] - 2026-08-29
 
 Compiler-pin, stdlib-migration, and de-narrowing change set for Chelis

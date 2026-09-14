@@ -1,7 +1,7 @@
-# Chelis 0.18.8 migration
+# Chelis 0.18.9 migration
 
 Coral advances with the C Note dependency chain. The final package requires
-published Chelis 0.18.8 and Nautilus 0.7.44, with the canonical compiler bump
+published Chelis 0.18.9 and Nautilus 0.7.44, with the canonical compiler bump
 and fresh compiler-bound artifacts.
 
 Explicit export enforcement exposes two existing cross-module dependencies:
@@ -25,5 +25,5 @@ and threshold cases, and their negative controls. Sonar records these under
 `g5-coral-column-length-*` / `g5-coral-threshold-*` receipts.
 
 The earlier full suite on published 0.18.7 timed out. It is not acceptance.
-The final published 0.18.8 / Nautilus 0.7.44 full gate and release hashes are
+The final published 0.18.9 / Nautilus 0.7.44 full gate and release hashes are
 pending. Do not publish until this pending marker is replaced by that record.

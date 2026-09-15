@@ -1,6 +1,6 @@
 # Chelis Capability Surface (this shell)
 
-<!-- BEGIN CHELIS MANAGED BLOCK: chelis-surface-header chelis@0.18.9 (sha256:28011bed9ccb5778) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: chelis-surface-header chelis@0.18.10 (sha256:28011bed9ccb5778) -->
 This file is a domain-scoped view of the canonical Chelis capability surface,
 generated for the pinned toolchain. Each capability row is marked `@pin` (usable
 at the current pin) or `@upstream` (lands at the next bump). **Read it before
@@ -14,13 +14,13 @@ in `Chelis-Lang/chelis`.
 
 | Item | Value |
 |---|---|
-| Validated manifest | Coral `0.7.41`; `reef.toml` pins compiler `=0.18.9`, `chelis-std 0.4.0`, and Nautilus `0.7.44`. The regenerated local `reef.lock` binds both dependencies to `=0.18.9`. `chelis reef build` produces CHB SHA-256 `cafd7fac4d66a4b8a1302cbdee63b2c9d711355f2fc42619947a69f7e0cea010` and archive SHA-256 `50c8a61c3a7b0d3a87c979566ec3e38fc14c5d35a38bcf7a4b116249ce5470ee`. The `v0.7.41` release is pending publication, so these are the local gate build outputs and are not yet checked against published `v0.7.41` release assets |
-| Published compiler | official `chelis 0.18.9` at tag commit `abff07b47eadc8d2be633e3a7d21220089befb6f`; Darwin arm64 archive SHA-256 `44e12cf187b37cb6d2a617e1573832a1bdcaa0e1564f59c4029e24081a84905d`; extracted binary SHA-256 `68e460df6e796891fb30c42904b0309b4d5e83d187944222faaaae63241101c7`. This gate ran on the **installed** toolchain payload extracted from that archive at `chelis-v0.18.9-darwin-arm64/bin/chelis`, byte-identical to the archive's `bin/chelis`. Linux glibc-2.31 assets for the same tag, sidecar-verified but exercised by CI rather than this gate run: archive `9aed0afbfc93a96a6804b4c82664869d74815bd27ca824dfeab02088b00ddb63` / binary payload `efe99c09f5d7d7372065206a332a2fd86b8aee77412262b0028cfbdbc98a19f2` (the default for `install-chelis` and the asset `release.yml` names) |
-| Reef dependency | `nautilus 0.7.44`, **published** at source commit `aa50d1c7c911dbebb3f379c0a86b6690b139b9af`. Release assets verified against the sidecar: CHB SHA-256 `58a02e90957bf36cdfa0e995a7c14c397790956b6e6d0bbb060caea2d4b399c1`, archive SHA-256 `8c7a9d79a4fad87340e58bce06525cb2210c3344acf09bca03efe489a16d2bb0`. Installed with `chelis reef install --from-github Chelis-Lang/nautilus@v0.7.44`, the same path CI uses; the cascade validated against the isolated `CHELIS_REEF_HOME` registry while the sibling release was fresh. `describe` and the GroupBy aggregations link against it |
-| Last refreshed | 2026-09-14 |
+| Validated manifest | Coral `0.7.42`; `reef.toml` pins compiler `=0.18.10`, `chelis-std 0.4.0`, and Nautilus `0.7.45`. The regenerated local `reef.lock` binds both dependencies to `=0.18.10`. `chelis reef build` produces CHB SHA-256 `73cd9ed7672de26b264a39eceb96b590067d7b1e04a8076e20e4e8f5d7347157` and archive SHA-256 `fab2d8c5194e270c1979b0be202665762b0cafb55b32e92dbb25ecb0f7e5213a`. The `v0.7.42` release is pending publication, so these are the local gate build outputs and are not yet checked against published `v0.7.42` release assets |
+| Published compiler | official `chelis 0.18.10` at tag commit `b9095ccf2c0b76859aa447c6febe699fd287f1d2` (annotated tag object `e247a5d33cd2df552f57e3efddfd4ea30846b3b8`); Darwin arm64 archive SHA-256 `80c9c5b42a8fbcee6884915df1a4dafb8bcc1cae33199ded060d8b2ebece8bf0`; extracted binary SHA-256 `a6af380886b21761bc2822a814e4fef4232e8b8551922d32bca722cd4e04e1e2`. This gate ran on the **installed** toolchain payload extracted from that archive at `chelis-v0.18.10-darwin-arm64/bin/chelis`, byte-identical to the archive's `bin/chelis`. Linux glibc-2.31 assets for the same tag, sidecar-verified but exercised by CI rather than this gate run: archive `0843697e0a7783e383df0347ae431ae56f62b5a5ae34a7aa72ac37ee91df1e0b` / binary payload `6622e40bc786c562b5b66d370a84e46ded551dee70abfc617a71d026c0119b00` (the default for `install-chelis` and the asset `release.yml` names) |
+| Reef dependency | `nautilus 0.7.45`, **published** at source commit `563f2737c2988eaa05ca1e6ce4e941cf86c296b8` (annotated tag object `f493395f6f07dd8a6afbf148b6cc1b7274947128`). Release assets verified against the sidecar: CHB SHA-256 `b1d55d8cf751e548c5f56a15c3b4f268328139510a9101ab51ae433117134ba4`, archive SHA-256 `4724b7b12ddc468f1db9ff327392d9437611f5f46834fe7e252fcf0db3010536`. Installed with `chelis reef install --from-github Chelis-Lang/nautilus@v0.7.45`, the same path CI uses. `describe` and the GroupBy aggregations link against it |
+| Last refreshed | 2026-09-15 |
 
 `@pin` means the row describes behavior available (or a limitation verified)
-on the exact 0.18.9 / 0.7.44 chain. `@upstream` means the capability
+on the exact 0.18.10 / 0.7.45 chain. `@upstream` means the capability
 is unavailable at that validated pin and must be re-probed before de-narrowing.
 
 This is the Coral-scoped view of the

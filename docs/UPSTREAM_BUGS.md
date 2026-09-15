@@ -167,40 +167,64 @@ every citation in it.
       works. Retire the host-map when the blocked probe reports
       FIX-DETECTED.
 
-- **Nautilus `special.ch` / `distributions.ch` native lowering trips a
-  C-backend by-value scalar liveness regression
-  ([chelis#2068](https://github.com/Chelis-Lang/chelis/issues/2068)).** On the
-  `--target c` lane a by-value scalar argument passed to two or more argument
-  slots of a tail-position user call is wrongly moved, so the later reads see
-  released storage and the native compile fails. It entered the compiler at
-  0.18.7 and is live on the pinned 0.18.9 binary. Nautilus's
-  `special.ch::airy_gg` and `distributions.ch::betacf` both hit it when
-  natively compiled. Coral never calls airy or betacf; the only exposure was in
-  a probe. `scripts/repro_native_nan.py` used to flat-paste
-  `MODULE_PRESETS["frame"]`, which drags the transitive Nautilus
-  `special`/`distributions`/`stats` chain into one native compile purely so the
-  concatenated `frame.ch` would type-check, then lowered the whole program --
-  airy_gg/betacf included -- to C, so the `native float NaN regression` CI step
-  failed even though the NaN mask path never touches those functions.
-    - **Narrowing.** The probe now extracts only Coral's own frame NaN defs
-      (`is_nan`, `any_nan`, `count_nan`, `mask_to_index_list`, and their
-      `zero_i64`/`one_i64` helpers) with the new
-      `repro_multimodule_bare_build.extract_named_defs` and natively compiles
-      that slice alone. No Nautilus special/distributions/stats code reaches the
-      C backend, so chelis#2068 is not exercised.
-    - **chelis#630 guard preserved.** The extracted slice is the exact code
-      chelis#630 narrows: `is_nan`'s per-element `neq(x, x)` scalar host-map.
-      The probe still compile-links-runs it and reads the IEEE-correct NaN
-      observation (`main = 0`); replacing the host-map with a NaN-blind mask or
-      the tensor-`neq` form still makes the probe fail (verified locally on the
-      0.18.9 binary). The blocked half of chelis#630 stays pinned separately by
-      `scripts/repro_native_neq_blocked.py`, which compiles a standalone source
-      and pulls in no Nautilus code.
-    - **Reverts when chelis#2068 is fixed.** Restore the full
-      `MODULE_PRESETS["frame"]` flat-paste in `scripts/repro_native_nan.py` once
-      the C-backend liveness regression is resolved, so the NaN path is again
-      exercised through the same module chain a real consumer's build links.
-      Re-probe: `CHELIS_BIN=<pin> python3 scripts/repro_native_nan.py`.
+- **Nautilus `special.ch` / `distributions.ch` native by-value scalar liveness
+  regression ([chelis#2068](https://github.com/Chelis-Lang/chelis/issues/2068))
+  -- FIXED on 0.18.10.** On the `--target c` lane a by-value scalar argument
+  passed to two or more argument slots of a tail-position user call was wrongly
+  moved, so the later reads saw released storage and the native compile failed.
+  It entered the compiler at 0.18.7 and was live on 0.18.9. Nautilus's
+  `special.ch::airy_gg` and `distributions.ch::betacf` both hit it.
+    - **Fixed on 0.18.10.** Verified with the issue's own minimal repro:
+      `def f3(a: f32, b: f32) -> f32 = add(a, b)` / `def g(x: f32) -> f32 =
+      f3(x, x)` / `def main() -> f32 = g(cast(0.5, f32))`. `chelis build
+      repro.ch --target c` fails on the 0.18.9 darwin binary with `error: owner
+      %1 in `g` b1 is not live` (rc=1) and builds cleanly on the 0.18.10 darwin
+      binary (rc=0). Nautilus 0.7.45's whole-package `chelis reef build` and
+      sealed-artifact contract are green on 0.18.10, exercising `airy_gg`
+      through the real build.
+    - **Probe stays narrowed anyway (see chelis#2097 below).** Restoring the
+      full `MODULE_PRESETS["frame"]` flat-paste in `scripts/repro_native_nan.py`
+      was attempted on 0.18.10 and does not compile -- not because of #2068 (the
+      Nautilus special/distributions/stats chain now lowers without the
+      `is not live` error), but because the full paste surfaces a separate,
+      pre-existing native-C gap in Coral's own `frame.ch` (chelis#2097). The
+      probe therefore remains extracted to Coral's own first-order frame NaN
+      defs, guarding chelis#630.
+
+- **Native-C rejects a direct call that threads a function-value argument
+  ([chelis#2097](https://github.com/Chelis-Lang/chelis/issues/2097)).** On the
+  `--target c` lane the ownership pass rejects a direct call whose ownership
+  signature does not match when a function-value parameter is passed through it:
+  `error: direct call in `<caller>` does not match ownership signature of u<N>`.
+  In Coral this is `frame.ch::list_filter_string`, which threads its
+  `pred: string -> bool` parameter through a direct call to
+  `list_filter_string_acc`. Same diagnostic class as the closed chelis#1732
+  (which covered only the *nullary* direct-call case; the function-value variant
+  was explicitly out of its scope).
+    - **Latent, not a 0.18.10 regression.** Verified with a minimal standalone
+      repro (`list_filter_string` + `list_filter_string_acc` + a trivial nullary
+      `main`, no anonymous `fn` at the call site): `chelis build repro.ch
+      --target c` fails **identically on both the 0.18.9 and 0.18.10 darwin
+      binaries** with `error: direct call in `list_filter_string_acc` does not
+      match ownership signature of u3` (rc=1, deterministic across repeated
+      runs). The full multi-module native-NaN probe never reached this on 0.18.9
+      because chelis#2068 (airy) failed earlier in the concatenated program; the
+      narrowed 0.7.41 probe never included `list_filter_string`. The full frame
+      preset last compiled on 0.18.6.
+    - **chelis#630 guard preserved.** `scripts/repro_native_nan.py` extracts only
+      Coral's own frame NaN defs (`is_nan`, `any_nan`, `count_nan`,
+      `mask_to_index_list`, and their `zero_i64`/`one_i64` helpers) via
+      `repro_multimodule_bare_build.extract_named_defs` and natively
+      compile-links-runs that slice alone, reading the IEEE-correct NaN
+      observation (`main = 0`). None of `list_filter_string`, nor any Nautilus
+      special/distributions/stats code, reaches the C backend in this probe.
+      Coral never calls `list_filter_string` through native-C in any shipping
+      lane (eval and `reef build` are unaffected). Re-probe: `CHELIS_BIN=<pin>
+      python3 scripts/repro_native_nan.py`.
+    - **De-narrows when chelis#2097 is fixed.** Restore the full
+      `MODULE_PRESETS["frame"]` flat-paste once the native-C function-value
+      ownership signature is accepted, so the NaN path is again exercised through
+      the same module chain a real consumer's build links.
 
 - **Native-lane probe harnesses had to change shape for 0.18.6 (no upstream
   defect; recorded here because every re-probe result above depends on it).**

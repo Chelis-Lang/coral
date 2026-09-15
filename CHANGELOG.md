@@ -4,6 +4,63 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.42] - 2026-09-15
+
+Compiler-pin and dependency repin change set for Chelis v0.18.10, the
+2026-09-15 dependency wave consumed by C Note. `chelis reef conform bump
+0.18.10` advances the compiler pin `=0.18.9` -> `=0.18.10` in `reef.toml`, both
+workflow pin mirrors, and the managed blocks in `AGENTS.md` and
+`docs/CHELIS_SURFACE.md`. The Coral package version advances from 0.7.41 to
+0.7.42.
+
+**The Nautilus cascade advances 0.7.44 -> 0.7.45.** Reef enforces exact
+compiler-pin equality on dependencies, so the previous release (declaring
+`=0.18.9`) is refused at coral's `=0.18.10` pin. CI installs the dependency with
+`chelis reef install --from-github Chelis-Lang/nautilus@v0.7.45`. Both Chelis
+v0.18.10 and Nautilus v0.7.45 are published, and the regenerated local
+`reef.lock` binds `nautilus` and `chelis-std 0.4.0` to compiler `=0.18.10`.
+
+**chelis#2068 (native-C airy ownership) is confirmed FIXED on 0.18.10.** 0.18.7
+introduced a native-C ownership/liveness regression where a by-value owned
+scalar passed to two or more argument slots of a user call in tail position was
+wrongly moved; Nautilus's `special.ch::airy_gg` and `distributions.ch::betacf`
+hit it. The issue's own minimal repro (`def g(x) = f3(x, x)`) now builds cleanly
+on 0.18.10 (`chelis build --target c`, rc=0) where it failed on 0.18.9 with
+`error: owner %1 in `g` b1 is not live`. Nautilus 0.7.45's whole-package
+`chelis reef build` and sealed-artifact contract are green on 0.18.10, which
+exercises `airy_gg` through the real build.
+
+**The full multi-module native-NaN probe is NOT restored; it is blocked by a
+separate gap, chelis#2097.** Restoring `scripts/repro_native_nan.py` to its full
+`MODULE_PRESETS["frame"]` form (hamt + Nautilus special/distributions/stats +
+frame) was attempted now that #2068 is fixed, but the full paste does not
+compile — not because of #2068, but because it surfaces a separate, pre-existing
+native-C completeness gap in Coral's own `frame.ch`: `error: direct call in
+`frame__list_filter_string` does not match ownership signature of u226`.
+`list_filter_string` threads a function-value parameter (`pred: string -> bool`)
+through a direct call, which the native-C ownership pass rejects. This is filed
+as [chelis#2097](https://github.com/Chelis-Lang/chelis/issues/2097). It is
+**latent since <= 0.18.6 and fails identically on 0.18.9 and 0.18.10 — not a
+0.18.10 regression** (#2068 previously shadowed it), and is the same diagnostic
+class as the closed chelis#1732 for the function-value-passing variant that
+#1732 did not cover. Coral therefore keeps its native-NaN canary **scoped to its
+own first-order frame-NaN defs** (`zero_i64`, `one_i64`, `is_nan`, `any_nan`,
+`count_nan`, `mask_to_index_list`) exactly as in 0.7.41 — the code chelis#630
+narrows. The narrowed probe compiles, links, runs, and asserts the IEEE-correct
+NaN observation on 0.18.10. Coral never calls `list_filter_string` through
+native-C in any shipping lane.
+
+**Validation status.** Locked against the published toolchain. On the published
+Chelis 0.18.10 Darwin arm64 binary with Nautilus 0.7.45, the native suite and
+`fmt --check`, `lint --check .`, `reef build`, the negative and blocked-probe
+suites, the strict pandas parity gate, `run_static_checks.py`,
+`run_skill_checks.py`, `validate_book_examples.py`, the narrowed `native float
+NaN regression` probe, `reef conform audit`, and `reef conform bump-check
+--base origin/main` are clean. Published hashes and the gate receipt are
+recorded in `docs/chelis-0.18.10-migration.md`. chelis#2068 is recorded as
+fixed and chelis#2097 as the new native-C function-value ownership gap in
+`docs/UPSTREAM_BUGS.md`.
+
 ## [0.7.41] - 2026-09-14
 
 Compiler-pin and package-boundary change set for Chelis v0.18.9, the

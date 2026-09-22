@@ -13,8 +13,8 @@ env:
   PACKAGE_NAME: coral
   # Audit-only mirrors required by the shell contract. The detection step
   # overwrites them from reef.toml before installation.
-  CHELIS_TAG: v0.18.10
-  CHELIS_VERSION: 0.18.10
+  CHELIS_TAG: v0.18.11
+  CHELIS_VERSION: 0.18.11
 
 jobs:
   build-reef-assets:

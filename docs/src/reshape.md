@@ -26,7 +26,7 @@ module Coral.BookReshape
 import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols)
 import Coral.Reshape (melt)
 export (main)
-def main() -> int64 = {
+def main() -> i64 = {
   frame = from_pairs([("city", StringCol(["london", "paris", "oslo"])), ("qty", FloatCol(to_tensor([cast(5.0, f32), cast(6.0, f32), cast(7.0, f32)]))), ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.0, f32), cast(30.0, f32)])))])
   melted = melt(frame, ["city"], ["qty", "price"])
   nrows(melted)

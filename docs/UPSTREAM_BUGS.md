@@ -82,7 +82,7 @@ every citation in it.
 >   (nothing compile-failed) and is promoted to the executed regression
 >   `tests/types.ch`. The **native IEEE** residue is unchanged and keeps
 >   `Coral.Frame.is_nan`'s scalar host-map alive; it now has its own
->   expected-to-fail probe, `scripts/repro_native_neq_blocked.py`.
+>   expected-to-fail probe, `scripts/repro_native_neq.py`.
 > - chelis#849 (block `if`/`else` newline) still blocks under
 >   `chelis test tests_blocked/ --expect blocked` (1 ok).
 > - chelis#741 stays narrowed. Re-probed A/B on the exact binary: a
@@ -135,37 +135,6 @@ every citation in it.
   the tail expression; use `do` for sequencing` rather than `expected Else,
   found Eof`. The `.expect` substring was re-cited to the new wording; the
   block stays blocked and the workaround remains.
-
-- **Float tensor `neq`: one residue left, and it is the native one
-  ([chelis#630](https://github.com/Chelis-Lang/chelis/issues/630)).** Two
-  residues were tracked here; 0.18.6 closes one of them.
-    - **De-narrowed.** The borrowed/borrowed form
-      `neq(lhs: &tensor[n, f32], rhs: &tensor[n, f32])` now checks at
-      `tensor[n, bool]`; through 0.18.5 it selected the f32 overload and the
-      declared signature was rejected. `chelis check` on the pinned probe
-      scores 1.0 with an empty error list, so
-      `tests_blocked/types/tensor_neq_borrowed.ch` reported CONFIG-ERROR
-      (nothing compile-failed) and is promoted, per its own `.expect`
-      instruction, to the executed regression `tests/types.ch`.
-    - **Still blocked.** Native C remains semantically wrong for NaN. For
-      `[NaN, -0.0, 3.5]`, `neq(copy(values), values)` evaluates to
-      `[true, false, false]` under `chelis eval`, while the compiled program
-      reports the NaN lane equal, because generated C derives `neq` from the
-      two ordered `<` comparisons. Measured on the exact 0.18.6 binary as a
-      lane bitmask: eval `1`, native `0`.
-    - **Narrowing retained.** `src/frame.ch` therefore keeps its O(n),
-      IEEE-safe scalar host-map for float masks under `chelis#630`.
-    - **Probes.** `scripts/repro_native_neq_blocked.py` is the
-      expected-to-fail trigger: it compares the two lanes on one source and
-      reports FIX-DETECTED when they agree. It exists because the promotion
-      above removed the only `tests_blocked/` entry this narrowing had, and a
-      retained workaround with no live trigger outlives its bug. The residue
-      is a wrong runtime answer rather than a rejected program, so it cannot
-      live under `tests_blocked/` -- nothing compile-fails.
-      `scripts/repro_native_nan.py` separately compile-links-runs the
-      production mask/drop-core/count/any path and proves the host-map still
-      works. Retire the host-map when the blocked probe reports
-      FIX-DETECTED.
 
 - **Nautilus `special.ch` / `distributions.ch` native by-value scalar liveness
   regression ([chelis#2068](https://github.com/Chelis-Lang/chelis/issues/2068))
@@ -225,6 +194,10 @@ every citation in it.
       `MODULE_PRESETS["frame"]` flat-paste once the native-C function-value
       ownership signature is accepted, so the NaN path is again exercised through
       the same module chain a real consumer's build links.
+    - **0.18.11 re-probe.** Against installed official Chelis 0.18.11 and
+      published Nautilus 0.7.46, all three stripped Frame/GroupBy/Join
+      smokes still fail with the ownership-signature mismatch in
+      `frame__list_filter_string`. The production NaN helper slice passes.
 
 - **Native-lane probe harnesses had to change shape for 0.18.6 (no upstream
   defect; recorded here because every re-probe result above depends on it).**
@@ -388,6 +361,19 @@ every citation in it.
   signals movement** or at the next major coral release, not on patches.
 
 ## Archived
+
+- **Float tensor `neq` native IEEE residue (chelis#630), fixed at the
+  0.18.11 pin.** The installed official compiler reports bitmask 1 for
+  `[NaN, -0.0, 3.5]` self-comparison in both evaluator and native C:
+  only NaN compares unequal. The former expected-failure probe detected
+  the fix and is now the positive `scripts/repro_native_neq.py` regression.
+  Coral's `is_nan` uses direct borrowed tensor `neq(col, col)` instead of
+  a scalar host-map. `scripts/repro_native_nan.py` also passes native
+  mask/drop-core/count/any execution with the new implementation.
+  The borrowed-tensor typing residue was already fixed at 0.18.6 and
+  remains covered by `tests/types.ch`. Full package validation still waits
+  for a compatible Nautilus release; this receipt is dependency-independent.
+
 
 - **`_ = f(x)` marked `x` consumed when `f` destructured a record parameter
   ([chelis#1200](https://github.com/Chelis-Lang/chelis/issues/1200); RESOLVED

@@ -8,8 +8,8 @@ module Coral.BookJoin
 import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, int_col_of_list)
 import Coral.Join (left_join, outer_join)
 export (main)
-def main() -> int64 = {
-  left = from_pairs([("customer", StringCol(["a", "b", "a"])), ("qty", int_col_of_list([cast(1, int64), cast(2, int64), cast(3, int64)]))])
+def main() -> i64 = {
+  left = from_pairs([("customer", StringCol(["a", "b", "a"])), ("qty", int_col_of_list([cast(1, i64), cast(2, i64), cast(3, i64)]))])
   right = from_pairs([("customer", StringCol(["a", "c"])), ("score", FloatCol(to_tensor([cast(10.0, f32), cast(40.0, f32)])))])
   nrows(left_join(left, right, "customer"))
 }

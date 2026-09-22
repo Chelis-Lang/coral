@@ -8,5 +8,5 @@ import Coral.Reshape (pivot, melt, stack, unstack)
 export (smoke)
 def smoke[n](col: tensor[n, f32]) -> tensor[n, f32] = {
   _ = version()
-  rolling_mean(col, cast(2, int64))
+  rolling_mean(col, cast(2, i64))
 }

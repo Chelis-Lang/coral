@@ -176,7 +176,7 @@ def window_program(fixture: dict) -> str:
     expected_values = ", ".join(chelis_float_literal(value) for value in fixture["expected"])
     extent = len(fixture["input"])
     if "window" in fixture:
-        call_body = f'{op}(values, cast({fixture["window"]}, int64))'
+        call_body = f'{op}(values, cast({fixture["window"]}, i64))'
     else:
         call_body = f'{op}(values, cast({fixture["alpha"]!r}, f32))'
     # chelis 0.17.1 regressed block parsing: an `if ... then X` inside a `{ }`
@@ -200,7 +200,7 @@ def rt_approx_eq(actual: f32, expected: f32, abs_tol: f32, rel_tol: f32) -> bool
   lte(diff, bound)
 }}
 
-def rt_float_list_eq(actual: List[f32], expected: List[f32], abs_tol: f32, rel_tol: f32) -> bool = if neq(len(actual), len(expected)) then false else if eq(len(actual), cast(0, int64)) then true else if not(rt_approx_eq(index(actual, cast(0, int64)), index(expected, cast(0, int64)), abs_tol, rel_tol)) then false else rt_float_list_eq(drop(actual, cast(1, int64)), drop(expected, cast(1, int64)), abs_tol, rel_tol)
+def rt_float_list_eq(actual: List[f32], expected: List[f32], abs_tol: f32, rel_tol: f32) -> bool = if neq(len(actual), len(expected)) then false else if eq(len(actual), cast(0, i64)) then true else if not(rt_approx_eq(index(actual, cast(0, i64)), index(expected, cast(0, i64)), abs_tol, rel_tol)) then false else rt_float_list_eq(skip(actual, cast(1, i64)), skip(expected, cast(1, i64)), abs_tol, rel_tol)
 
 def rt_window_call(values: tensor[{extent}, f32]) -> tensor[{extent}, f32] = {call_body}
 
@@ -277,14 +277,14 @@ NEGATIVE_CASES = [
     {
         "name": "nrows_type_mismatch",
         "module_file": "negwrongcol",
-        "desc": "nrows called with int64 instead of Frame — checker reports TypeMismatch",
+        "desc": "nrows called with i64 instead of Frame — checker reports TypeMismatch",
         "expected_fragment": "TypeMismatch",
         "code": """\
 module Coral.NegWrongCol
 import Coral.Frame (nrows)
 export (main)
 def main() -> f32 = {
-  _ = nrows(cast(1, int64))
+  _ = nrows(cast(1, i64))
   cast(0.0, f32)
 }
 """,
@@ -292,14 +292,14 @@ def main() -> f32 = {
     {
         "name": "concat_type_mismatch",
         "module_file": "negtypemismatch",
-        "desc": "concat called with int64 instead of List[Frame] — checker reports TypeMismatch",
+        "desc": "concat called with i64 instead of List[Frame] — checker reports TypeMismatch",
         "expected_fragment": "TypeMismatch",
         "code": """\
 module Coral.NegTypeMismatch
 import Coral.Frame (concat)
 export (main)
 def main() -> f32 = {
-  _ = concat(cast(1, int64))
+  _ = concat(cast(1, i64))
   cast(0.0, f32)
 }
 """,

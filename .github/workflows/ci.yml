@@ -14,10 +14,10 @@ concurrency:
 env:
   # AUTO-SYNC: must match reef.toml. The pin-consistency-guard job
   # below fails immediately if these drift from reef.toml.
-  CHELIS_TAG: v0.18.10
-  CHELIS_VERSION: 0.18.10
-  NAUTILUS_TAG: v0.7.45
-  CORAL_VERSION: 0.7.42
+  CHELIS_TAG: v0.18.11
+  CHELIS_VERSION: 0.18.11
+  NAUTILUS_TAG: v0.7.46
+  CORAL_VERSION: 0.7.43
 
 jobs:
   pin-consistency-guard:
@@ -141,11 +141,8 @@ jobs:
       - name: native full drop remains explicitly blocked
         run: python scripts/repro_native_drop_nan_blocked.py
 
-      # Shell contract §5: src/frame.ch keeps an IEEE-safe scalar host-map for
-      # float NaN masks under chelis#630. This is the FIX-DETECTED trigger that
-      # keeps that narrowing from outliving the bug.
-      - name: native tensor neq remains IEEE-wrong for NaN
-        run: python scripts/repro_native_neq_blocked.py
+      - name: native tensor neq preserves IEEE NaN inequality
+        run: python scripts/repro_native_neq.py
 
   mac-smoke:
     needs: lint

@@ -2,9 +2,9 @@ module Coral.Join
 import Coral.Internal.Hamt (hamt_entries)
 import Coral.Frame (Column, IntCol, FloatCol, StringCol, BoolCol, Frame, KeyValue, KeyIntValue, KeyFloatValue, KeyStringValue, KeyBoolValue, columns, from_pairs, get_column, key_id, key_values, nrows)
 export (inner_join, left_join, outer_join)
-def zero_i64() -> int64 = cast(0, int64)
-def one_i64() -> int64 = cast(1, int64)
-def neg_one_i64() -> int64 = cast(-1, int64)
+def zero_i64() -> i64 = cast(0, i64)
+def one_i64() -> i64 = cast(1, i64)
+def neg_one_i64() -> i64 = cast(-1, i64)
 def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))
 def inner_join[n, m, k](left: Frame[n], right: Frame[m], on: string) -> Frame[k] = build_join(left, right, on, false)
 def left_join[n, m, k](left: Frame[n], right: Frame[m], on: string) -> Frame[k] = build_join(left, right, on, true)
@@ -29,16 +29,16 @@ def key_display(value: KeyValue) -> string =
     | KeyStringValue(v) => v
     | KeyBoolValue(v) => to_string(v)
   }
-def build_outer_key_strs(lkeys: List[KeyValue], rkeys: List[KeyValue], left_rows: List[int64], right_rows: List[int64], acc: List[string]) -> List[string] =
+def build_outer_key_strs(lkeys: List[KeyValue], rkeys: List[KeyValue], left_rows: List[i64], right_rows: List[i64], acc: List[string]) -> List[string] =
   if eq(len(left_rows), zero_i64()) then acc else {
     lr = index(left_rows, zero_i64())
     rr = index(right_rows, zero_i64())
     v = if lt(lr, zero_i64()) then key_display(index(rkeys, rr)) else key_display(index(lkeys, lr))
-    build_outer_key_strs(lkeys, rkeys, drop(left_rows, one_i64()), drop(right_rows, one_i64()), append(acc, v))
+    build_outer_key_strs(lkeys, rkeys, skip(left_rows, one_i64()), skip(right_rows, one_i64()), append(acc, v))
   }
-def assemble_outer_join[n, m, k](left: Frame[n], right: Frame[m], on: string, lkeys: List[KeyValue], rkeys: List[KeyValue], pairs: List[(int64, int64)]) -> Frame[k] = {
-  left_rows = map(fn (pair: (int64, int64)) -> pair.0, pairs)
-  right_rows = map(fn (pair: (int64, int64)) -> pair.1, pairs)
+def assemble_outer_join[n, m, k](left: Frame[n], right: Frame[m], on: string, lkeys: List[KeyValue], rkeys: List[KeyValue], pairs: List[(i64, i64)]) -> Frame[k] = {
+  left_rows = map(fn (pair: (i64, i64)) -> pair.0, pairs)
+  right_rows = map(fn (pair: (i64, i64)) -> pair.1, pairs)
   key_strs = build_outer_key_strs(lkeys, rkeys, left_rows, right_rows, [])
   left_pairs = frame_to_pairs(left)
   left_order = pairs_to_names(left_pairs, [])
@@ -47,9 +47,9 @@ def assemble_outer_join[n, m, k](left: Frame[n], right: Frame[m], on: string, lk
   right_cols = build_outer_right_cols(right_pairs, left_order, on, right_rows, [])
   from_pairs(append_named(left_cols, right_cols))
 }
-def assemble_join[n, m, k](left: Frame[n], right: Frame[m], on: string, pairs: List[(int64, int64)]) -> Frame[k] = {
-  left_rows = map(fn (pair: (int64, int64)) -> pair.0, pairs)
-  right_rows = map(fn (pair: (int64, int64)) -> pair.1, pairs)
+def assemble_join[n, m, k](left: Frame[n], right: Frame[m], on: string, pairs: List[(i64, i64)]) -> Frame[k] = {
+  left_rows = map(fn (pair: (i64, i64)) -> pair.0, pairs)
+  right_rows = map(fn (pair: (i64, i64)) -> pair.1, pairs)
   left_pairs = frame_to_pairs(left)
   left_order = pairs_to_names(left_pairs, [])
   right_pairs = frame_to_pairs(right)
@@ -65,82 +65,82 @@ def reorder_pairs_local[n](pairs: List[(string, Column[n])], order: List[string]
   if eq(len(order), zero_i64()) then acc else {
     name = index(order, zero_i64())
     extracted = extract_pair_local(pairs, name, [])
-    reorder_pairs_local(extracted.1, drop(order, one_i64()), append(acc, (name, extracted.0)))
+    reorder_pairs_local(extracted.1, skip(order, one_i64()), append(acc, (name, extracted.0)))
   }
 def extract_pair_local[n](pairs: List[(string, Column[n])], target: string, acc: List[(string, Column[n])]) -> (Column[n], List[(string, Column[n])]) =
   if eq(len(pairs), zero_i64()) then fail("join: column not found") else {
     head_pair = index(pairs, zero_i64())
-    if eq(head_pair.0, target) then (head_pair.1, drain_pairs_local(drop(pairs, one_i64()), acc)) else extract_pair_local(drop(pairs, one_i64()), target, append(acc, head_pair))
+    if eq(head_pair.0, target) then (head_pair.1, drain_pairs_local(skip(pairs, one_i64()), acc)) else extract_pair_local(skip(pairs, one_i64()), target, append(acc, head_pair))
   }
 def drain_pairs_local[n](src: List[(string, Column[n])], dst: List[(string, Column[n])]) -> List[(string, Column[n])] =
   if eq(len(src), zero_i64()) then dst else {
     hd = index(src, zero_i64())
-    drain_pairs_local(drop(src, one_i64()), append(dst, hd))
+    drain_pairs_local(skip(src, one_i64()), append(dst, hd))
   }
 def pairs_to_names[n](pairs: List[(string, Column[n])], acc: List[string]) -> List[string] =
   if eq(len(pairs), zero_i64()) then acc else {
     hd = index(pairs, zero_i64())
-    pairs_to_names(drop(pairs, one_i64()), append(acc, hd.0))
+    pairs_to_names(skip(pairs, one_i64()), append(acc, hd.0))
   }
-def build_outer_left_cols[n, k](pairs: List[(string, Column[n])], left_order: List[string], on: string, key_strs: List[string], rows: List[int64], acc: List[(string, Column[k])]) -> List[(string, Column[k])] =
+def build_outer_left_cols[n, k](pairs: List[(string, Column[n])], left_order: List[string], on: string, key_strs: List[string], rows: List[i64], acc: List[(string, Column[k])]) -> List[(string, Column[k])] =
   if eq(len(pairs), zero_i64()) then acc else {
     head_pair = index(pairs, zero_i64())
     name = head_pair.0
     next_entry = if eq(name, on) then (name, StringCol(key_strs)) else (name, build_column(head_pair.1, rows, false))
-    build_outer_left_cols(drop(pairs, one_i64()), left_order, on, key_strs, rows, append(acc, next_entry))
+    build_outer_left_cols(skip(pairs, one_i64()), left_order, on, key_strs, rows, append(acc, next_entry))
   }
-def build_outer_right_cols[n, k](pairs: List[(string, Column[n])], left_order: List[string], on: string, rows: List[int64], acc: List[(string, Column[k])]) -> List[(string, Column[k])] =
+def build_outer_right_cols[n, k](pairs: List[(string, Column[n])], left_order: List[string], on: string, rows: List[i64], acc: List[(string, Column[k])]) -> List[(string, Column[k])] =
   if eq(len(pairs), zero_i64()) then acc else {
     head_pair = index(pairs, zero_i64())
     name = head_pair.0
     next_entry = if eq(name, on) then ("", StringCol([])) else (right_name(left_order, name), build_column(head_pair.1, rows, true))
-    build_outer_right_cols(drop(pairs, one_i64()), left_order, on, rows, append(acc, next_entry))
+    build_outer_right_cols(skip(pairs, one_i64()), left_order, on, rows, append(acc, next_entry))
   }
-def build_join_left_cols[n, k](pairs: List[(string, Column[n])], rows: List[int64], acc: List[(string, Column[k])]) -> List[(string, Column[k])] =
+def build_join_left_cols[n, k](pairs: List[(string, Column[n])], rows: List[i64], acc: List[(string, Column[k])]) -> List[(string, Column[k])] =
   if eq(len(pairs), zero_i64()) then acc else {
     head_pair = index(pairs, zero_i64())
     name = head_pair.0
     next_entry = (name, build_column(head_pair.1, rows, false))
-    build_join_left_cols(drop(pairs, one_i64()), rows, append(acc, next_entry))
+    build_join_left_cols(skip(pairs, one_i64()), rows, append(acc, next_entry))
   }
-def right_unmatched_pairs(left_keys: List[KeyValue], right_keys: List[KeyValue], idx: int64, acc: List[(int64, int64)]) -> List[(int64, int64)] =
+def right_unmatched_pairs(left_keys: List[KeyValue], right_keys: List[KeyValue], idx: i64, acc: List[(i64, i64)]) -> List[(i64, i64)] =
   if gte(idx, len(right_keys)) then acc else {
     right_key = index(right_keys, idx)
     matches = matching_rows(left_keys, key_id(right_key), zero_i64(), [])
     if eq(len(matches), zero_i64()) then right_unmatched_pairs(left_keys, right_keys, add(idx, one_i64()), append(acc, (neg_one_i64(), idx))) else right_unmatched_pairs(left_keys, right_keys, add(idx, one_i64()), acc)
   }
 def right_name(left_names: List[string], name: string) -> string = if contains_name(left_names, name) then string_concat(name, "_right") else name
-def join_pairs(left_keys: List[KeyValue], right_keys: List[KeyValue], keep_left: bool, idx: int64, acc: List[(int64, int64)]) -> List[(int64, int64)] =
+def join_pairs(left_keys: List[KeyValue], right_keys: List[KeyValue], keep_left: bool, idx: i64, acc: List[(i64, i64)]) -> List[(i64, i64)] =
   if gte(idx, len(left_keys)) then acc else {
     matches = matching_rows(right_keys, key_id(index(left_keys, idx)), zero_i64(), [])
     next = if eq(len(matches), zero_i64()) then if keep_left then append(acc, (idx, neg_one_i64())) else acc else append_pairs(acc, left_pairs(idx, matches))
     join_pairs(left_keys, right_keys, keep_left, add(idx, one_i64()), next)
   }
-def matching_rows(keys: List[KeyValue], key: string, idx: int64, acc: List[int64]) -> List[int64] =
+def matching_rows(keys: List[KeyValue], key: string, idx: i64, acc: List[i64]) -> List[i64] =
   if gte(idx, len(keys)) then acc else {
     next = if eq(key_id(index(keys, idx)), key) then append(acc, idx) else acc
     matching_rows(keys, key, add(idx, one_i64()), next)
   }
-def left_pairs(left_row: int64, right_rows: List[int64]) -> List[(int64, int64)] = map(fn (right_row: int64) -> (left_row, right_row), right_rows)
-def append_pairs(lhs: List[(int64, int64)], rhs: List[(int64, int64)]) -> List[(int64, int64)] = if eq(len(rhs), zero_i64()) then lhs else append_pairs(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
-def append_named(lhs: List[(string, Column[n])], rhs: List[(string, Column[n])]) -> List[(string, Column[n])] =
+def left_pairs(left_row: i64, right_rows: List[i64]) -> List[(i64, i64)] = map(fn (right_row: i64) -> (left_row, right_row), right_rows)
+def append_pairs(lhs: List[(i64, i64)], rhs: List[(i64, i64)]) -> List[(i64, i64)] = if eq(len(rhs), zero_i64()) then lhs else append_pairs(append(lhs, index(rhs, zero_i64())), skip(rhs, one_i64()))
+def append_named[n](lhs: List[(string, Column[n])], rhs: List[(string, Column[n])]) -> List[(string, Column[n])] =
   if eq(len(rhs), zero_i64()) then lhs else {
     entry = index(rhs, zero_i64())
-    if eq(entry.0, "") then append_named(lhs, drop(rhs, one_i64())) else append_named(append(lhs, entry), drop(rhs, one_i64()))
+    if eq(entry.0, "") then append_named(lhs, skip(rhs, one_i64())) else append_named(append(lhs, entry), skip(rhs, one_i64()))
   }
-def build_column[n, k](col: Column[n], rows: List[int64], allow_missing: bool) -> Column[k] =
+def build_column[n, k](col: Column[n], rows: List[i64], allow_missing: bool) -> Column[k] =
   match col with {
     | IntCol(xs, xmask) => {
     xs_list = to_list(xs)
     xmask_list = to_list(xmask)
-    int_vals = to_tensor(map(fn (row: int64) -> if lt(row, zero_i64()) then cast(0, int64) else index(xs_list, row), rows))
-    mask_ints = to_tensor(map(fn (row: int64) -> if lt(row, zero_i64()) then one_i64() else if index(xmask_list, row) then one_i64() else zero_i64(), rows))
-    mask_zeros = to_tensor(map(fn (row: int64) -> zero_i64(), rows))
+    int_vals = to_tensor(map(fn (row: i64) -> if lt(row, zero_i64()) then cast(0, i64) else index(xs_list, row), rows))
+    mask_ints = to_tensor(map(fn (row: i64) -> if lt(row, zero_i64()) then one_i64() else if index(xmask_list, row) then one_i64() else zero_i64(), rows))
+    mask_zeros = to_tensor(map(fn (row: i64) -> zero_i64(), rows))
     __borrow_migration_out_0 = IntCol(int_vals, neq(mask_ints, mask_zeros))
     __borrow_migration_out_0
   }
-    | FloatCol(xs) => FloatCol(to_tensor(map(fn (row: int64) -> if lt(row, zero_i64()) then nan_f32() else index(to_list(xs), row), rows)))
-    | StringCol(xs) => StringCol(map(fn (row: int64) -> if lt(row, zero_i64()) then "" else index(xs, row), rows))
+    | FloatCol(xs) => FloatCol(to_tensor(map(fn (row: i64) -> if lt(row, zero_i64()) then nan_f32() else index(to_list(xs), row), rows)))
+    | StringCol(xs) => StringCol(map(fn (row: i64) -> if lt(row, zero_i64()) then "" else index(xs, row), rows))
     | BoolCol(xs) => fail("join: bool output columns are not supported yet")
   }
 def contains_name(names: List[string], target: string) -> bool = fold(fn (acc: bool, value: string) -> or(acc, eq(value, target)), false, names)

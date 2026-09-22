@@ -54,8 +54,10 @@ def main() -> int:
             return 1
 
         evaluated = subprocess.run(
-            [CHELIS, "eval", "--file", str(entry)], cwd=workdir,
-            capture_output=True, text=True, timeout=300
+            [CHELIS, "eval", "--file", str(entry)],
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
         if evaluated.returncode != 0:
             print((evaluated.stdout + evaluated.stderr).strip())

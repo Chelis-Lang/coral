@@ -74,7 +74,7 @@ TARGETS = {
         "source": (
             f"module {ENTRY_MODULE}\n"
             "import Coral.Frame (FloatCol, from_pairs, ncols)\n"
-            f"def main() -> int64 = ncols(from_pairs({TWO_COLUMNS}))\n"
+            f"def main() -> i64 = ncols(from_pairs({TWO_COLUMNS}))\n"
         ),
         "expect_build": True,
         "expect_value": 2,
@@ -83,7 +83,7 @@ TARGETS = {
         "source": (
             f"module {ENTRY_MODULE}\n"
             "import Coral.Frame (FloatCol, from_pairs, nrows)\n"
-            f"def main() -> int64 = nrows(from_pairs({TWO_COLUMNS}))\n"
+            f"def main() -> i64 = nrows(from_pairs({TWO_COLUMNS}))\n"
         ),
         "expect_build": False,
         "expect_diagnostic": (

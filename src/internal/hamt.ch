@@ -2,13 +2,13 @@ module Coral.Internal.Hamt
 export (Hamt, hamt_empty, hamt_singleton, hamt_from_pairs, hamt_get, hamt_contains, hamt_put, hamt_remove, hamt_size, hamt_keys, hamt_entries, char_code)
 type Hamt[a] =
   | Empty
-  | Leaf { hash: int64, key: string, value: a }
-  | BitmapNode { bitmap: int64, children: List[Hamt[a]], count: int64 }
-  | Collision { hash: int64, entries: List[(string, a)] }
-def zero_i64() -> int64 = cast(0, int64)
-def one_i64() -> int64 = cast(1, int64)
-def five_i64() -> int64 = cast(5, int64)
-def mask_i64() -> int64 = cast(31, int64)
+  | Leaf { hash: i64, key: string, value: a }
+  | BitmapNode { bitmap: i64, children: List[Hamt[a]], count: i64 }
+  | Collision { hash: i64, entries: List[(string, a)] }
+def zero_i64() -> i64 = cast(0, i64)
+def one_i64() -> i64 = cast(1, i64)
+def five_i64() -> i64 = cast(5, i64)
+def mask_i64() -> i64 = cast(31, i64)
 def hamt_empty[a]() -> Hamt[a] = Empty
 def hamt_singleton[a](key: string, value: a) -> Hamt[a] = hamt_put(hamt_empty(), key, value)
 def hamt_from_pairs[a](pairs: List[(string, a)]) -> Hamt[a] = from_pairs_rec(pairs, hamt_empty())
@@ -25,7 +25,7 @@ def hamt_remove[a](map0: Hamt[a], key: string) -> Hamt[a] = {
   hash = hash_string_local(key)
   remove_h(map0, key, hash, zero_i64())
 }
-def hamt_size[a](map0: Hamt[a]) -> int64 =
+def hamt_size[a](map0: Hamt[a]) -> i64 =
   match map0 with {
     | Empty => zero_i64()
     | Leaf { hash, key, value } => one_i64()
@@ -34,7 +34,7 @@ def hamt_size[a](map0: Hamt[a]) -> int64 =
   }
 def hamt_keys[a](map0: Hamt[a]) -> List[string] = map(fn (entry: (string, a)) -> entry.0, hamt_entries(map0))
 def hamt_entries[a](map0: Hamt[a]) -> List[(string, a)] = entries_h(map0, [])
-def get_h[a](node: Hamt[a], key: string, hash: int64, depth: int64) -> Option[a] =
+def get_h[a](node: Hamt[a], key: string, hash: i64, depth: i64) -> Option[a] =
   match node with {
     | Empty => None
     | Leaf { hash: leaf_hash, key: leaf_key, value: leaf_value } => if leaf_hash |> eq(hash) |> and(eq(leaf_key, key)) then Some(leaf_value) else None
@@ -44,7 +44,7 @@ def get_h[a](node: Hamt[a], key: string, hash: int64, depth: int64) -> Option[a]
     if bitmap |> has_bit(bit) |> not then None else get_h(index(children, index_of(bitmap, bit)), key, hash, add(depth, one_i64()))
   }
   }
-def put_h[a](node: Hamt[a], key: string, value: a, hash: int64, depth: int64) -> Hamt[a] =
+def put_h[a](node: Hamt[a], key: string, value: a, hash: i64, depth: i64) -> Hamt[a] =
   match node with {
     | Empty => Leaf { hash, key, value }
     | Leaf { hash: leaf_hash, key: leaf_key, value: leaf_value } => if leaf_hash |> eq(hash) |> and(eq(leaf_key, key)) then Leaf { hash, key, value } else if eq(leaf_hash, hash) then Collision { hash, entries: collision_put([(leaf_key, leaf_value)], key, value) } else merge_leaves(Leaf { hash: leaf_hash, key: leaf_key, value: leaf_value }, Leaf { hash, key, value }, depth)
@@ -61,7 +61,7 @@ def put_h[a](node: Hamt[a], key: string, value: a, hash: int64, depth: int64) ->
     }
   }
   }
-def remove_h[a](node: Hamt[a], key: string, hash: int64, depth: int64) -> Hamt[a] =
+def remove_h[a](node: Hamt[a], key: string, hash: i64, depth: i64) -> Hamt[a] =
   match node with {
     | Empty => Empty
     | Leaf { hash: leaf_hash, key: leaf_key, value: leaf_value } => if leaf_hash |> eq(hash) |> and(eq(leaf_key, key)) then Empty else node
@@ -91,7 +91,7 @@ def remove_h[a](node: Hamt[a], key: string, hash: int64, depth: int64) -> Hamt[a
     }
   }
   }
-def merge_leaves[a](lhs: Hamt[a], rhs: Hamt[a], depth: int64) -> Hamt[a] = {
+def merge_leaves[a](lhs: Hamt[a], rhs: Hamt[a], depth: i64) -> Hamt[a] = {
   lhs_hash = node_hash(lhs)
   rhs_hash = node_hash(rhs)
   lhs_frag = fragment(lhs_hash, depth)
@@ -104,49 +104,49 @@ def merge_leaves[a](lhs: Hamt[a], rhs: Hamt[a], depth: int64) -> Hamt[a] = {
     if lt(lhs_frag, rhs_frag) then BitmapNode { bitmap: bitor(lhs_bit, rhs_bit), children: [lhs, rhs], count: total } else BitmapNode { bitmap: bitor(lhs_bit, rhs_bit), children: [rhs, lhs], count: total }
   }
 }
-def node_hash[a](node: Hamt[a]) -> int64 =
+def node_hash[a](node: Hamt[a]) -> i64 =
   match node with {
     | Leaf { hash, key, value } => hash
     | Collision { hash, entries } => hash
     | _ => fail("node_hash: expected leaf or collision")
   }
-def fragment(hash: int64, depth: int64) -> int64 = hash |> shr(mul(depth, five_i64())) |> bitand(mask_i64())
-def bitpos(frag: int64) -> int64 = shl(one_i64(), frag)
-def has_bit(bitmap: int64, bit: int64) -> bool = bitmap |> bitand(bit) |> neq(zero_i64())
-def index_of(bitmap: int64, bit: int64) -> int64 = bitmap |> bitand(sub(bit, one_i64())) |> popcount_i64
-def mask_i64_all() -> int64 = cast(-1, int64)
-def popcount_i64(value: int64) -> int64 = if eq(value, zero_i64()) then zero_i64() else add(one_i64(), value |> bitand(sub(value, one_i64())) |> popcount_i64)
-def hash_string_local(text: string) -> int64 = hash_chars(text, zero_i64(), one_i64())
-def hash_chars(text: string, idx: int64, acc: int64) -> int64 =
+def fragment(hash: i64, depth: i64) -> i64 = hash |> shr(mul(depth, five_i64())) |> bitand(mask_i64())
+def bitpos(frag: i64) -> i64 = shl(one_i64(), frag)
+def has_bit(bitmap: i64, bit: i64) -> bool = bitmap |> bitand(bit) |> neq(zero_i64())
+def index_of(bitmap: i64, bit: i64) -> i64 = bitmap |> bitand(sub(bit, one_i64())) |> popcount_i64
+def mask_i64_all() -> i64 = cast(-1, i64)
+def popcount_i64(value: i64) -> i64 = if eq(value, zero_i64()) then zero_i64() else add(one_i64(), value |> bitand(sub(value, one_i64())) |> popcount_i64)
+def hash_string_local(text: string) -> i64 = hash_chars(text, zero_i64(), one_i64())
+def hash_chars(text: string, idx: i64, acc: i64) -> i64 =
   if gte(idx, string_len(text)) then acc else {
     ch = string_slice(text, idx, one_i64())
-    next = mod(add(mul(acc, cast(131, int64)), char_code(ch)), cast(2147483647, int64))
+    next = mod(add(mul(acc, cast(131, i64)), char_code(ch)), cast(2147483647, i64))
     hash_chars(text, add(idx, one_i64()), next)
   }
-def char_code(ch: string) -> int64 = char_index(char_table(), ch, zero_i64())
-def char_index(chars: List[string], target: string, idx: int64) -> int64 =
-  if chars |> len |> eq(zero_i64()) then cast(127, int64) else {
+def char_code(ch: string) -> i64 = char_index(char_table(), ch, zero_i64())
+def char_index(chars: List[string], target: string, idx: i64) -> i64 =
+  if chars |> len |> eq(zero_i64()) then cast(127, i64) else {
     head = index(chars, zero_i64())
-    rest = drop(chars, one_i64())
+    rest = skip(chars, one_i64())
     if eq(head, target) then add(idx, one_i64()) else char_index(rest, target, add(idx, one_i64()))
   }
 def char_table() -> List[string] = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "_", "-", ".", " ", "%", "/", ":", "+", "*", "#", "@"]
 def collision_get[a](entries: List[(string, a)], key: string) -> Option[a] =
   if entries |> len |> eq(zero_i64()) then None else {
     head = index(entries, zero_i64())
-    rest = drop(entries, one_i64())
+    rest = skip(entries, one_i64())
     if eq(head.0, key) then Some(head.1) else collision_get(rest, key)
   }
 def collision_put[a](entries: List[(string, a)], key: string, value: a) -> List[(string, a)] =
   if entries |> len |> eq(zero_i64()) then [(key, value)] else {
     head = index(entries, zero_i64())
-    rest = drop(entries, one_i64())
+    rest = skip(entries, one_i64())
     if eq(head.0, key) then prepend_entry((key, value), rest) else prepend_entry(head, collision_put(rest, key, value))
   }
 def collision_remove[a](entries: List[(string, a)], key: string) -> List[(string, a)] =
   if entries |> len |> eq(zero_i64()) then [] else {
     head = index(entries, zero_i64())
-    rest = drop(entries, one_i64())
+    rest = skip(entries, one_i64())
     if eq(head.0, key) then rest else prepend_entry(head, collision_remove(rest, key))
   }
 def entries_h[a](node: Hamt[a], acc: List[(string, a)]) -> List[(string, a)] =
@@ -159,12 +159,12 @@ def entries_h[a](node: Hamt[a], acc: List[(string, a)]) -> List[(string, a)] =
 def entries_children[a](children: List[Hamt[a]], acc: List[(string, a)]) -> List[(string, a)] =
   if children |> len |> eq(zero_i64()) then acc else {
     hd = index(children, zero_i64())
-    entries_children(drop(children, one_i64()), entries_h(hd, acc))
+    entries_children(skip(children, one_i64()), entries_h(hd, acc))
   }
 def from_pairs_rec[a](pairs: List[(string, a)], acc: Hamt[a]) -> Hamt[a] =
   if pairs |> len |> eq(zero_i64()) then acc else {
     head = index(pairs, zero_i64())
-    rest = drop(pairs, one_i64())
+    rest = skip(pairs, one_i64())
     from_pairs_rec(rest, hamt_put(acc, head.0, head.1))
   }
 def has_value[a](value: Option[a]) -> bool =
@@ -176,23 +176,23 @@ def prepend_node[a](value: Hamt[a], items: List[Hamt[a]]) -> List[Hamt[a]] = pre
 def prepend_node_acc[a](items: List[Hamt[a]], acc: List[Hamt[a]]) -> List[Hamt[a]] =
   if items |> len |> eq(zero_i64()) then acc else {
     hd = index(items, zero_i64())
-    prepend_node_acc(drop(items, one_i64()), append(acc, hd))
+    prepend_node_acc(skip(items, one_i64()), append(acc, hd))
   }
 def prepend_entry[a](value: (string, a), items: List[(string, a)]) -> List[(string, a)] = prepend_entry_acc(items, [value])
 def prepend_entry_acc[a](items: List[(string, a)], acc: List[(string, a)]) -> List[(string, a)] =
   if items |> len |> eq(zero_i64()) then acc else {
     hd = index(items, zero_i64())
-    prepend_entry_acc(drop(items, one_i64()), append(acc, hd))
+    prepend_entry_acc(skip(items, one_i64()), append(acc, hd))
   }
-def append_all_entries[a](lhs: List[(string, a)], rhs: List[(string, a)]) -> List[(string, a)] = if rhs |> len |> eq(zero_i64()) then lhs else append_all_entries(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
-def list_insert_node[a](items: List[Hamt[a]], idx: int64, value: Hamt[a]) -> List[Hamt[a]] = if lte(idx, zero_i64()) then prepend_node(value, items) else if items |> len |> eq(zero_i64()) then [value] else prepend_node(index(items, zero_i64()), list_insert_node(drop(items, one_i64()), sub(idx, one_i64()), value))
-def list_replace_node[a](items: List[Hamt[a]], idx: int64, value: Hamt[a]) -> List[Hamt[a]] =
-  if items |> len |> eq(zero_i64()) then [] else if eq(idx, zero_i64()) then prepend_node(value, drop(items, one_i64())) else {
+def append_all_entries[a](lhs: List[(string, a)], rhs: List[(string, a)]) -> List[(string, a)] = if rhs |> len |> eq(zero_i64()) then lhs else append_all_entries(append(lhs, index(rhs, zero_i64())), skip(rhs, one_i64()))
+def list_insert_node[a](items: List[Hamt[a]], idx: i64, value: Hamt[a]) -> List[Hamt[a]] = if lte(idx, zero_i64()) then prepend_node(value, items) else if items |> len |> eq(zero_i64()) then [value] else prepend_node(index(items, zero_i64()), list_insert_node(skip(items, one_i64()), sub(idx, one_i64()), value))
+def list_replace_node[a](items: List[Hamt[a]], idx: i64, value: Hamt[a]) -> List[Hamt[a]] =
+  if items |> len |> eq(zero_i64()) then [] else if eq(idx, zero_i64()) then prepend_node(value, skip(items, one_i64())) else {
     hd = index(items, zero_i64())
-    prepend_node(hd, list_replace_node(drop(items, one_i64()), sub(idx, one_i64()), value))
+    prepend_node(hd, list_replace_node(skip(items, one_i64()), sub(idx, one_i64()), value))
   }
-def list_remove_node[a](items: List[Hamt[a]], idx: int64) -> List[Hamt[a]] =
-  if items |> len |> eq(zero_i64()) then [] else if eq(idx, zero_i64()) then drop(items, one_i64()) else {
+def list_remove_node[a](items: List[Hamt[a]], idx: i64) -> List[Hamt[a]] =
+  if items |> len |> eq(zero_i64()) then [] else if eq(idx, zero_i64()) then skip(items, one_i64()) else {
     hd = index(items, zero_i64())
-    prepend_node(hd, list_remove_node(drop(items, one_i64()), sub(idx, one_i64())))
+    prepend_node(hd, list_remove_node(skip(items, one_i64()), sub(idx, one_i64())))
   }

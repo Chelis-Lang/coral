@@ -25,7 +25,7 @@ A DataFrame is `Dict[String, Column]` where:
 
 ```chelis
 type Column =
-  | IntCol(tensor[n, int64])
+  | IntCol(tensor[n, i64])
   | FloatCol(tensor[n, f32])
   | StringCol(List[String])
   | BoolCol(tensor[n, bool])

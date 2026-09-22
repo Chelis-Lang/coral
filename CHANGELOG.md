@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+- Prepare Coral 0.7.43 for Chelis 0.18.11 and published Nautilus 0.7.46,
+  including canonical integer dtype spelling and refreshed conformance artifacts.
+  See `docs/chelis_0_18_11_migration.md` for bounded validation and native-C limits.
+- Use direct tensor inequality for float NaN masks after the official compiler
+  passes the evaluator/native IEEE probe; retain positive native regressions.
+- Migrate generated parity/probe programs and executable documentation, align
+  the CI package version, and use lint-conforming migration-note filenames.
+- Declare the missing dimension binder on the internal join `append_named`
+  helper, preserving its existing row-dimension relationship.
+
 ## [0.7.42] - 2026-09-15
 
 Compiler-pin and dependency repin change set for Chelis v0.18.10, the
@@ -57,7 +69,7 @@ suites, the strict pandas parity gate, `run_static_checks.py`,
 `run_skill_checks.py`, `validate_book_examples.py`, the narrowed `native float
 NaN regression` probe, `reef conform audit`, and `reef conform bump-check
 --base origin/main` are clean. Published hashes and the gate receipt are
-recorded in `docs/chelis-0.18.10-migration.md`. chelis#2068 is recorded as
+recorded in `docs/chelis_0_18_10_migration.md`. chelis#2068 is recorded as
 fixed and chelis#2097 as the new native-C function-value ownership gap in
 `docs/UPSTREAM_BUGS.md`.
 
@@ -111,7 +123,7 @@ gate, `run_static_checks.py`, `run_skill_checks.py` (11 of 11),
 diagnostic re-cited for 0.18.9, and the `Coral.Frame.concat` book example now
 stacks two equal-length frames to satisfy 0.18.9's type-level row-count
 tracking. Published hashes and the sonar gate receipt are recorded in
-`docs/chelis-0.18.9-migration.md`. The non-shipping native bare-build
+`docs/chelis_0_18_9_migration.md`. The non-shipping native bare-build
 multimodule probe hits a Nautilus `special__airy_gg` native-lowering error
 under 0.18.9 (the C-backend liveness regression chelis#2068); it is not a
 shipping lane and is not a CI gate. The required `native float NaN regression`

@@ -8,19 +8,19 @@ type ColumnType =
   | StringType
   | BoolType
 type Column[n] =
-  | IntCol(tensor[n, int64], tensor[n, bool])
+  | IntCol(tensor[n, i64], tensor[n, bool])
   | FloatCol(tensor[n, f32])
   | StringCol(List[string])
   | BoolCol(tensor[n, bool])
 type KeyValue =
-  | KeyIntValue(int64)
+  | KeyIntValue(i64)
   | KeyFloatValue(f32)
   | KeyStringValue(string)
   | KeyBoolValue(bool)
 type Frame[n] =
   | Frame { cols: Hamt[Column[n]], col_order: List[string] }
-def zero_i64() -> int64 = cast(0, int64)
-def one_i64() -> int64 = cast(1, int64)
+def zero_i64() -> i64 = cast(0, i64)
+def one_i64() -> i64 = cast(1, i64)
 def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))
 def bool_list_to_tensor[n](values: List[bool]) -> tensor[n, bool] = {
   ints = to_tensor(map(fn (flag: bool) -> if flag then one_i64() else zero_i64(), values))
@@ -28,8 +28,8 @@ def bool_list_to_tensor[n](values: List[bool]) -> tensor[n, bool] = {
   __borrow_migration_out_0 = neq(ints, zeros)
   __borrow_migration_out_0
 }
-def zeros_bool_n[n](template: tensor[n, int64]) -> tensor[n, bool] = bool_list_to_tensor(map(fn (unused: int64) -> false, to_list(template)))
-def int_col_of_list[n](values: List[int64]) -> Column[n] = {
+def zeros_bool_n[n](template: tensor[n, i64]) -> tensor[n, bool] = bool_list_to_tensor(map(fn (unused: i64) -> false, to_list(template)))
+def int_col_of_list[n](values: List[i64]) -> Column[n] = {
   xs = to_tensor(values)
   zm = zeros_bool_n(xs)
   IntCol(xs, zm)
@@ -56,7 +56,7 @@ def get_float_col[n](df: Frame[n], name: string) -> tensor[n, f32] =
     | FloatCol(col) => col
     | _ => fail(string_concat("column is not float: ", name))
   }
-def get_int_col[n](df: Frame[n], name: string) -> tensor[n, int64] =
+def get_int_col[n](df: Frame[n], name: string) -> tensor[n, i64] =
   match get_column(df, name) with {
     | IntCol(col, imask) => col
     | _ => fail(string_concat("column is not int: ", name))
@@ -87,14 +87,14 @@ def column_type[n](df: Frame[n], name: string) -> ColumnType =
     | StringCol(_) => StringType
     | BoolCol(_) => BoolType
   }
-def nrows[n](df: Frame[n]) -> int64 = {
+def nrows[n](df: Frame[n]) -> i64 = {
   names = columns(df)
   if eq(len(names), zero_i64()) then zero_i64() else column_len(get_column(df, index(names, zero_i64())))
 }
-def ncols[n](df: Frame[n]) -> int64 = len(columns(df))
+def ncols[n](df: Frame[n]) -> i64 = len(columns(df))
 def filter[n, k](df: Frame[n], mask: tensor[n, bool]) -> Frame[k] = {
   mask_list = to_list(mask)
-  mask_size = cast(len(mask_list), int64)
+  mask_size = cast(len(mask_list), i64)
   idx_list = mask_to_index_list(enumerate(mask_list), [])
   match df with {
     | Frame { cols, col_order: order } => {
@@ -107,8 +107,8 @@ def filter[n, k](df: Frame[n], mask: tensor[n, bool]) -> Frame[k] = {
   }
   }
 }
-def head[n, k](df: Frame[n], count: int64) -> Frame[k] = slice(df, zero_i64(), int_max(count, zero_i64()))
-def tail[n, k](df: Frame[n], count: int64) -> Frame[k] =
+def head[n, k](df: Frame[n], count: i64) -> Frame[k] = slice(df, zero_i64(), int_max(count, zero_i64()))
+def tail[n, k](df: Frame[n], count: i64) -> Frame[k] =
   match df with {
     | Frame { cols, col_order: order } => {
     pairs = hamt_entries(cols)
@@ -121,15 +121,15 @@ def reorder_column_pairs[n](pairs: List[(string, Column[n])], order: List[string
   if eq(len(order), zero_i64()) then acc else {
     name = index(order, zero_i64())
     matched = extract_named_column(pairs, name, [])
-    reorder_column_pairs(matched.1, drop(order, one_i64()), append(acc, (name, matched.0)))
+    reorder_column_pairs(matched.1, skip(order, one_i64()), append(acc, (name, matched.0)))
   }
 def extract_named_column[n](pairs: List[(string, Column[n])], target: string, acc: List[(string, Column[n])]) -> (Column[n], List[(string, Column[n])]) =
   if eq(len(pairs), zero_i64()) then fail("extract_named_column: name not found") else {
     head_pair = index(pairs, zero_i64())
-    if eq(head_pair.0, target) then (head_pair.1, append_pair_list(acc, drop(pairs, one_i64()))) else extract_named_column(drop(pairs, one_i64()), target, append(acc, head_pair))
+    if eq(head_pair.0, target) then (head_pair.1, append_pair_list(acc, skip(pairs, one_i64()))) else extract_named_column(skip(pairs, one_i64()), target, append(acc, head_pair))
   }
-def append_pair_list[n](lhs: List[(string, Column[n])], rhs: List[(string, Column[n])]) -> List[(string, Column[n])] = if eq(len(rhs), zero_i64()) then lhs else append_pair_list(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
-def column_tail[n, k](col: Column[n], count: int64) -> Column[k] =
+def append_pair_list[n](lhs: List[(string, Column[n])], rhs: List[(string, Column[n])]) -> List[(string, Column[n])] = if eq(len(rhs), zero_i64()) then lhs else append_pair_list(append(lhs, index(rhs, zero_i64())), skip(rhs, one_i64()))
+def column_tail[n, k](col: Column[n], count: i64) -> Column[k] =
   match col with {
     | IntCol(xs, mask) => {
     total = numel(xs)
@@ -137,7 +137,7 @@ def column_tail[n, k](col: Column[n], count: int64) -> Column[k] =
     start = sub(total, kept)
     idx_list = range(start, total)
     idx = to_tensor(idx_list)
-    IntCol(gather(xs, idx, cast(0, int32)), gather(mask, idx, cast(0, int32)))
+    IntCol(gather(xs, idx, cast(0, i32)), gather(mask, idx, cast(0, i32)))
   }
     | FloatCol(xs) => {
     total = numel(xs)
@@ -145,7 +145,7 @@ def column_tail[n, k](col: Column[n], count: int64) -> Column[k] =
     start = sub(total, kept)
     idx_list = range(start, total)
     idx = to_tensor(idx_list)
-    FloatCol(gather(xs, idx, cast(0, int32)))
+    FloatCol(gather(xs, idx, cast(0, i32)))
   }
     | StringCol(xs) => {
     total = len(xs)
@@ -160,10 +160,10 @@ def column_tail[n, k](col: Column[n], count: int64) -> Column[k] =
     start = sub(total, kept)
     idx_list = range(start, total)
     idx = to_tensor(idx_list)
-    BoolCol(gather(xs, idx, cast(0, int32)))
+    BoolCol(gather(xs, idx, cast(0, i32)))
   }
   }
-def slice[n, k](df: Frame[n], start: int64, finish: int64) -> Frame[k] =
+def slice[n, k](df: Frame[n], start: i64, finish: i64) -> Frame[k] =
   match df with {
     | Frame { cols, col_order: order } => {
     pairs = hamt_entries(cols)
@@ -171,7 +171,7 @@ def slice[n, k](df: Frame[n], start: int64, finish: int64) -> Frame[k] =
     from_pairs(reorder_column_pairs(sliced, order, []))
   }
   }
-def slice_column_range[n, k](col: Column[n], start: int64, finish: int64) -> Column[k] =
+def slice_column_range[n, k](col: Column[n], start: i64, finish: i64) -> Column[k] =
   match col with {
     | IntCol(xs, mask) => {
     total = numel(xs)
@@ -180,7 +180,7 @@ def slice_column_range[n, k](col: Column[n], start: int64, finish: int64) -> Col
     if lte(hi, lo) then IntCol(to_tensor([]), bool_list_to_tensor([])) else {
       idx_list = range(lo, hi)
       idx = to_tensor(idx_list)
-      IntCol(gather(xs, idx, cast(0, int32)), gather(mask, idx, cast(0, int32)))
+      IntCol(gather(xs, idx, cast(0, i32)), gather(mask, idx, cast(0, i32)))
     }
   }
     | FloatCol(xs) => {
@@ -190,7 +190,7 @@ def slice_column_range[n, k](col: Column[n], start: int64, finish: int64) -> Col
     if lte(hi, lo) then FloatCol(to_tensor([])) else {
       idx_list = range(lo, hi)
       idx = to_tensor(idx_list)
-      FloatCol(gather(xs, idx, cast(0, int32)))
+      FloatCol(gather(xs, idx, cast(0, i32)))
     }
   }
     | StringCol(xs) => {
@@ -209,29 +209,29 @@ def slice_column_range[n, k](col: Column[n], start: int64, finish: int64) -> Col
     if lte(hi, lo) then BoolCol(bool_list_to_tensor([])) else {
       idx_list = range(lo, hi)
       idx = to_tensor(idx_list)
-      BoolCol(gather(xs, idx, cast(0, int32)))
+      BoolCol(gather(xs, idx, cast(0, i32)))
     }
   }
   }
 def str_char_lt(lch: string, rch: string) -> bool = lt(char_code(lch), char_code(rch))
 def str_lt(lhs: string, rhs: string) -> bool = str_lt_pos(lhs, rhs, zero_i64(), string_len(lhs), string_len(rhs))
-def str_lt_pos(lhs: string, rhs: string, pos: int64, llen: int64, rlen: int64) -> bool =
+def str_lt_pos(lhs: string, rhs: string, pos: i64, llen: i64, rlen: i64) -> bool =
   if eq(pos, llen) then neq(llen, rlen) else if eq(pos, rlen) then false else {
     lch = string_slice(lhs, pos, one_i64())
     rch = string_slice(rhs, pos, one_i64())
     if neq(lch, rch) then str_char_lt(lch, rch) else str_lt_pos(lhs, rhs, add(pos, one_i64()), llen, rlen)
   }
-def append_all_enum_pairs(lhs: List[(int64, string)], rhs: List[(int64, string)]) -> List[(int64, string)] = if eq(len(rhs), zero_i64()) then lhs else append_all_enum_pairs(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
-def enum_pair_insert(xs: List[(int64, string)], pair: (int64, string)) -> List[(int64, string)] = if eq(len(xs), zero_i64()) then [pair] else if str_lt(pair.1, index(xs, zero_i64()).1) then append_all_enum_pairs([pair], xs) else append_all_enum_pairs([index(xs, zero_i64())], enum_pair_insert(drop(xs, one_i64()), pair))
-def enum_insertion_sort(unsorted: List[(int64, string)], acc: List[(int64, string)]) -> List[(int64, string)] =
+def append_all_enum_pairs(lhs: List[(i64, string)], rhs: List[(i64, string)]) -> List[(i64, string)] = if eq(len(rhs), zero_i64()) then lhs else append_all_enum_pairs(append(lhs, index(rhs, zero_i64())), skip(rhs, one_i64()))
+def enum_pair_insert(xs: List[(i64, string)], pair: (i64, string)) -> List[(i64, string)] = if eq(len(xs), zero_i64()) then [pair] else if str_lt(pair.1, index(xs, zero_i64()).1) then append_all_enum_pairs([pair], xs) else append_all_enum_pairs([index(xs, zero_i64())], enum_pair_insert(skip(xs, one_i64()), pair))
+def enum_insertion_sort(unsorted: List[(i64, string)], acc: List[(i64, string)]) -> List[(i64, string)] =
   if eq(len(unsorted), zero_i64()) then acc else {
     hd = index(unsorted, zero_i64())
-    enum_insertion_sort(drop(unsorted, one_i64()), enum_pair_insert(acc, hd))
+    enum_insertion_sort(skip(unsorted, one_i64()), enum_pair_insert(acc, hd))
   }
-def extract_perm_indices(pairs: List[(int64, string)], acc: List[int64]) -> List[int64] =
+def extract_perm_indices(pairs: List[(i64, string)], acc: List[i64]) -> List[i64] =
   if eq(len(pairs), zero_i64()) then acc else {
     hd = index(pairs, zero_i64())
-    extract_perm_indices(drop(pairs, one_i64()), append(acc, hd.0))
+    extract_perm_indices(skip(pairs, one_i64()), append(acc, hd.0))
   }
 def sort_by[n](df: Frame[n], name: string, ascending: bool) -> Frame[n] =
   match df with {
@@ -245,36 +245,36 @@ def sort_by[n](df: Frame[n], name: string, ascending: bool) -> Frame[n] =
     from_pairs(reorder_column_pairs(reindexed, order, []))
   }
   }
-def compute_sort_perm_for[n](pairs: List[(string, Column[n])], name: string, ascending: bool, acc: List[(string, Column[n])]) -> (tensor[n, int64], List[(string, Column[n])]) =
+def compute_sort_perm_for[n](pairs: List[(string, Column[n])], name: string, ascending: bool, acc: List[(string, Column[n])]) -> (tensor[n, i64], List[(string, Column[n])]) =
   if eq(len(pairs), zero_i64()) then fail("sort_by: column not found") else {
     head_pair = index(pairs, zero_i64())
     if eq(head_pair.0, name) then {
       key_pair = perm_from_key_column(head_pair.1, ascending)
       perm = key_pair.0
       key_col_back = key_pair.1
-      next_pairs = append_pair_list(append(acc, (name, key_col_back)), drop(pairs, one_i64()))
+      next_pairs = append_pair_list(append(acc, (name, key_col_back)), skip(pairs, one_i64()))
       (perm, next_pairs)
-    } else compute_sort_perm_for(drop(pairs, one_i64()), name, ascending, append(acc, head_pair))
+    } else compute_sort_perm_for(skip(pairs, one_i64()), name, ascending, append(acc, head_pair))
   }
-def perm_from_key_column[n](col: Column[n], ascending: bool) -> (tensor[n, int64], Column[n]) =
+def perm_from_key_column[n](col: Column[n], ascending: bool) -> (tensor[n, i64], Column[n]) =
   match col with {
     | FloatCol(xs) => {
     xs_list = to_list(xs)
     fresh_tensor = to_tensor(xs_list)
-    perm = orient_perm(sort(fresh_tensor, cast(0, int32)).1, ascending)
+    perm = orient_perm(sort(fresh_tensor, cast(0, i32)).1, ascending)
     (perm, FloatCol(to_tensor(xs_list)))
   }
     | IntCol(xs, mask) => {
     xs_list = to_list(xs)
     mask_list = to_list(mask)
     fresh_tensor = to_tensor(xs_list)
-    perm = orient_perm(sort(fresh_tensor, cast(0, int32)).1, ascending)
+    perm = orient_perm(sort(fresh_tensor, cast(0, i32)).1, ascending)
     (perm, IntCol(to_tensor(xs_list), bool_list_to_tensor(mask_list)))
   }
     | BoolCol(xs) => {
     xs_list = to_list(xs)
     fresh_tensor = to_tensor(map(fn (b: bool) -> if b then one_i64() else zero_i64(), xs_list))
-    perm = orient_perm(sort(fresh_tensor, cast(0, int32)).1, ascending)
+    perm = orient_perm(sort(fresh_tensor, cast(0, i32)).1, ascending)
     (perm, BoolCol(bool_list_to_tensor(xs_list)))
   }
     | StringCol(xs) => {
@@ -283,10 +283,10 @@ def perm_from_key_column[n](col: Column[n], ascending: bool) -> (tensor[n, int64
     (orient_perm(perm, ascending), StringCol(xs))
   }
   }
-def extract_perm_strings(pairs: List[(int64, string)], acc: List[string]) -> List[string] =
+def extract_perm_strings(pairs: List[(i64, string)], acc: List[string]) -> List[string] =
   if eq(len(pairs), zero_i64()) then acc else {
     hd = index(pairs, zero_i64())
-    extract_perm_strings(drop(pairs, one_i64()), append(acc, hd.1))
+    extract_perm_strings(skip(pairs, one_i64()), append(acc, hd.1))
   }
 def with_column[n](df: Frame[n], name: string, col: Column[n]) -> Frame[n] =
   match df with {
@@ -300,7 +300,7 @@ def with_column[n](df: Frame[n], name: string, col: Column[n]) -> Frame[n] =
 def replace_named_column[n](pairs: List[(string, Column[n])], name: string, col: Column[n], acc: List[(string, Column[n])]) -> List[(string, Column[n])] =
   if eq(len(pairs), zero_i64()) then acc else {
     head_pair = index(pairs, zero_i64())
-    if eq(head_pair.0, name) then append_pair_list(append(acc, (name, col)), drop(pairs, one_i64())) else replace_named_column(drop(pairs, one_i64()), name, col, append(acc, head_pair))
+    if eq(head_pair.0, name) then append_pair_list(append(acc, (name, col)), skip(pairs, one_i64())) else replace_named_column(skip(pairs, one_i64()), name, col, append(acc, head_pair))
   }
 def mutate[n](df: Frame[n], name: string, col: Column[n]) -> Frame[n] = with_column(df, name, col)
 def rename[n](df: Frame[n], old_name: string, new_name: string) -> Frame[n] =
@@ -314,9 +314,7 @@ def drop_column[n](df: Frame[n], name: string) -> Frame[n] =
   if not(contains_string(columns(df), name)) then fail(string_concat("drop_column: missing column ", name)) else match df with {
     | Frame { cols, col_order: order } => Frame { cols: hamt_remove(cols, name), col_order: list_filter_string(fn (entry: string) -> neq(entry, name), order) }
   }
--- chelis#630: tensor neq's native C lowering is not IEEE-correct for NaN; keep
--- the scalar host-map path until evaluator and compiled backends agree.
-def is_nan[n](col: &tensor[n, f32]) -> tensor[n, bool] = to_tensor(map(fn (x: f32) -> neq(x, x), to_list(col)))
+def is_nan[n](col: &tensor[n, f32]) -> tensor[n, bool] = neq(col, col)
 def fill_nan[n](col: &tensor[n, f32], value: f32) -> tensor[n, f32] = to_tensor(map(fn (x: f32) -> if neq(x, x) then value else x, to_list(col)))
 def drop_nan[n, k](df: Frame[n], col_name: string) -> Frame[k] = {
   col = get_float_col(df, col_name)
@@ -324,15 +322,15 @@ def drop_nan[n, k](df: Frame[n], col_name: string) -> Frame[k] = {
   filter(df, keep)
 }
 def any_nan[n](col: &tensor[n, f32]) -> bool = fold(fn (acc: bool, flag: bool) -> or(acc, flag), false, to_list(is_nan(col)))
-def count_nan[n](col: &tensor[n, f32]) -> int64 = fold(fn (acc: int64, flag: bool) -> if flag then add(acc, one_i64()) else acc, zero_i64(), to_list(is_nan(col)))
+def count_nan[n](col: &tensor[n, f32]) -> i64 = fold(fn (acc: i64, flag: bool) -> if flag then add(acc, one_i64()) else acc, zero_i64(), to_list(is_nan(col)))
 def is_nan_col[n](df: Frame[n], col_name: string) -> tensor[n, bool] =
   match get_column(df, col_name) with {
     | IntCol(ivals, mask) => mask
     | _ => fail(string_concat("is_nan_col: column is not int: ", col_name))
   }
 def any_nan_col[n](df: Frame[n], col_name: string) -> bool = fold(fn (acc: bool, v: bool) -> or(acc, v), false, to_list(is_nan_col(df, col_name)))
-def count_nan_col[n](df: Frame[n], col_name: string) -> int64 = fold(fn (acc: int64, v: bool) -> if v then add(acc, one_i64()) else acc, zero_i64(), to_list(is_nan_col(df, col_name)))
-def fill_nan_col[n](df: Frame[n], col_name: string, fill_val: int64) -> Frame[n] =
+def count_nan_col[n](df: Frame[n], col_name: string) -> i64 = fold(fn (acc: i64, v: bool) -> if v then add(acc, one_i64()) else acc, zero_i64(), to_list(is_nan_col(df, col_name)))
+def fill_nan_col[n](df: Frame[n], col_name: string, fill_val: i64) -> Frame[n] =
   match get_column(df, col_name) with {
     | IntCol(xs, mask) => {
     filled = to_tensor(fill_int_list(to_list(xs), to_list(mask), fill_val, []))
@@ -341,12 +339,12 @@ def fill_nan_col[n](df: Frame[n], col_name: string, fill_val: int64) -> Frame[n]
   }
     | _ => fail(string_concat("fill_nan_col: column is not int: ", col_name))
   }
-def fill_int_list(values: List[int64], masks: List[bool], fill_val: int64, acc: List[int64]) -> List[int64] =
+def fill_int_list(values: List[i64], masks: List[bool], fill_val: i64, acc: List[i64]) -> List[i64] =
   if eq(len(values), zero_i64()) then acc else {
     v = index(values, zero_i64())
     m = index(masks, zero_i64())
     next = if m then fill_val else v
-    fill_int_list(drop(values, one_i64()), drop(masks, one_i64()), fill_val, append(acc, next))
+    fill_int_list(skip(values, one_i64()), skip(masks, one_i64()), fill_val, append(acc, next))
   }
 def drop_nan_col[n, k](df: Frame[n], col_name: string) -> Frame[k] =
   match get_column(df, col_name) with {
@@ -366,7 +364,7 @@ def concat_with_order_decision[n, k](frames: List[Frame[n]]) -> Frame[k] = {
 def first_frame_columns_or_empty[n](frames: List[Frame[n]]) -> (List[string], List[Frame[n]]) =
   if eq(len(frames), zero_i64()) then ([], []) else {
     head_frame = index(frames, zero_i64())
-    rest = drop(frames, one_i64())
+    rest = skip(frames, one_i64())
     match head_frame with {
       | Frame { cols, col_order: order } => (order, prepend_frame_to_list(Frame { cols, col_order: order }, rest))
     }
@@ -375,7 +373,7 @@ def prepend_frame_to_list[n](first: Frame[n], rest: List[Frame[n]]) -> List[Fram
 def prepend_frame_acc[n](src: List[Frame[n]], acc: List[Frame[n]]) -> List[Frame[n]] =
   if eq(len(src), zero_i64()) then acc else {
     hd = index(src, zero_i64())
-    prepend_frame_acc(drop(src, one_i64()), append(acc, hd))
+    prepend_frame_acc(skip(src, one_i64()), append(acc, hd))
   }
 def describe[n, m](df: Frame[n]) -> Frame[m] =
   match df with {
@@ -392,13 +390,13 @@ def build_describe_pairs[n, m](pairs: List[(string, Column[n])], order: List[str
     name = index(order, zero_i64())
     extracted = extract_pair_for_describe(pairs, name, [])
     next_acc = if is_numeric_column(extracted.0) then append(acc, (name, describe_column(extracted.0))) else discard_describe_column(extracted.0, acc)
-    build_describe_pairs(extracted.1, drop(order, one_i64()), next_acc)
+    build_describe_pairs(extracted.1, skip(order, one_i64()), next_acc)
   }
-def drain_pairs_to_acc[n, m](pairs: List[(string, Column[n])], acc: List[(string, Column[m])]) -> List[(string, Column[m])] = if eq(len(pairs), zero_i64()) then acc else drain_pairs_to_acc(drop(pairs, one_i64()), acc)
+def drain_pairs_to_acc[n, m](pairs: List[(string, Column[n])], acc: List[(string, Column[m])]) -> List[(string, Column[m])] = if eq(len(pairs), zero_i64()) then acc else drain_pairs_to_acc(skip(pairs, one_i64()), acc)
 def extract_pair_for_describe[n](pairs: List[(string, Column[n])], target: string, acc: List[(string, Column[n])]) -> (Column[n], List[(string, Column[n])]) =
   if eq(len(pairs), zero_i64()) then fail("describe: column not found") else {
     head_pair = index(pairs, zero_i64())
-    if eq(head_pair.0, target) then (head_pair.1, append_pair_list(acc, drop(pairs, one_i64()))) else extract_pair_for_describe(drop(pairs, one_i64()), target, append(acc, head_pair))
+    if eq(head_pair.0, target) then (head_pair.1, append_pair_list(acc, skip(pairs, one_i64()))) else extract_pair_for_describe(skip(pairs, one_i64()), target, append(acc, head_pair))
   }
 def is_numeric_column[n](col: Column[n]) -> bool =
   match col with {
@@ -434,7 +432,7 @@ def key_values_to_column_like[m, n](keys: List[KeyValue], template: Column[n]) -
   }, keys))
     | BoolCol(col) => fail("bool regrouping is not supported yet")
   }
-def keys_to_int_col[m](keys: List[KeyValue], vals_acc: List[int64], mask_acc: List[bool]) -> Column[m] =
+def keys_to_int_col[m](keys: List[KeyValue], vals_acc: List[i64], mask_acc: List[bool]) -> Column[m] =
   if eq(len(keys), zero_i64()) then IntCol(to_tensor(vals_acc), bool_list_to_tensor(mask_acc)) else {
     key = index(keys, zero_i64())
     pair = match key with {
@@ -442,7 +440,7 @@ def keys_to_int_col[m](keys: List[KeyValue], vals_acc: List[int64], mask_acc: Li
       | KeyStringValue(s) => (zero_i64(), true)
       | _ => fail("key type mismatch")
     }
-    keys_to_int_col(drop(keys, one_i64()), append(vals_acc, pair.0), append(mask_acc, pair.1))
+    keys_to_int_col(skip(keys, one_i64()), append(vals_acc, pair.0), append(mask_acc, pair.1))
   }
 def empty_column[n](ty: ColumnType) -> Column[n] =
   match ty with {
@@ -451,7 +449,7 @@ def empty_column[n](ty: ColumnType) -> Column[n] =
     | StringType => StringCol([])
     | BoolType => BoolCol(to_tensor([]))
   }
-def column_len[n](col: Column[n]) -> int64 =
+def column_len[n](col: Column[n]) -> i64 =
   match col with {
     | IntCol(xs, lmask) => numel(xs)
     | FloatCol(xs) => numel(xs)
@@ -470,33 +468,33 @@ def names_unique(values: List[string]) -> bool = unique_rec(values, [])
 def unique_rec(values: List[string], seen: List[string]) -> bool =
   if eq(len(values), zero_i64()) then true else {
     current = index(values, zero_i64())
-    if contains_string(seen, current) then false else unique_rec(drop(values, one_i64()), append(seen, current))
+    if contains_string(seen, current) then false else unique_rec(skip(values, one_i64()), append(seen, current))
   }
 def column_lengths_match[n](pairs: List[(string, Column[n])]) -> bool =
   if eq(len(pairs), zero_i64()) then true else {
     first_len = column_len(index(pairs, zero_i64()).1)
-    all_eq_len(drop(pairs, one_i64()), first_len)
+    all_eq_len(skip(pairs, one_i64()), first_len)
   }
-def all_eq_len[n](pairs: List[(string, Column[n])], expected: int64) -> bool =
+def all_eq_len[n](pairs: List[(string, Column[n])], expected: i64) -> bool =
   if eq(len(pairs), zero_i64()) then true else {
     entry = index(pairs, zero_i64())
-    if neq(column_len(entry.1), expected) then false else all_eq_len(drop(pairs, one_i64()), expected)
+    if neq(column_len(entry.1), expected) then false else all_eq_len(skip(pairs, one_i64()), expected)
   }
-def mask_to_index_list(items: List[(int64, bool)], acc: List[int64]) -> List[int64] =
+def mask_to_index_list(items: List[(i64, bool)], acc: List[i64]) -> List[i64] =
   if eq(len(items), zero_i64()) then acc else {
     entry = index(items, zero_i64())
     next = if entry.1 then append(acc, entry.0) else acc
-    mask_to_index_list(drop(items, one_i64()), next)
+    mask_to_index_list(skip(items, one_i64()), next)
   }
-def reindex_column[n, k](col: Column[n], idx_tensor: tensor[k, int64], idx_list: List[int64]) -> Column[k] =
+def reindex_column[n, k](col: Column[n], idx_tensor: tensor[k, i64], idx_list: List[i64]) -> Column[k] =
   match col with {
-    | IntCol(xs, mask) => IntCol(gather(xs, idx_tensor, cast(0, int32)), gather(mask, idx_tensor, cast(0, int32)))
-    | FloatCol(xs) => FloatCol(gather(xs, idx_tensor, cast(0, int32)))
+    | IntCol(xs, mask) => IntCol(gather(xs, idx_tensor, cast(0, i32)), gather(mask, idx_tensor, cast(0, i32)))
+    | FloatCol(xs) => FloatCol(gather(xs, idx_tensor, cast(0, i32)))
     | StringCol(xs) => StringCol(list_gather_string(xs, idx_list))
-    | BoolCol(xs) => BoolCol(gather(xs, idx_tensor, cast(0, int32)))
+    | BoolCol(xs) => BoolCol(gather(xs, idx_tensor, cast(0, i32)))
   }
-def list_gather_string(xs: List[string], idxs: List[int64]) -> List[string] = map(fn (i: int64) -> index(xs, i), idxs)
-def reindex_all[n](df: Frame[n], perm: tensor[n, int64]) -> Frame[n] = {
+def list_gather_string(xs: List[string], idxs: List[i64]) -> List[string] = map(fn (i: i64) -> index(xs, i), idxs)
+def reindex_all[n](df: Frame[n], perm: tensor[n, i64]) -> Frame[n] = {
   perm_list = to_list(perm)
   match df with {
     | Frame { cols, col_order: order } => {
@@ -506,22 +504,22 @@ def reindex_all[n](df: Frame[n], perm: tensor[n, int64]) -> Frame[n] = {
   }
   }
 }
-def orient_perm[n](perm: tensor[n, int64], ascending: bool) -> tensor[n, int64] = if ascending then perm else to_tensor(reverse_ints(to_list(perm), []))
-def reverse_ints(values: List[int64], acc: List[int64]) -> List[int64] =
+def orient_perm[n](perm: tensor[n, i64], ascending: bool) -> tensor[n, i64] = if ascending then perm else to_tensor(reverse_ints(to_list(perm), []))
+def reverse_ints(values: List[i64], acc: List[i64]) -> List[i64] =
   if eq(len(values), zero_i64()) then acc else {
     hd = index(values, zero_i64())
-    append(reverse_ints(drop(values, one_i64()), acc), hd)
+    append(reverse_ints(skip(values, one_i64()), acc), hd)
   }
 def all_same_schema[n](frames: List[Frame[n]], base: Frame[n]) -> bool =
   if eq(len(frames), zero_i64()) then true else {
     current = index(frames, zero_i64())
-    if not(schema_eq(base, current)) then false else all_same_schema(drop(frames, one_i64()), base)
+    if not(schema_eq(base, current)) then false else all_same_schema(skip(frames, one_i64()), base)
   }
 def schema_eq[n](lhs: Frame[n], rhs: Frame[n]) -> bool = if not(string_list_eq(columns(lhs), columns(rhs))) then false else schema_eq_names(columns(lhs), lhs, rhs)
 def schema_eq_names[n](names: List[string], lhs: Frame[n], rhs: Frame[n]) -> bool =
   if eq(len(names), zero_i64()) then true else {
     name = index(names, zero_i64())
-    if not(column_type_eq(column_type(lhs, name), column_type(rhs, name))) then false else schema_eq_names(drop(names, one_i64()), lhs, rhs)
+    if not(column_type_eq(column_type(lhs, name), column_type(rhs, name))) then false else schema_eq_names(skip(names, one_i64()), lhs, rhs)
   }
 def concat_column[n, k](name: string, frames: List[Frame[n]]) -> Column[k] = {
   sample = get_column(index(frames, zero_i64()), name)
@@ -535,7 +533,7 @@ def concat_column[n, k](name: string, frames: List[Frame[n]]) -> Column[k] = {
     | StringCol(col) => StringCol(concat_strings(map(fn (frame: Frame[n]) -> get_string_col(frame, name), frames), []))
     | BoolCol(col) => {
     int_list = concat_int_lists(map(fn (frame: Frame[n]) -> bools_to_ints(to_list(get_bool_col(frame, name))), frames), [])
-    zeros = to_tensor(map(fn (value: int64) -> zero_i64(), int_list))
+    zeros = to_tensor(map(fn (value: i64) -> zero_i64(), int_list))
     ints = to_tensor(int_list)
     __borrow_migration_out_1 = BoolCol(neq(ints, zeros))
     __borrow_migration_out_1
@@ -545,13 +543,13 @@ def concat_column[n, k](name: string, frames: List[Frame[n]]) -> Column[k] = {
 def concat_bool_lists(parts: List[List[bool]], acc: List[bool]) -> List[bool] =
   if eq(len(parts), zero_i64()) then acc else {
     hd = index(parts, zero_i64())
-    concat_bool_lists(drop(parts, one_i64()), append_all_bools(acc, hd))
+    concat_bool_lists(skip(parts, one_i64()), append_all_bools(acc, hd))
   }
-def append_all_bools(lhs: List[bool], rhs: List[bool]) -> List[bool] = if eq(len(rhs), zero_i64()) then lhs else append_all_bools(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
+def append_all_bools(lhs: List[bool], rhs: List[bool]) -> List[bool] = if eq(len(rhs), zero_i64()) then lhs else append_all_bools(append(lhs, index(rhs, zero_i64())), skip(rhs, one_i64()))
 def concat_strings(parts: List[List[string]], acc: List[string]) -> List[string] =
   if eq(len(parts), zero_i64()) then acc else {
     hd = index(parts, zero_i64())
-    concat_strings(drop(parts, one_i64()), append_all_strings(acc, hd))
+    concat_strings(skip(parts, one_i64()), append_all_strings(acc, hd))
   }
 def is_numeric_type(ty: ColumnType) -> bool =
   match ty with {
@@ -588,18 +586,18 @@ def non_nan_values(values: List[f32], acc: List[f32]) -> List[f32] =
   if eq(len(values), zero_i64()) then acc else {
     current = index(values, zero_i64())
     next = if neq(current, current) then acc else append(acc, current)
-    non_nan_values(drop(values, one_i64()), next)
+    non_nan_values(skip(values, one_i64()), next)
   }
-def ints_to_floats[n](values: tensor[n, int64]) -> tensor[n, f32] = to_tensor(map(fn (x: int64) -> cast(x, f32), to_list(values)))
-def ints_masked_to_floats[n](values: tensor[n, int64], mask: tensor[n, bool]) -> tensor[n, f32] = to_tensor(int_mask_to_float_list(to_list(values), to_list(mask), []))
-def int_mask_to_float_list(values: List[int64], masks: List[bool], acc: List[f32]) -> List[f32] =
+def ints_to_floats[n](values: tensor[n, i64]) -> tensor[n, f32] = to_tensor(map(fn (x: i64) -> cast(x, f32), to_list(values)))
+def ints_masked_to_floats[n](values: tensor[n, i64], mask: tensor[n, bool]) -> tensor[n, f32] = to_tensor(int_mask_to_float_list(to_list(values), to_list(mask), []))
+def int_mask_to_float_list(values: List[i64], masks: List[bool], acc: List[f32]) -> List[f32] =
   if eq(len(values), zero_i64()) then acc else {
     v = index(values, zero_i64())
     m = index(masks, zero_i64())
     fv = if m then nan_f32() else cast(v, f32)
-    int_mask_to_float_list(drop(values, one_i64()), drop(masks, one_i64()), append(acc, fv))
+    int_mask_to_float_list(skip(values, one_i64()), skip(masks, one_i64()), append(acc, fv))
   }
-def bools_to_ints(values: List[bool]) -> List[int64] = map(fn (flag: bool) -> if flag then one_i64() else zero_i64(), values)
+def bools_to_ints(values: List[bool]) -> List[i64] = map(fn (flag: bool) -> if flag then one_i64() else zero_i64(), values)
 def column_key_values[n](col: Column[n]) -> List[KeyValue] =
   match col with {
     | IntCol(xs, mask) => map2_int_key(to_list(xs), to_list(mask), [])
@@ -607,30 +605,30 @@ def column_key_values[n](col: Column[n]) -> List[KeyValue] =
     | StringCol(xs) => map(fn (x: string) -> KeyStringValue(x), xs)
     | BoolCol(xs) => map(fn (x: bool) -> KeyBoolValue(x), to_list(xs))
   }
-def map2_int_key(values: List[int64], masks: List[bool], acc: List[KeyValue]) -> List[KeyValue] =
+def map2_int_key(values: List[i64], masks: List[bool], acc: List[KeyValue]) -> List[KeyValue] =
   if eq(len(values), zero_i64()) then acc else {
     v = index(values, zero_i64())
     m = index(masks, zero_i64())
     key = if m then KeyStringValue("NULL") else KeyIntValue(v)
-    map2_int_key(drop(values, one_i64()), drop(masks, one_i64()), append(acc, key))
+    map2_int_key(skip(values, one_i64()), skip(masks, one_i64()), append(acc, key))
   }
-def int_min(lhs: int64, rhs: int64) -> int64 = if lt(lhs, rhs) then lhs else rhs
-def int_max(lhs: int64, rhs: int64) -> int64 = if gt(lhs, rhs) then lhs else rhs
+def int_min(lhs: i64, rhs: i64) -> i64 = if lt(lhs, rhs) then lhs else rhs
+def int_max(lhs: i64, rhs: i64) -> i64 = if gt(lhs, rhs) then lhs else rhs
 def prepend_pair_column[n](value: (string, Column[n]), items: List[(string, Column[n])]) -> List[(string, Column[n])] = prepend_pair_column_acc(items, [value])
 def list_filter_string(pred: string -> bool, items: List[string]) -> List[string] = list_filter_string_acc(pred, items, [])
 def list_filter_string_acc(pred: string -> bool, items: List[string], acc: List[string]) -> List[string] =
   if eq(len(items), zero_i64()) then acc else {
     current = index(items, zero_i64())
     next = if pred(current) then append(acc, current) else acc
-    list_filter_string_acc(pred, drop(items, one_i64()), next)
+    list_filter_string_acc(pred, skip(items, one_i64()), next)
   }
 def string_list_eq(lhs: List[string], rhs: List[string]) -> bool = if neq(len(lhs), len(rhs)) then false else string_list_eq_rec(lhs, rhs)
-def string_list_eq_rec(lhs: List[string], rhs: List[string]) -> bool = if eq(len(lhs), zero_i64()) then true else if neq(index(lhs, zero_i64()), index(rhs, zero_i64())) then false else string_list_eq_rec(drop(lhs, one_i64()), drop(rhs, one_i64()))
+def string_list_eq_rec(lhs: List[string], rhs: List[string]) -> bool = if eq(len(lhs), zero_i64()) then true else if neq(index(lhs, zero_i64()), index(rhs, zero_i64())) then false else string_list_eq_rec(skip(lhs, one_i64()), skip(rhs, one_i64()))
 def replace_name(values: List[string], old_name: string, new_name: string, acc: List[string]) -> List[string] =
   if eq(len(values), zero_i64()) then acc else {
     head = index(values, zero_i64())
     next = if eq(head, old_name) then append(acc, new_name) else append(acc, head)
-    replace_name(drop(values, one_i64()), old_name, new_name, next)
+    replace_name(skip(values, one_i64()), old_name, new_name, next)
   }
 def column_type_eq(lhs: ColumnType, rhs: ColumnType) -> bool =
   match lhs with {
@@ -651,21 +649,21 @@ def column_type_eq(lhs: ColumnType, rhs: ColumnType) -> bool =
     | _ => false
   }
   }
-def append_all_strings(lhs: List[string], rhs: List[string]) -> List[string] = if eq(len(rhs), zero_i64()) then lhs else append_all_strings(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
+def append_all_strings(lhs: List[string], rhs: List[string]) -> List[string] = if eq(len(rhs), zero_i64()) then lhs else append_all_strings(append(lhs, index(rhs, zero_i64())), skip(rhs, one_i64()))
 def prepend_pair_column_acc[n](items: List[(string, Column[n])], acc: List[(string, Column[n])]) -> List[(string, Column[n])] =
   if eq(len(items), zero_i64()) then acc else {
     hd = index(items, zero_i64())
-    prepend_pair_column_acc(drop(items, one_i64()), append(acc, hd))
+    prepend_pair_column_acc(skip(items, one_i64()), append(acc, hd))
   }
-def concat_int_lists(parts: List[List[int64]], acc: List[int64]) -> List[int64] =
+def concat_int_lists(parts: List[List[i64]], acc: List[i64]) -> List[i64] =
   if eq(len(parts), zero_i64()) then acc else {
     hd = index(parts, zero_i64())
-    concat_int_lists(drop(parts, one_i64()), append_all_ints(acc, hd))
+    concat_int_lists(skip(parts, one_i64()), append_all_ints(acc, hd))
   }
-def append_all_ints(lhs: List[int64], rhs: List[int64]) -> List[int64] = if eq(len(rhs), zero_i64()) then lhs else append_all_ints(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
+def append_all_ints(lhs: List[i64], rhs: List[i64]) -> List[i64] = if eq(len(rhs), zero_i64()) then lhs else append_all_ints(append(lhs, index(rhs, zero_i64())), skip(rhs, one_i64()))
 def concat_float_lists(parts: List[List[f32]], acc: List[f32]) -> List[f32] =
   if eq(len(parts), zero_i64()) then acc else {
     hd = index(parts, zero_i64())
-    concat_float_lists(drop(parts, one_i64()), append_all_floats(acc, hd))
+    concat_float_lists(skip(parts, one_i64()), append_all_floats(acc, hd))
   }
-def append_all_floats(lhs: List[f32], rhs: List[f32]) -> List[f32] = if eq(len(rhs), zero_i64()) then lhs else append_all_floats(append(lhs, index(rhs, zero_i64())), drop(rhs, one_i64()))
+def append_all_floats(lhs: List[f32], rhs: List[f32]) -> List[f32] = if eq(len(rhs), zero_i64()) then lhs else append_all_floats(append(lhs, index(rhs, zero_i64())), skip(rhs, one_i64()))

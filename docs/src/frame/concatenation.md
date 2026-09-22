@@ -11,9 +11,9 @@ count `n`; the example below stacks two two-row frames into a four-row result.
 module Coral.BookConcat
 import Coral.Frame (BoolCol, from_pairs, concat, nrows, int_col_of_list)
 export (main)
-def main() -> int64 = {
-  lhs = from_pairs([("id", int_col_of_list([cast(1, int64), cast(2, int64)])), ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(0, int64)]), to_tensor([cast(0, int64), cast(0, int64)]))))])
-  rhs = from_pairs([("id", int_col_of_list([cast(3, int64), cast(4, int64)])), ("flag", BoolCol(neq(to_tensor([cast(1, int64), cast(1, int64)]), to_tensor([cast(0, int64), cast(0, int64)]))))])
+def main() -> i64 = {
+  lhs = from_pairs([("id", int_col_of_list([cast(1, i64), cast(2, i64)])), ("flag", BoolCol(neq(to_tensor([cast(1, i64), cast(0, i64)]), to_tensor([cast(0, i64), cast(0, i64)]))))])
+  rhs = from_pairs([("id", int_col_of_list([cast(3, i64), cast(4, i64)])), ("flag", BoolCol(neq(to_tensor([cast(1, i64), cast(1, i64)]), to_tensor([cast(0, i64), cast(0, i64)]))))])
   nrows(concat([lhs, rhs]))
 }
 ```

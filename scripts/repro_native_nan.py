@@ -10,17 +10,12 @@ effect-free nullary definition, so the verdict is read off the compiled
 program's `main = <value>` observation line rather than its exit status,
 which the emitted entry always sets to zero.
 
-Scope note (chelis#2068): this probe extracts only Coral's own frame NaN
-helpers -- `is_nan` (the chelis#630 scalar host-map), `any_nan`, `count_nan`,
-`mask_to_index_list`, and their `zero_i64`/`one_i64` helpers -- instead of
-flat-pasting `MODULE_PRESETS["frame"]`. The full frame preset would also
-natively compile the transitive Nautilus `special.ch`/`distributions.ch`
-functions (`airy_gg`, `betacf`), which trip the chelis#2068 C-backend liveness
-regression on the `--target c` lane, even though Coral never calls them. The
-extracted slice is the exact code chelis#630 narrows, so the guard is
-unchanged: it still natively compiles `is_nan`'s per-element `neq(x, x)` host
-map and asserts the NaN observation is IEEE-correct. Revert to the full preset
-when chelis#2068 is fixed. See docs/UPSTREAM_BUGS.md.
+Scope: this probe extracts Coral's own frame NaN helpers and their dependencies
+instead of flat-pasting `MODULE_PRESETS["frame"]`. The full preset remains a
+separate package-dependent re-probe (chelis#2097; see docs/UPSTREAM_BUGS.md).
+The 0.18.11 pin makes tensor `neq` IEEE-correct for the tested NaN lanes, so
+`is_nan` now uses it directly. This probe executes the production mask,
+drop-core, count and any paths after native compile-link-run.
 """
 from __future__ import annotations
 
@@ -58,17 +53,17 @@ def main() -> int:
     body += """
 
 def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))
-def main() -> int64 = {
+def main() -> i64 = {
   values = to_tensor([nan_f32(), cast(-0.0, f32), cast(3.5, f32)])
   mask = to_list(frame__is_nan(values))
-  mask_ok = and(index(mask, cast(0, int64)), and(not(index(mask, cast(1, int64))), not(index(mask, cast(2, int64)))))
+  mask_ok = and(index(mask, cast(0, i64)), and(not(index(mask, cast(1, i64))), not(index(mask, cast(2, i64)))))
   any_ok = frame__any_nan(values)
-  count_ok = eq(frame__count_nan(values), cast(1, int64))
+  count_ok = eq(frame__count_nan(values), cast(1, i64))
   keep = not(frame__is_nan(values))
   kept_indices = frame__mask_to_index_list(enumerate(to_list(keep)), [])
-  kept_values = to_list(gather(values, to_tensor(kept_indices), cast(0, int32)))
-  drop_ok = and(eq(len(kept_values), cast(2, int64)), and(eq(index(kept_values, cast(0, int64)), cast(-0.0, f32)), eq(index(kept_values, cast(1, int64)), cast(3.5, f32))))
-  if and(mask_ok, and(any_ok, and(count_ok, drop_ok))) then cast(0, int64) else cast(1, int64)
+  kept_values = to_list(gather(values, to_tensor(kept_indices), cast(0, i32)))
+  drop_ok = and(eq(len(kept_values), cast(2, i64)), and(eq(index(kept_values, cast(0, i64)), cast(-0.0, f32)), eq(index(kept_values, cast(1, i64)), cast(3.5, f32))))
+  if and(mask_ok, and(any_ok, and(count_ok, drop_ok))) then cast(0, i64) else cast(1, i64)
 }
 """
 

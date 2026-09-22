@@ -58,7 +58,7 @@ def main() -> int:
     body += """
 
 def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))
-def main() -> int64 = {
+def main() -> i64 = {
   values = to_tensor([nan_f32(), cast(-0.0, f32), cast(3.5, f32)])
   frame = frame__from_pairs([("value", FloatCol(values))])
   kept = frame__drop_nan(frame, "value")

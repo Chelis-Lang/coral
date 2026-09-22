@@ -1,7 +1,7 @@
 type mismatch:
 
-Assumption: Coral.Frame.nrows takes a Frame, not a scalar. Passing an int64
-must be rejected during checking with a Frame-vs-int64 type mismatch (the pinned
+Assumption: Coral.Frame.nrows takes a Frame, not a scalar. Passing an i64
+must be rejected during checking with a Frame-vs-i64 type mismatch (the pinned
 fragment stays mangle-insensitive: upstream demangles user-facing renderings
 over time, e.g. chelis#399, and the case is narrow enough that any type
 mismatch here is the intended rejection). If the

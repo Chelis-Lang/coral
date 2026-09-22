@@ -5,7 +5,7 @@ to this file so Claude-style and Codex-style entry points do not drift.
 
 ## Repo Identity
 
-<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.18.10 (sha256:758a5eb9aefb5c7e) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.18.11 (sha256:758a5eb9aefb5c7e) -->
 This repository is a downstream **shell** of the Chelis compiler. Its upstream
 of truth is `Chelis-Lang/chelis`: the monorepo `AGENTS.md` applies verbatim
 (machine-local environment sections excepted), and
@@ -19,7 +19,7 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
 
 - Coral is a downstream **shell repo** for the
   [Chelis](https://github.com/Chelis-Lang/chelis) language, scoped to
-  numerical methods, statistics, and optimization.
+  typed dataframes and tabular transformations.
 - Upstream of truth: `Chelis-Lang/chelis`. The Chelis monorepo's
   `AGENTS.md` rules apply here **verbatim** unless explicitly overridden
   below. That contract covers spec-first development, negative-test
@@ -32,36 +32,19 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
 - Coral should track the latest **published and validation-clean**
   Chelis release by default. Treat stale pins as drift, not as a reason
   to stay on an older compiler.
-- `reef.toml` should pin the currently validated release exactly. The
-  `0.7.41` candidate targets `chelis 0.18.9` and `nautilus 0.7.44`; both are
-  pending publication, and the artifact identities below describe the last
-  fully validated chain (0.18.6 / 0.7.43) until
-  `docs/chelis-0.18.9-migration.md` records the published 0.18.9 gate.
-  Chelis 0.18.6 is published at commit
-  `cf49f85bf0d1bca2c87c88a3e459c446912189c0`; its
-  publisher-checksummed Darwin arm64 archive SHA-256 is
-  `08580435570c6fd44716f4d5c64117e973e379808cefeaaa97c8faefa2588f6c`
-  and its extracted binary SHA-256 is
-  `1c88c737d7d3740eb4adbe7b50ea31d29ee64498b9d74b35664255ca16aea8d4`.
-  Validate against the **installed** toolchain, not a from-source build:
-  `chelisup install <version>`, then `chelis +<version> ...` or
-  `$CHELIS_HOME/toolchains/<version>/bin/chelis`. Inside this repo the shim
-  also resolves off `reef.toml`'s `compiler` pin, which is the resolution CI
-  performs.
-  Bumps cascade in dependency order (`nautilus` first, then coral) via the Pin
-  Bump Checklist below — never edit the pin directly on `main`.
-- **Nautilus 0.7.43 is published**, at source commit
-  `7e3451b4977922d0bda80883ba385c7da211fc9e`, and closes the last fully
-  validated chain (0.18.6 / 0.7.43). This candidate's cascade depends on
-  **Nautilus 0.7.44**, which is still pending publication, so the cascade is
-  not yet clear. Reef enforces exact compiler-pin equality on dependencies,
-  which is why the bump order is Nautilus first: the previous release (0.7.43,
-  declaring `=0.18.6`) is refused at coral's `=0.18.9` pin. Resolve the
-  dependency with `chelis reef install --from-github
-  Chelis-Lang/nautilus@v0.7.44`, the same path CI uses. While a sibling
-  release is still outstanding, validate against an artifact built into a
-  registry scoped by `CHELIS_REEF_HOME` rather than the shared one, and treat
-  those hashes as provisional until the release publishes.
+- `reef.toml` pins the candidate exactly: Coral `0.7.43` targets Chelis
+  `0.18.11` with published Nautilus `0.7.46`. Dependency hashes come from
+  the published payload, never a guessed version or locally repacked artifact.
+  [The migration receipt](docs/chelis_0_18_11_migration.md) separates
+  passing package checks from remaining native-C limitations and release gates.
+- Validate against the **installed published** toolchain, not a from-source
+  build: `chelisup install <version>`, then `chelis +<version> ...` or
+  `$CHELIS_HOME/toolchains/<version>/bin/chelis`. The shim also resolves
+  from `reef.toml`'s compiler pin, as CI does.
+- Bumps cascade in dependency order (Nautilus first, then Coral). Resolve
+  the exact published dependency with `chelis reef install --from-github
+  Chelis-Lang/nautilus@v<version>`, the same path CI uses. Regenerate the
+  lock from those published bytes and run the full Pin Bump Checklist.
 - Do not vendor or build the Chelis compiler from source inside this
   repo. Consume the released tarball from the private
   `Chelis-Lang/chelis` releases. CI authenticates via the repo secret

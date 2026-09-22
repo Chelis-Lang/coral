@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import re
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -11,6 +13,21 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReleaseWorkflowTests(unittest.TestCase):
+    def test_ci_version_mirrors_match_manifest(self) -> None:
+        manifest = tomllib.loads((ROOT / "reef.toml").read_text())
+        ci = (ROOT / ".github/workflows/ci.yml").read_text()
+        expected = {
+            "CHELIS_TAG": "v" + manifest["package"]["compiler"].removeprefix("="),
+            "CHELIS_VERSION": manifest["package"]["compiler"].removeprefix("="),
+            "CORAL_VERSION": manifest["package"]["version"],
+            "NAUTILUS_TAG": "v" + manifest["dependencies"]["nautilus"]["version"],
+        }
+        for key, value in expected.items():
+            with self.subTest(key=key):
+                match = re.search(rf"^  {key}: (\S+)$", ci, re.MULTILINE)
+                self.assertIsNotNone(match)
+                self.assertEqual(match.group(1), value)
+
     def test_toolchain_download_is_checksum_verified_and_compatibility_scoped(
         self,
     ) -> None:

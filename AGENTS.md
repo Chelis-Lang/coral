@@ -20,6 +20,11 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
 - Coral is a downstream **shell repo** for the
   [Chelis](https://github.com/Chelis-Lang/chelis) language, scoped to
   typed dataframes and tabular transformations.
+- Intent: a Chelis program should be able to load tabular data, filter,
+  sort, group, join, reshape, and window it, and write it back out, with
+  typed column access and numeric columns stored as Chelis tensors so they
+  flow into the rest of a tensor program. [`spec/scope.md`](spec/scope.md)
+  states the full intent and what is deliberately deferred.
 - Upstream of truth: `Chelis-Lang/chelis`. The Chelis monorepo's
   `AGENTS.md` rules apply here **verbatim** unless explicitly overridden
   below. That contract covers spec-first development, negative-test
@@ -32,19 +37,22 @@ only through a `chelis reef conform bump` PR (never a direct edit to `main`).
 - Coral should track the latest **published and validation-clean**
   Chelis release by default. Treat stale pins as drift, not as a reason
   to stay on an older compiler.
-- `reef.toml` pins the candidate exactly: Coral `0.7.43` targets Chelis
-  `0.18.11` with published Nautilus `0.7.46`. Dependency hashes come from
-  the published payload, never a guessed version or locally repacked artifact.
-  [The migration receipt](docs/chelis_0_18_11_migration.md) separates
-  passing package checks from remaining native-C limitations and release gates.
+- `reef.toml` pins the currently validated published compiler exactly, and
+  the published Nautilus release built for that compiler. Dependency hashes
+  come from the published payload, never a guessed version or a locally
+  repacked artifact.
+- If the latest published Chelis release fails Coral validation, document
+  the blocker in `docs/UPSTREAM_BUGS.md` and pin the newest known-good
+  release until the blocker is resolved.
 - Validate against the **installed published** toolchain, not a from-source
   build: `chelisup install <version>`, then `chelis +<version> ...` or
   `$CHELIS_HOME/toolchains/<version>/bin/chelis`. The shim also resolves
   from `reef.toml`'s compiler pin, as CI does.
-- Bumps cascade in dependency order (Nautilus first, then Coral). Resolve
+- Bumps cascade in dependency order (Nautilus first, then Coral), because
+  Reef requires every dependency to declare the same compiler pin. Resolve
   the exact published dependency with `chelis reef install --from-github
-  Chelis-Lang/nautilus@v<version>`, the same path CI uses. Regenerate the
-  lock from those published bytes and run the full Pin Bump Checklist.
+  Chelis-Lang/nautilus@v<version>`, the same path CI uses, and run the full
+  Pin Bump Checklist.
 - Do not vendor or build the Chelis compiler from source inside this
   repo. Consume the released tarball from the private
   `Chelis-Lang/chelis` releases. CI authenticates via the repo secret
@@ -98,25 +106,40 @@ request, never by editing the pin directly on `main`.
    with `chelis reef conform audit` and
    `chelis reef conform bump-check --base origin/main`.
 
-## Phase Spec
+Record the per-surface re-probe results and any expected unlocks in the bump
+pull request description and a `CHANGELOG.md` entry. Do not check in
+per-version migration documents: the repository describes the current pin,
+and history lives in `CHANGELOG.md`, pull requests, and git.
 
-The owning spec section for this shell is checked in at
-`spec/phase3k.md`, extracted verbatim from the Chelis monorepo's
-`spec/design/chelis_phase3_plan.md`. That file is the source of truth
-for module scope, test plan, and acceptance oracle. Update this repo's
-copy in the same change set as any monorepo-side changes to the
-original section.
+## Scope and Acceptance
+
+[`spec/scope.md`](spec/scope.md) owns Coral's intent, architecture as built,
+acceptance rules, known limitations, and dated deferrals. `SKILL.md` §5 is the
+public API inventory. [`CONTRIBUTING.md`](CONTRIBUTING.md) lists the local gate
+commands. The original Phase 3k design plan lives in the Chelis monorepo
+(`spec/design/chelis_phase3_plan.md` §3k); `spec/scope.md` records where Coral
+as built departs from it.
+
+## Upstream Chelis Bugs
+
+Upstream limitations are tracked in
+[`docs/UPSTREAM_BUGS.md`](docs/UPSTREAM_BUGS.md), with executable reproducers
+under `tests_blocked/` where the harness can express them and Python probes
+under `scripts/` where it cannot. Cite every narrowing by issue number at its
+site, or by a dated deferral in `spec/scope.md`; never describe a limitation by
+prose name alone.
 
 ## Shared Local Skills
 
 Project-local skills live in `agent-skills/`. `.claude/skills` and
 `.codex/skills` are symlinks to that directory so both tool surfaces
 load the same skill library. `.claude/commands/` and `.codex/commands/`
-mirror each other. The shared skill set (`redteam-exec`, `spec-sync`,
-`phase-gate`, `backend-numerics`, `example-corpus`, `cli-surface`) and
-the `red-team` alias wired to `redteam-exec` are copied from the
-monorepo and should stay behaviorally aligned with it. If a skill
-diverges upstream, update this repo in the same change set.
+mirror each other. The complete shared set (`redteam-exec`, `spec-sync`,
+`phase-gate`, `backend-numerics`, `example-corpus`, `cli-surface`,
+`packaging-install`, and `issue-resolution`) is toolchain-owned material,
+regenerated by `chelis reef conform sync`, and stamped in
+`agent-skills/UPSTREAM.toml`; do not edit its managed content as a copied
+fork. Keep the `red-team` alias wired to `redteam-exec`.
 
 ## Scaffolding Drift Rule
 

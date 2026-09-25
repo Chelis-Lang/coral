@@ -2,10 +2,9 @@
 
 ## Float columns
 
-Float NaN values are handled via IEEE 754 semantics (`x != x` is true iff NaN).
-At the 0.18.1 compiler pin, Coral computes the float mask through an O(n)
-scalar host-map because native tensor `neq` is not yet IEEE-correct
-([chelis#630](https://github.com/Chelis-Lang/chelis/issues/630)).
+Float NaN values are handled via IEEE 754 semantics (`x != x` is true iff NaN):
+`is_nan(col)` is the tensor comparison `neq(col, col)`, which is IEEE-correct
+in both the evaluator and native code.
 Note the asymmetry with the column-form helpers below: float helpers operate on
 *tensors* (extract the column with `get_float_col` first), while the `_col`
 helpers take a `Frame` plus a column name.
@@ -19,8 +18,8 @@ helpers take a `Frame` plus a column name.
 ## Integer columns
 
 Integer columns carry an explicit boolean missing-value mask (`true` = missing).
-The mask is propagated through joins (sentinel rows), aggregations (masked rows
-are skipped), and concat. Use the `_col` variants:
+The mask is propagated through joins (sentinel rows) and concat. Sum, mean,
+min, and max aggregations skip masked entries; counts include them. Use the `_col` variants:
 
 - `is_nan_col(df, col_name)` — returns the bool mask tensor
 - `fill_nan_col(df, col_name, fill_val)` — replace masked entries with `fill_val`

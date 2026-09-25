@@ -1,7 +1,8 @@
 # Joins
 
-`Coral.Join` covers `inner_join`, `left_join`, and `outer_join` with string keys.
-The implementation uses host-path equality matching rather than sort-merge ordering.
+`Coral.Join` covers `inner_join`, `left_join`, and `outer_join` on a named key
+column. Keys may be int, float, or string, and are matched by host-side
+equality rather than a sort-merge.
 
 ```chelis
 module Coral.BookJoin
@@ -23,9 +24,14 @@ NaN for left float columns.
 
 Row order: left-sequential traversal first, then right-only rows appended at the end.
 
+`outer_join` returns the key column as a string column whatever the key type,
+so an int key `2` comes back as `"2"`. `inner_join` and `left_join` keep the
+key's type.
+
 ## Semantics notes
 
 - Right-hand key column is suppressed in the output
 - Overlapping right column names are suffixed with `_right`
-- Bool output columns from the joined right side are deferred
+- A bool non-key column in either input frame fails every join at runtime,
+  and a bool key column fails `inner_join` and `left_join`
 - Integer columns from the source frame have their missing-value mask propagated through joins

@@ -128,6 +128,7 @@ def append_named[n](lhs: List[(string, Column[n])], rhs: List[(string, Column[n]
     entry = index(rhs, zero_i64())
     if eq(entry.0, "") then append_named(lhs, skip(rhs, one_i64())) else append_named(append(lhs, entry), skip(rhs, one_i64()))
   }
+-- Bool columns in join inputs are deferred: spec/scope.md Deferrals (D2).
 def build_column[n, k](col: Column[n], rows: List[i64], allow_missing: bool) -> Column[k] =
   match col with {
     | IntCol(xs, xmask) => {

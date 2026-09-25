@@ -1,30 +1,47 @@
 # Pandas Comparison
 
-Coral uses pandas as its behavioral reference for the first validated frame slice.
+Coral uses pandas as its behavioral reference. `parity/gen_goldens.py`
+records pandas results for fixed inputs as JSON goldens under
+`parity/goldens/`, and CI confirms on every change that the goldens still
+match what it derives from pandas. The `outer_join` and `melt` goldens are
+pandas output reordered to Coral's documented row and column order (see the
+deltas below).
 
-Current parity-backed scope:
+Covered by goldens:
 
-- construction from typed pairs
-- boolean-mask filtering
-- `head`, `tail`, and `slice`
-- `rename`, `with_column`, and `drop_column`
-- float-NaN helpers
-- vertical `concat`
-- numeric `describe`
-- `sort_by` on int, float, bool, and string columns
-- single-key `group_by` with `sum` / `mean` / `count` / `min` / `max`
-- string-key `inner_join` and `left_join` for the current supported output slice
-- CSV/JSON read-write expectations for int / float / bool / string columns
-- `rolling_sum`, `rolling_mean`, `rolling_std`, `rolling_min`, `rolling_max`
-- `ewm(alpha, adjust=False)`
+- construction from typed pairs, boolean-mask filtering, `head`, `tail`,
+  `slice`, `rename`, `with_column`, `drop_column`
+- float and integer NaN helpers, vertical `concat`, numeric `describe`,
+  `value_counts`
+- `sort_by` on string columns, ascending and descending
+- single-key `group_by` with `sum`, `mean`, `count`, `min`, `max`, and a
+  multi-aggregation spec
+- `inner_join`, `left_join`, and `outer_join` on a string key
+- CSV and JSON read and write for int, float, bool, and string columns
+- `pivot`, `melt`, `stack`, `unstack`
+- `rolling_sum`, `rolling_mean`, `rolling_std`, `rolling_min`,
+  `rolling_max`, and `ewm(alpha, adjust=False)`
 
-Documented deltas:
+How Coral is checked against them:
 
-- stripped Frame/GroupBy/Join bare builds pass on the official Chelis
-  0.18.1 / Nautilus 0.7.38 chain after chelis#935's nullary generic
-  `Hamt.Empty` lowering fix
-- GroupBy, Join, and IO are currently fixture-backed plus compile-checked
-- Window and Frame both have an executed runtime parity lane; GroupBy, Join, and IO are fixture-backed plus compile-checked
-- Chelis-native correctness lives in `tests/*.ch`
-  (`chelis test tests/ --jobs auto`); pandas comparison work and
-  goldens live in `parity/`
+- `rolling_mean` and `ewm` are compiled to native code, run, and compared
+  with their goldens by `parity/run_parity.py`.
+- For everything else, the native tests in `tests/*.ch` assert
+  hand-computed values for the same behaviors; the goldens are the
+  reference those expectations are written against, not an automated
+  comparison.
+
+Documented deltas from pandas:
+
+- Grouping keeps first-seen key order (pandas `sort=False`), and so does
+  `value_counts`, where pandas sorts by count.
+- `outer_join` row order is left rows in order, then right-only rows; pandas
+  groups the rows by key.
+- `melt` output columns are `variable`, `value`, then the id columns.
+- Missing values: float columns use NaN, integer columns carry a separate
+  mask, and string and bool columns have no missing marker (joins pad
+  unmatched string cells with `""`).
+- `outer_join` returns its key column as strings.
+- Overlapping right-hand column names in a join get a `_right` suffix.
+- `describe` uses the sample standard deviation (`ddof=1`), as pandas does,
+  and skips non-numeric columns.

@@ -1,9 +1,12 @@
 # Rolling And EWM
 
-`Coral.Window` is the first Coral module with a runtime-executed pandas parity
-lane in the checked-in test harness.
+`Coral.Window` computes rolling and exponentially weighted statistics over a
+float tensor. It is the one Coral module compared with pandas by execution:
+`parity/run_parity.py` compiles `rolling_mean` and `ewm` to native code and
+checks their output against pandas goldens. The native tests cover all six
+operations.
 
-Validated operations in the current slice:
+Operations:
 
 - `rolling_sum`
 - `rolling_mean`

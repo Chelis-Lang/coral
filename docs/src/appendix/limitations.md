@@ -1,11 +1,26 @@
 # Limitations
 
-- Parquet I/O is deferred
-- bool-heavy regrouping and join-output paths are still narrower than the numeric and string paths
-- `from_columns` / `empty` column order should not be treated as parity-stable until
-  Coral stops depending on raw `Dict` entry order for those constructors
-- the invalid-C type-collapse and Phase 0e RISC DAG panic that previously blocked
-  stripped Frame/GroupBy/Join bare builds are both fixed as of `chelis v0.1.19`;
-  their trivial-entry module smokes build, link, and run cleanly. Invoked native
-  Frame operations that reconstruct the HAMT, including full `drop_nan`, remain
-  blocked by recursive generic specialization under chelis#941.
+- **Parquet.** `read_parquet_frame` and `write_parquet_frame` fail at runtime
+  until the Chelis standard library implements `Std.Io.Parquet`
+  ([chelis#850](https://github.com/Chelis-Lang/chelis/issues/850)).
+- **Bool columns.** Bool columns cannot be group keys. A bool non-key column
+  fails every join, and a bool key fails `inner_join` and `left_join`.
+- **Multi-aggregation.** `agg` takes each value column at most once
+  ([coral#37](https://github.com/Chelis-Lang/coral/issues/37)), and an
+  `AggCount` spec needs a float or int column
+  ([coral#38](https://github.com/Chelis-Lang/coral/issues/38)).
+- **`outer_join` keys** come back as strings whatever the key type.
+- **Reshape.** `pivot` and `melt` take float value columns and string
+  id/index columns only.
+- **Column order from `from_columns` and `empty`** follows the dictionary's
+  entry order; use `from_pairs` when column order matters.
+- **Native builds.** Coral runs as a Reef package and in the evaluator.
+  Compiling a program that reads `Frame` columns with `chelis build` does not
+  lower yet ([chelis#1226](https://github.com/Chelis-Lang/chelis/issues/1226)).
+- **Wide frames.** Frames with 100 or more columns are slow in the evaluator
+  ([chelis#828](https://github.com/Chelis-Lang/chelis/issues/828)).
+- **Gradients and GPU.** Coral makes no claim that `grad` differentiates
+  through its operations, and no operation is validated on a GPU backend.
+
+The repository's `spec/scope.md` lists every deliberate deferral, and
+`docs/UPSTREAM_BUGS.md` tracks every compiler issue that affects Coral.

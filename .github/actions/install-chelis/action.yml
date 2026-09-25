@@ -44,7 +44,7 @@ runs:
   steps:
     - name: Restore cached chelis toolchain
       id: toolchain-cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: /tmp/chelis-toolchain
         key: chelis-toolchain-sha256-v1-${{ inputs.chelis-tag }}-${{ inputs.platform }}
@@ -88,7 +88,7 @@ runs:
     - name: Restore cached reef registry
       id: reef-cache
       if: inputs.reef-cache-key != ''
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.chelis/reef
         # The chelis tag is part of the key: a registry populated under one

@@ -1,10 +1,13 @@
 # Parked upstream issue drafts
 
-Ready-to-file issue bodies awaiting a stated filing condition.
+This directory holds ready-to-file bodies for upstream Chelis issues that are
+waiting on a stated filing condition, such as isolating a minimal reproducer.
+While a draft is parked, Coral cites it by path
+(`docs/issue_drafts/<file>.md`) at the narrowing site and in
+[`docs/UPSTREAM_BUGS.md`](../UPSTREAM_BUGS.md).
 
-| Draft | Target repository | Filing condition |
-|---|---|---|
-| [`bare_build_unbound_pipe_targets.md`](bare_build_unbound_pipe_targets.md) | `Chelis-Lang/chelis` | Narrow to a minimal reproducer first — single-reference minimal cases are correctly rejected, so file only once the scale/context trigger is isolated |
+No drafts are currently parked.
 
-Before filing, search the upstream tracker for duplicates. After filing, remove
-the draft and replace every path citation with `chelis#NNN` in the same change.
+Before filing a draft, search the upstream tracker for duplicates. After
+filing, delete the draft and replace every citation of its path with the new
+`chelis#NNN` in the same change.

@@ -1,10 +1,12 @@
 # GroupBy
 
-`Coral.GroupBy` currently validates a single-key aggregation slice against
-checked-in pandas goldens. The current implementation uses host-path key
-equality and preserves first-seen key order (`sort=False`-style behavior).
+`Coral.GroupBy` groups a frame by one key column and aggregates the groups.
+Keys are matched by host-side equality and keep first-seen order, like pandas
+with `sort=False`. Key columns may be int, float, or string; bool keys are not
+supported yet. `agg_sum`, `agg_mean`, `agg_min`, and `agg_max` take float or
+int value columns, and masked integer entries are skipped.
 
-Validated operations in the current slice:
+Operations:
 
 - `group_by`
 - `agg_sum`
@@ -12,7 +14,11 @@ Validated operations in the current slice:
 - `agg_count`
 - `agg_min`
 - `agg_max`
-- `agg` for explicit multi-aggregation specs in requested order
+- `agg` for explicit multi-aggregation specs in requested order. Each value
+  column may appear in at most one spec
+  ([coral#37](https://github.com/Chelis-Lang/coral/issues/37)), and an
+  `AggCount` spec needs a float or int column
+  ([coral#38](https://github.com/Chelis-Lang/coral/issues/38))
 - `value_counts` — frequency table for a single column (returns a Frame with the key column and a `"count"` column)
 
 ```chelis
@@ -28,7 +34,6 @@ def main() -> i64 = {
 }
 ```
 
-The honest gate today is fixture-backed plus evaluator-tested. The stripped
-Frame/GroupBy/Join bare probes also build, link, and run on the official
-Chelis 0.18.1 / Nautilus 0.7.38 chain after chelis#935's nullary generic
-`Hamt.Empty` lowering fix.
+The native tests in `tests/groupby.ch` check these operations against
+hand-computed values; `parity/goldens/groupby/` holds the pandas results for
+the same inputs.

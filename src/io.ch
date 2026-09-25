@@ -186,5 +186,6 @@ def bools_to_tensor[n](values: List[bool]) -> tensor[n, bool] = {
   __borrow_migration_out_1 = neq(ints, zeros)
   __borrow_migration_out_1
 }
+-- Parquet stubs: Std.Io.Parquet has no runtime implementation (chelis#850).
 def read_parquet_frame[n](path: string) -> Frame[n] = fail("read_parquet_frame requires Std.Io.Parquet (not in current runtime)")
 def write_parquet_frame[n](df: Frame[n], path: string) -> string = fail("write_parquet_frame requires Std.Io.Parquet (not in current runtime)")

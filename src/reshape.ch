@@ -27,6 +27,7 @@ def pivot_add_columns[m](out: Frame[m], col_keys: List[string], index_keys: List
     next = with_column(out, ck, new_col)
     pivot_add_columns(next, skip(col_keys, one_i64()), index_keys, col_vals, value_vals, index_vals, row_count)
   }
+-- pivot and melt column types are restricted: spec/scope.md Deferrals (D4).
 def pivot[n, m](df: Frame[n], index_col: string, columns_col: string, values_col: string) -> Frame[m] =
   match df with {
     | Frame { cols, col_order: order } => {

@@ -50,7 +50,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         seal = release.index("sha256sum \\\n")
         second_build = release.index("chelis reef build", seal)
         verify = release.index("sha256sum -c", second_build)
-        publish = release.index("uses: softprops/action-gh-release@v2")
+        publish = release.index("uses: softprops/action-gh-release@v3")
         self.assertLess(first_build, seal)
         self.assertLess(seal, second_build)
         self.assertLess(second_build, verify)

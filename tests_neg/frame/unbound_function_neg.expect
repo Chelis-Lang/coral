@@ -1,8 +1,4 @@
 unbound variable: coral_function_that_does_not_exist
 
 Assumption: a call to a name that is neither imported nor defined must be
-rejected during checking as an unbound variable. This also pins the checker
-behavior the bare-build triage probe relies on (see docs/UPSTREAM_BUGS.md
-§Tracking, unbound `|>` pipe targets entry: large-concat admission of unbound
-names is a known unnarrowed anomaly — a single unbound reference like this one
-must always be rejected).
+rejected during checking as an unbound variable.

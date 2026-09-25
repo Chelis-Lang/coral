@@ -1,20 +1,16 @@
 # Reshape
 
 `Coral.Reshape` provides wide-to-long and long-to-wide transformations on
-`Frame` values. All four operations are evaluator-tested on the 0.18.1
-release line. The stripped bare-C Frame/GroupBy/Join gates pass on the
-official release after the chelis#935 fix with a trivial entrypoint. They are
-module/lowering smokes, not proof that invoked recursive generic Frame APIs
-compile; full native Frame reconstruction remains blocked by chelis#941.
+`Frame` values.
 
-Validated operations in the current slice:
+Operations:
 
 - `melt` — wide to long: repeat id columns, pivot value columns into `variable`/`value` rows
 - `pivot` — long to wide: unique values of `columns_col` become new column names
 - `stack` — thin shim: `melt` with no id columns, all columns as value columns
 - `unstack` — thin shim: `pivot` on a stacked frame given an explicit index column
 
-v0.1 constraints:
+Constraints:
 
 - `values_col` for `pivot` must be `FloatCol`; other types fail with a runtime error.
 - `value_cols` for `melt` must all be `FloatCol`.
@@ -36,6 +32,5 @@ def main() -> i64 = {
 The output frame has columns `variable`, `value`, and `city` with
 `nrows = 3 * 2 = 6` (one row per original row per value column).
 
-The honest gate today is fixture-backed plus compile-checked. A full
-executed runtime parity lane for Reshape will follow when the bare-build
-harness is extended to cover multi-column frames.
+The native tests in `tests/reshape.ch` check these operations;
+`parity/goldens/reshape/` holds the pandas results for the same inputs.

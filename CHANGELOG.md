@@ -6,9 +6,49 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+Public-release cleanup. No change to any public function's behavior.
+
+- Documentation now describes the current pin instead of carrying
+  per-version receipts. Removed the per-version migration notes
+  (`docs/chelis_0_18_{9,10,11}_migration.md`), `docs/status.md`,
+  `docs/maintenance_schedule.md`, `docs/testing_cutover_0.7.6.json`, and the
+  unused `deps/chelis-std-0.2.0.tar.zst`. History stays in this file, pull
+  requests, and git.
+- `spec/phase3k.md`, a copy of the monorepo's Phase 3k plan that had drifted
+  from both the monorepo and the implementation, is replaced by
+  `spec/scope.md`: intent, architecture as built, departures from the plan,
+  acceptance rules, known limitations, and dated deferrals D1-D9. Narrowing
+  sites in `src/` cite their deferral or upstream issue.
+- Rewrote `README.md`, `AGENTS.md`, `SKILL.md` §4-5, `docs/UPSTREAM_BUGS.md`,
+  `docs/CHELIS_SURFACE.md`, `docs/releases.md`, and the book's installation,
+  GroupBy, Join, IO, Window, Reshape, and appendix pages. Corrected claims
+  that no longer held: that stripped native builds are clean (chelis#2097
+  blocks them), that `Coral.Frame` has an executed pandas parity lane (only
+  Window's `rolling_mean` and `ewm` do), and that `is_nan` uses a scalar
+  host-map. Added `CONTRIBUTING.md`.
+- Re-probed every upstream entry on 0.18.11. Archived chelis#849 (fixed; its
+  blocked probe had drifted onto the intended one-expression-block rule) and
+  chelis#405 (scalar `grad` builds natively). chelis#741 now fails in the
+  evaluator as well as `chelis build` and has a mechanical blocked probe,
+  `tests_blocked/lowering/gather_axis_helper.ch`. Re-measured chelis#828: a
+  100-column frame plus one `with_column` takes about 164 s in `chelis test`.
+- Retired the parked issue draft for unbound `|>` pipe targets without filing
+  it: its original reproducer is correctly rejected on 0.18.11.
+- `scripts/repro_multimodule_bare_build.py` is now an expected-failure probe
+  for chelis#2097 and reports FIX-DETECTED when the smokes build again.
+- Added native tests for multi-aggregation `agg` against the
+  `agg_multi_city` golden and an int-key configuration. Filed coral#37 (a
+  repeated value column fails) and coral#38 (`AggCount` rejects string and
+  bool columns).
+- CI actions move to their Node 24 majors: `actions/checkout@v6`,
+  `actions/cache@v5`, `softprops/action-gh-release@v3`.
+
+## [0.7.43] - 2026-09-22
+
 - Prepare Coral 0.7.43 for Chelis 0.18.11 and published Nautilus 0.7.46,
   including canonical integer dtype spelling and refreshed conformance artifacts.
-  See `docs/chelis_0_18_11_migration.md` for bounded validation and native-C limits.
+  Validation and native-C limits are recorded in the release pull request
+  (#36).
 - Use direct tensor inequality for float NaN masks after the official compiler
   passes the evaluator/native IEEE probe; retain positive native regressions.
 - Migrate generated parity/probe programs and executable documentation, align

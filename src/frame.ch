@@ -129,6 +129,7 @@ def extract_named_column[n](pairs: List[(string, Column[n])], target: string, ac
     if eq(head_pair.0, target) then (head_pair.1, append_pair_list(acc, skip(pairs, one_i64()))) else extract_named_column(skip(pairs, one_i64()), target, append(acc, head_pair))
   }
 def append_pair_list[n](lhs: List[(string, Column[n])], rhs: List[(string, Column[n])]) -> List[(string, Column[n])] = if eq(len(rhs), zero_i64()) then lhs else append_pair_list(append(lhs, index(rhs, zero_i64())), skip(rhs, one_i64()))
+-- gather/sort axes are written inline as cast(0, i32), not through a helper (chelis#741).
 def column_tail[n, k](col: Column[n], count: i64) -> Column[k] =
   match col with {
     | IntCol(xs, mask) => {
@@ -419,6 +420,7 @@ def key_id(value: KeyValue) -> string =
     | KeyBoolValue(v) => string_concat("b:", to_string(v))
   }
 def key_values[n](df: Frame[n], name: string) -> List[KeyValue] = column_key_values(get_column(df, name))
+-- Bool group keys are deferred: spec/scope.md Deferrals (D1).
 def key_values_to_column_like[m, n](keys: List[KeyValue], template: Column[n]) -> Column[m] =
   match template with {
     | IntCol(col, ktmpl) => keys_to_int_col(keys, [], [])

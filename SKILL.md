@@ -171,32 +171,71 @@ def main() -> i64 = {
 
 ## 4. Gotchas
 
-- Integer columns use a two-field `IntCol(values, bool_mask)` representation; always use
-  `int_col_of_list([...])` to construct int columns — never `IntCol(to_tensor([...]))` directly.
-- Integer NaN uses `_col` suffix helpers (column-form variants taking a Frame +
-  column name): `fill_nan_col`, `drop_nan_col`, `is_nan_col`, `any_nan_col`,
-  `count_nan_col`. Float NaN uses the non-suffixed versions (operate on tensors).
-- Prefer mask-first filtering over scalar predicate helpers.
-- String grouping and joins use host-path equality logic (not sort-merge).
-- String `sort_by` is supported and golden-validated: lexicographic ascending and descending, with runtime parity for the insertion sort and comparison path.
-- `outer_join` row order: left-sequential first, then right-only rows appended.
-- `melt` is column-major: all rows for value_col[0] appear before value_col[1].
-- Parquet is upstream-blocked (`import Std.Io.Parquet` resolves at check time through the current release pin, but the runtime path is still not callable; functions intentionally fail).
-- `describe` skips NaN for float columns and masked entries for int columns; uses sample std (`ddof=1`).
-- `Coral.Window` and `Coral.Frame` both have an executed runtime parity lane: pandas goldens + runtime build/link/execute lane (in `parity/run_parity.py`). GroupBy, Join, and IO are fixture-backed plus compile-checked.
-- Stripped Frame/GroupBy/Join bare builds are clean on the official Chelis
-  0.18.1 / Nautilus 0.7.38 chain after chelis#935.
-- The 80 tests in `tests/*.ch` run via `chelis test tests/ --jobs auto` and assert mathematical identities, hand-computed values, structural properties, and round-trip identities. Pandas comparison work lives in `parity/`.
-- Tensor comparison operands require matching shapes. To compare a column with a scalar threshold, map the scalar predicate over its elements and convert the resulting boolean list to a tensor. The threshold-filter test retains three rows with sum 600; a negative fixture rejects direct `gt(tensor, scalar)`.
+- Integer columns use a two-field `IntCol(values, missing_mask)` representation;
+  always construct them with `int_col_of_list([...])`, never
+  `IntCol(to_tensor([...]))` directly.
+- Integer missing values use the `_col` helpers, which take a Frame and a
+  column name: `fill_nan_col`, `drop_nan_col`, `is_nan_col`, `any_nan_col`,
+  `count_nan_col`. Float NaN uses the unsuffixed helpers, which take the float
+  tensor from `get_float_col` (`drop_nan` takes a Frame and column name).
+- Filtering is mask-first: build a `tensor[n, bool]` mask, then call
+  `filter(df, mask)`.
+- Tensor comparison operands must have matching shapes. To compare a column
+  with a scalar threshold, map the scalar predicate over the column's
+  elements and convert the resulting bool list to a tensor; a direct
+  `gt(tensor, scalar)` is rejected (`tests_neg/frame/tensor_scalar_gt_neg.ch`).
+- Grouping and joins match keys by host-side equality and keep first-seen key
+  order (pandas `sort=False`). Keys may be int, float, or string columns.
+- `agg` takes each value column at most once (coral#37), and its `AggCount`
+  spec needs a float or int column (coral#38); use `agg_count` or
+  `value_counts` for plain row counts.
+- Bool columns are not supported as group keys. A bool non-key column fails
+  every join, and a bool key fails `inner_join` and `left_join`
+  (`spec/scope.md` deferrals D1 and D2).
+- `outer_join` row order: matched and left-only rows in left order, then
+  right-only rows appended. Its key column comes back as strings whatever the
+  key type (deferral D9); `inner_join` and `left_join` keep the key type.
+- Overlapping right-hand column names in a join get a `_right` suffix.
+- `melt` is column-major: all rows for `value_cols[0]` come before
+  `value_cols[1]`. `pivot` and `melt` take float value columns and string
+  id/index columns only (deferral D4).
+- `sort_by` works on int, float, bool, and string columns, ascending or
+  descending; string order is lexicographic.
+- `describe` summarizes int and float columns, skips string and bool columns,
+  skips NaN and masked entries, and uses the sample standard deviation
+  (`ddof=1`).
+- Parquet is unavailable: `read_parquet_frame` and `write_parquet_frame`
+  exist but fail at runtime (chelis#850).
+- Only `Coral.Window`'s `rolling_mean` and `ewm` are compared with pandas by
+  execution (`parity/run_parity.py`). The other modules' pandas goldens are
+  references for the native tests in `tests/*.ch`, which run with
+  `chelis test tests/ --jobs auto`.
 
 ## 5. API Surface
 
-- `Coral.Frame`: typed columns, accessors, filtering, sorting, mutation (`mutate`/`with_column`), int+float NaN helpers, concat, `describe`, `int_col_of_list`, `column_len`
-- `Coral.GroupBy`: `group_by`, aggregations (sum/mean/count/min/max), `value_counts`; masked int rows skipped in agg
-- `Coral.Join`: `inner_join`, `left_join`, `outer_join`
-- `Coral.Reshape`: `pivot`, `melt`, `stack`, `unstack`
-- `Coral.Window`: `rolling_mean`, `rolling_std`, `rolling_max`, `ewm`
-- `Coral.Io`: CSV + JSON read/write; Parquet upstream-blocked
+- `Coral.Frame`: `Column` (`IntCol`, `FloatCol`, `StringCol`, `BoolCol`),
+  `from_pairs`, `from_columns`, `empty`, `int_col_of_list`; accessors
+  `get_column`, `get_float_col`, `get_int_col`, `get_string_col`,
+  `get_bool_col`, `columns`, `column_type`, `column_len`, `nrows`, `ncols`;
+  `filter`, `head`, `tail`, `slice`, `sort_by`; `with_column`, `mutate`,
+  `rename`, `drop_column`; float NaN `is_nan`, `fill_nan`, `drop_nan`,
+  `any_nan`, `count_nan` and their integer `_col` forms; `concat`,
+  `describe`.
+- `Coral.GroupBy`: `group_by`, `agg_sum`, `agg_mean`, `agg_count`, `agg_min`,
+  `agg_max`, `agg` with `AggFn` specs (`AggSum`, `AggMean`, `AggCount`,
+  `AggMin`, `AggMax`), `value_counts`. Sum, mean, min, and max skip masked
+  integer entries; counts include them.
+- `Coral.Join`: `inner_join`, `left_join`, `outer_join`.
+- `Coral.Reshape`: `pivot`, `melt`, `stack`, `unstack`.
+- `Coral.Window`: `rolling_sum`, `rolling_mean`, `rolling_std`,
+  `rolling_min`, `rolling_max`, `ewm`. Each maps `tensor[n, f32]` to
+  `tensor[n, f32]`; the rolling functions return NaN until the window is full.
+- `Coral.Io`: `read_csv_frame`, `write_csv_frame`, `read_json_frame`,
+  `write_json_frame`; `read_parquet_frame` and `write_parquet_frame` fail at
+  runtime.
+- `Coral.AsOf`: `asof_lookup`, `asof_join` over `i64` key tensors and `f32`
+  value tensors, and their host-list forms `asof_lookup_list`,
+  `asof_join_list`.
 
 `Coral.Frame.column_len[n](col: Column[n]) -> i64` returns the stored length
 of a float, integer, string, or boolean column, including zero for empty columns.

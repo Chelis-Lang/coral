@@ -32,6 +32,6 @@ key's type.
 
 - Right-hand key column is suppressed in the output
 - Overlapping right column names are suffixed with `_right`
-- Bool columns are not supported in either input frame yet; a join over a
-  frame with a bool column fails at runtime
+- A bool non-key column in either input frame fails every join at runtime,
+  and a bool key column fails `inner_join` and `left_join`
 - Integer columns from the source frame have their missing-value mask propagated through joins

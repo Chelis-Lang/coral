@@ -3,7 +3,9 @@
 Coral uses pandas as its behavioral reference. `parity/gen_goldens.py`
 records pandas results for fixed inputs as JSON goldens under
 `parity/goldens/`, and CI confirms on every change that the goldens still
-match pandas.
+match what it derives from pandas. The `outer_join` and `melt` goldens are
+pandas output reordered to Coral's documented row and column order (see the
+deltas below).
 
 Covered by goldens:
 
@@ -31,7 +33,11 @@ How Coral is checked against them:
 
 Documented deltas from pandas:
 
-- Grouping keeps first-seen key order (pandas `sort=False`).
+- Grouping keeps first-seen key order (pandas `sort=False`), and so does
+  `value_counts`, where pandas sorts by count.
+- `outer_join` row order is left rows in order, then right-only rows; pandas
+  groups the rows by key.
+- `melt` output columns are `variable`, `value`, then the id columns.
 - Missing values: float columns use NaN, integer columns carry a separate
   mask, and string and bool columns have no missing marker (joins pad
   unmatched string cells with `""`).

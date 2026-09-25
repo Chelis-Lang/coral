@@ -36,7 +36,7 @@ pandas parity harness is a separate uv project under `parity/`.
 | Native tests | `chelis test tests/ --timeout 600 --jobs auto` | Identities, hand-computed values, structural properties, and round trips, written in Chelis. Use `--jobs 1` to debug serially |
 | Negative tests | `chelis test tests_neg/ --expect neg` | Each `tests_neg/<area>/<name>.ch` must fail to compile with the diagnostic on line 1 of its `.expect` file |
 | Blocked probes | `chelis test tests_blocked/ --expect blocked` | Reproducers of open upstream compiler issues. Each must keep failing the way its `.expect` file says; see [`docs/UPSTREAM_BUGS.md`](docs/UPSTREAM_BUGS.md#re-probing) |
-| pandas parity | `uv run --project parity --frozen python parity/run_parity.py --strict` | Checked-in goldens still match pandas, and the native Window lane matches them by execution; see [`spec/scope.md`](spec/scope.md#what-the-parity-harness-proves) |
+| pandas parity | `uv run --project parity --frozen python parity/run_parity.py --strict` | Checked-in goldens still match pandas, and native `rolling_mean` and `ewm` match their goldens by execution; see [`spec/scope.md`](spec/scope.md#what-the-parity-harness-proves) |
 
 `tests/` must never contain Python, and pandas, SciPy, or other oracle
 libraries may be imported only under `parity/`. CI enforces both rules.
@@ -65,9 +65,9 @@ uv run --python 3.11 --no-project python scripts/repro_native_drop_nan_blocked.p
 chelis reef conform audit
 ```
 
-When you change documentation, also run the example validators, which compile
-and run every complete ```` ```chelis ```` block in `SKILL.md` and the book
-against the pinned compiler:
+When you change documentation, also run the example validators, which
+type-check and build every complete ```` ```chelis ```` block in `SKILL.md` and
+the book against the pinned compiler:
 
 ```sh
 uv run --python 3.11 --no-project python scripts/run_skill_checks.py

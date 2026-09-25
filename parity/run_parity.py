@@ -3,14 +3,13 @@
 
 Internal correctness lives in tests/*.ch (run via `chelis test tests/`).
 This script runs only the Python-driven checks: pandas-derived goldens,
-window runtime parity (expected values pandas-derived), HAMT integration
-compile probe, and check-time negative test suite.
+window runtime parity (expected values pandas-derived), and a check-time
+negative test suite.
 
 Scope:
-  1. typecheck the shell entrypoints and core module slices
-  2. validate checked-in pandas goldens for Frame, GroupBy, IO, Join, Window, Reshape
-  3. execute a bare-build runtime parity lane for Window (expected values pandas-derived)
-  4. negative test suite: check-time error detection (TypeMismatch, UnboundVariable)
+  1. validate checked-in pandas goldens for Frame, GroupBy, IO, Join, Window, Reshape
+  2. execute a bare-build runtime parity lane for rolling_mean and ewm
+  3. negative test suite: check-time error detection (TypeMismatch, UnboundVariable)
 
 Only the Window lane executes Coral against pandas-derived values; the other
 goldens are checked against pandas but not executed through Coral (see

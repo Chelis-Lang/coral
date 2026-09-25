@@ -3,8 +3,8 @@
 - **Parquet.** `read_parquet_frame` and `write_parquet_frame` fail at runtime
   until the Chelis standard library implements `Std.Io.Parquet`
   ([chelis#850](https://github.com/Chelis-Lang/chelis/issues/850)).
-- **Bool columns.** Bool columns cannot be group keys, and a join fails if
-  either input frame has a bool column.
+- **Bool columns.** Bool columns cannot be group keys. A bool non-key column
+  fails every join, and a bool key fails `inner_join` and `left_join`.
 - **Multi-aggregation.** `agg` takes each value column at most once
   ([coral#37](https://github.com/Chelis-Lang/coral/issues/37)), and an
   `AggCount` spec needs a float or int column

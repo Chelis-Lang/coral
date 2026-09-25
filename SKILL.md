@@ -189,8 +189,9 @@ def main() -> i64 = {
 - `agg` takes each value column at most once (coral#37), and its `AggCount`
   spec needs a float or int column (coral#38); use `agg_count` or
   `value_counts` for plain row counts.
-- Bool columns are not supported as group keys or anywhere in a join's input
-  frames (`spec/scope.md` deferrals D1 and D2).
+- Bool columns are not supported as group keys. A bool non-key column fails
+  every join, and a bool key fails `inner_join` and `left_join`
+  (`spec/scope.md` deferrals D1 and D2).
 - `outer_join` row order: matched and left-only rows in left order, then
   right-only rows appended. Its key column comes back as strings whatever the
   key type (deferral D9); `inner_join` and `left_join` keep the key type.
@@ -222,8 +223,8 @@ def main() -> i64 = {
   `describe`.
 - `Coral.GroupBy`: `group_by`, `agg_sum`, `agg_mean`, `agg_count`, `agg_min`,
   `agg_max`, `agg` with `AggFn` specs (`AggSum`, `AggMean`, `AggCount`,
-  `AggMin`, `AggMax`), `value_counts`. Masked integer rows are skipped in
-  aggregations.
+  `AggMin`, `AggMax`), `value_counts`. Sum, mean, min, and max skip masked
+  integer entries; counts include them.
 - `Coral.Join`: `inner_join`, `left_join`, `outer_join`.
 - `Coral.Reshape`: `pivot`, `melt`, `stack`, `unstack`.
 - `Coral.Window`: `rolling_sum`, `rolling_mean`, `rolling_std`,

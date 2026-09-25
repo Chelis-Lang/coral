@@ -18,8 +18,8 @@ helpers take a `Frame` plus a column name.
 ## Integer columns
 
 Integer columns carry an explicit boolean missing-value mask (`true` = missing).
-The mask is propagated through joins (sentinel rows), aggregations (masked rows
-are skipped), and concat. Use the `_col` variants:
+The mask is propagated through joins (sentinel rows) and concat. Sum, mean,
+min, and max aggregations skip masked entries; counts include them. Use the `_col` variants:
 
 - `is_nan_col(df, col_name)` — returns the bool mask tensor
 - `fill_nan_col(df, col_name, fill_val)` — replace masked entries with `fill_val`

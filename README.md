@@ -22,7 +22,7 @@ known limitations, and what is deliberately out of scope.
 | `Coral.Window` | Rolling `sum`, `mean`, `std`, `min`, `max`, and exponentially weighted `ewm` |
 | `Coral.Io` | CSV and JSON read and write with column type inference |
 | `Coral.AsOf` | As-of lookup and join over sorted `i64` keys with `f32` values |
-| `Coral.Core` | Package version metadata |
+| `Coral.Core` | Package smoke anchor (`version`) |
 
 [`SKILL.md`](SKILL.md) has the full API inventory and compact examples, and
 the [book](docs/src/SUMMARY.md) has a chapter per module.
@@ -74,8 +74,8 @@ def main() -> i64 = {
   integer columns carry a separate missing-value mask, and string and bool
   columns have no missing-value marker (joins pad unmatched string cells with
   the empty string).
-- Bool columns are not supported as group keys or anywhere in a join's input
-  frames, and `pivot` and `melt` take float value columns only.
+- Bool columns are not supported as group keys or as non-key join columns,
+  and `pivot` and `melt` take float value columns only.
 - Frames with 100 or more columns are slow in the evaluator (chelis#828).
 
 [`docs/UPSTREAM_BUGS.md`](docs/UPSTREAM_BUGS.md) tracks every compiler issue

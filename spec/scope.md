@@ -28,8 +28,8 @@ converted out of a separate dataframe runtime.
 ## Architecture
 
 - **Pure Chelis.** Coral has no C or Rust FFI and no compiler special-casing.
-  Summary statistics in `describe` and the GroupBy aggregations delegate to
-  `Nautilus.Stats`, a sibling Reef package.
+  The summary statistics in `describe` delegate to `Nautilus.Stats`, a sibling
+  Reef package; the GroupBy aggregations are Coral's own.
 - **Typed columns.** `Column[n]` is a sum type over four payloads, each
   carrying the symbolic row count `n`:
   `FloatCol(tensor[n, f32])`, `IntCol(tensor[n, i64], tensor[n, bool])`
@@ -39,15 +39,17 @@ converted out of a separate dataframe runtime.
   dimension.
 - **Persistent column store.** A `Frame` stores its columns in a persistent
   hash array mapped trie (`Coral.Internal.Hamt`), not a copy-on-write `Dict`,
-  plus an explicit column order. `with_column`, `drop_column`, and `rename`
-  therefore share unchanged columns with the input frame instead of copying
-  the whole column map. This was a requirement of the original plan, which
-  anticipated gradients through multi-step frame pipelines.
+  plus an explicit column order. `drop_column` and `rename` update the trie
+  in place (`hamt_remove` / `hamt_put`), so the result shares unchanged
+  columns with the input frame; `with_column` currently rebuilds the trie
+  from all entries. The persistent store was a requirement of the original
+  plan, which anticipated gradients through multi-step frame pipelines.
 - **Host-list algorithms, tensor payloads.** Column payloads are stored as
   tensors, but the relational algorithms run on host lists: grouping and
   joins match keys by equality and preserve first-seen key order, and string
-  sorting is an insertion sort. Row selection applies the resulting index
-  lists to every column with `gather`.
+  sorting is an insertion sort. `filter`, `head`, `tail`, `slice`, and
+  `sort_by` apply the resulting row indices to tensor columns with `gather`;
+  joins, grouping, and string columns select rows through host lists.
 
 ### Departures from the Phase 3k plan
 
@@ -71,16 +73,21 @@ A change to Coral's public surface is accepted when:
   `tests_neg/`, which must fail to compile with the diagnostic on line 1 of
   its `.expect` sidecar;
 - where pandas defines the behavior, a reviewed golden under
-  `parity/goldens/` records the pandas result for the same input;
+  `parity/goldens/` records the pandas result for the same input (adapted to
+  Coral's documented ordering where the two differ, as the `outer_join` and
+  `melt` goldens are);
 - `SKILL.md` and the book are updated, and their complete ```` ```chelis ````
-  examples still compile and run under `scripts/run_skill_checks.py` and
-  `scripts/validate_book_examples.py`.
+  examples still type-check and build under `scripts/run_skill_checks.py`
+  and `scripts/validate_book_examples.py`.
 
 ### What the parity harness proves
 
 `parity/run_parity.py --strict` does three things. It confirms that every
-checked-in golden still matches pandas on its fixed input, so the goldens
-cannot drift from the reference. It compiles `rolling_mean` and `ewm` to
+checked-in golden still matches what `parity/gen_goldens.py` derives from
+pandas on its fixed input, so the goldens cannot drift from the reference.
+Two goldens are pandas output reordered to Coral's documented order:
+`outer_join` (left rows in order, then right-only rows) and `melt`
+(`variable`, `value`, then the id columns). It compiles `rolling_mean` and `ewm` to
 native code, runs them, and compares the output with the pandas goldens.
 And it checks three generated negative cases. Only those two Window
 functions are compared against pandas by execution. For Frame, GroupBy,
@@ -105,15 +112,16 @@ user is most likely to notice:
 
 ## Deferrals
 
-Each deliberate narrowing of Coral's own surface has an entry here, and the
-narrowing site cites it as `spec/scope.md` § Deferrals (Dn). All were recorded
+Each deliberate narrowing of Coral's own surface has an entry here. Sites
+that fail at runtime cite it as `spec/scope.md` § Deferrals (Dn). All were recorded
 on 2026-09-25 and are revisited when a user needs the capability.
 
 - **D1: Bool group keys.** `group_by` and `value_counts` accept int, float,
   and string key columns. A bool key column fails at runtime
   ("bool regrouping is not supported yet").
-- **D2: Bool columns in joins.** `inner_join`, `left_join`, and `outer_join`
-  fail at runtime if either input frame has a bool column, key or not.
+- **D2: Bool columns in joins.** A bool non-key column in either input frame
+  fails every join at runtime. A bool key column fails `inner_join` and
+  `left_join`; `outer_join` accepts it and returns the key as strings (D9).
 - **D3: Numeric aggregation types.** `agg_sum`, `agg_mean`, `agg_min`,
   `agg_max`, and `agg` accept float and int value columns only. `agg_count`
   counts rows per group and takes no value column.

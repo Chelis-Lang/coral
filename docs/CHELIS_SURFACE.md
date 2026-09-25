@@ -65,7 +65,7 @@ owns the compiler-wide surface. Last refreshed: 2026-09-25.
 | `Std.Test` (`assert_true`, `assert_false`, `assert_eq`, `assert_close`) | The whole `tests/` suite. `assert_eq` is generic over the compared type; `assert_close` is restricted to the active float types, which Coral's `f32` tolerances satisfy. Coral uses neither `assert_close_tensor` nor `assert_eq_tensor`. | `@pin` |
 | `Std.Io.Json` (`Json` ADT, `load_json`, `json_array`, `json_object`) | JSON read/write for `Coral.Io`. An integer token outside `i64` range ingests as `JsonBigInt(string)` carrying its exact decimal spelling. `Coral.Io.render_json_value` matches all eight `Json` variants explicitly rather than through a wildcard, so a future variant is a compile error here instead of a silently empty cell; `tests/io.ch` pins the exact-digit passthrough and the resulting column inference. | `@pin` |
 | `Std.Io.Parquet` | **Signatures only** (chelis#850). The import checks clean, but `libchelis_runtime.a` has no Parquet symbol (re-probed at 0.18.11); Coral ships intentional `fail(...)` stubs (`UPSTREAM_BUGS` §Parked). | `@pin` |
-| `Nautilus.Stats` (`mean_vec`, `min_vec`, `max_vec`, `quantile_vec`, `std_vec`) | `describe` and GroupBy aggregations delegate scalar statistics to Nautilus. Reef requires the dependency to declare the same compiler pin as Coral, so Nautilus is bumped first. | `@pin` |
+| `Nautilus.Stats` (`mean_vec`, `min_vec`, `max_vec`, `quantile_vec`, `std_vec`) | `describe` delegates its summary statistics to Nautilus; the GroupBy aggregations are Coral's own. Reef requires the dependency to declare the same compiler pin as Coral, so Nautilus is bumped first. | `@pin` |
 
 ### Lanes
 

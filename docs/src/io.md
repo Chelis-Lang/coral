@@ -1,7 +1,7 @@
 # IO
 
-`Coral.Io` provides CSV, JSON, and Parquet read/write helpers. Read inference
-covers int, float, bool, and string columns.
+`Coral.Io` provides CSV and JSON read/write helpers. Read inference covers
+int, float, bool, and string columns.
 
 ```chelis
 module Coral.BookIo
@@ -19,7 +19,6 @@ def main() -> i64 = {
 ## Parquet
 
 `read_parquet_frame` and `write_parquet_frame` are exported by `Coral.Io` but
-currently call `fail(...)` at runtime. Parquet support remains gated on upstream
-`Chelis-Lang/chelis` shipping the runtime backing for `Std.Io.Parquet`; the
-v0.7.6 probe still resolves the import at check time but does not provide a
-usable runtime path. See `docs/UPSTREAM_BUGS.md` for the full probe log.
+call `fail(...)` at runtime. The Chelis standard library's `Std.Io.Parquet`
+declares its functions but has no runtime implementation yet
+([chelis#850](https://github.com/Chelis-Lang/chelis/issues/850)).

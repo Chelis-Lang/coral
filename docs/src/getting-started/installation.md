@@ -1,14 +1,24 @@
 # Installation
 
-Coral 0.7.35 pins the published, publisher-checksummed Chelis 0.18.1 and
-Nautilus 0.7.38 releases. Populate a fresh Reef registry with the matching
-Nautilus release before building:
+Coral is a Reef package. Install the Chelis toolchain with `chelisup`, then
+install a Coral release into your local Reef registry. Coral 0.7.43 is built
+for Chelis 0.18.11:
 
 ```sh
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.38
-chelis check src/frame.ch
-chelis reef build
+chelisup install 0.18.11
+chelis reef install --from-github Chelis-Lang/coral@v0.7.43
 ```
 
-Private-repository access uses `GITHUB_TOKEN`, falling back to the authenticated
-`gh` token. The build does not silently substitute a local path checkout.
+Declare the dependency in your project's `reef.toml`:
+
+```toml
+[dependencies]
+coral = { version = "0.7.43" }
+```
+
+`chelis reef build` fetches Coral's dependency, Nautilus, into the registry if
+it is missing. `--from-github` authenticates with `GITHUB_TOKEN`, falling back
+to `gh auth token`.
+
+To work on Coral itself, see
+[`CONTRIBUTING.md`](https://github.com/Chelis-Lang/coral/blob/main/CONTRIBUTING.md).

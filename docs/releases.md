@@ -4,8 +4,8 @@
 
 Each Coral release on GitHub ships exactly three artifacts:
 
-- `coral-X.Y.Z.chb` (≈13 KB) — Reef shell package
-- `coral-X.Y.Z.tar.zst` (≈13 KB) — source archive
+- `coral-X.Y.Z.chb` (about 20 KB) — Reef shell package
+- `coral-X.Y.Z.tar.zst` (about 15 KB) — source archive
 - `coral-X.Y.Z.sha256` — publisher checksum manifest sealing both payloads
 
 The payload pair is produced by `chelis reef build`; the release gate validates
@@ -40,52 +40,33 @@ the IR is the contract; the consumer compiles to their platform.**
 
 ## How a Mac (or any) user consumes Coral
 
-Coral 0.7.35 pins Chelis 0.18.1 and Nautilus 0.7.38. Chelis 0.18.1 is
-published at commit
-`c8db387d06d538ce8039ac37645a43def48373c9`; its official glibc-2.31 archive
-SHA-256 is `88a1a53b47b7168e4df614e66a6d9313176174b1dc3a25a43db5f73a3ee8f0cd`
-and its extracted binary SHA-256 is
-`0d7a46262b4ba2975702d5ed2def5d54b79b5d68258602da59069b6715cc690b`.
-Nautilus 0.7.38 is published from commit
-`6b4c10f19a2cd120c08ba3c7d9cb746c161106ec`; its official CHB and archive
-SHA-256 are `cad8bd996ddeddb25f698496a394ab45388a120f9b870e7832cb5b87b5935740`
-and `39a81b079dfae2a0aa907574954eeb48631757fb5fb1d0940def0c8a98adf4f6`.
-The exact dependency chain passes the complete Coral release gate.
+No platform-specific Coral artifact is needed:
 
-End-to-end once the corresponding Coral 0.7.35
-artifact is published, with no platform-specific Coral artifact required:
-
-1. Download the chelis toolchain that matches the consumer's OS:
+1. Install the Chelis toolchain for the consumer's platform with `chelisup`,
+   at the compiler version the Coral release pins (`compiler` in that
+   release's `reef.toml`; Coral 0.7.43 pins 0.18.11):
    ```sh
-   gh release download v0.18.1 --repo Chelis-Lang/chelis \
-     --pattern 'chelis-v0.18.1-darwin-arm64.tar.gz'
+   chelisup install 0.18.11
    ```
-   (or `linux-x86_64-glibc2.31` for Linux consumers).
-2. Extract and put `bin/chelis` on PATH.
-3. Install the published Coral release into the consumer's local Reef
-   registry (private-repository access requires an authenticated `gh` session
-   or `GITHUB_TOKEN`):
+2. Install the Coral release into the local Reef registry:
    ```sh
-   chelis reef install --from-github Chelis-Lang/coral@v0.7.35
+   chelis reef install --from-github Chelis-Lang/coral@v0.7.43
    ```
-4. In their own Chelis project's `reef.toml`:
+3. Declare the dependency in the consumer project's `reef.toml`:
    ```toml
    [dependencies]
-   coral = { version = "0.7.35" }
+   coral = { version = "0.7.43" }
    ```
-5. `chelis reef build` resolves the platform-agnostic `.chb` +
-   sources; the consumer's chelis compiles the result to whatever
-   native code that platform requires (Mach-O on Darwin, ELF on
-   Linux, etc.).
-
-The same `.chb` and `.tar.zst` we publish today work unchanged for
-this flow on every platform the chelis toolchain supports.
+4. `chelis reef build` fetches Coral's own dependency (Nautilus) if it is
+   missing, resolves the platform-agnostic `.chb` and sources, and the
+   consumer's compiler produces whatever native code that platform needs
+   (Mach-O on Darwin, ELF on Linux).
 
 ## Verification
 
 A `mac-smoke` job in `.github/workflows/ci.yml` (gated on `lint`,
-runs on `macos-latest`) downloads the Darwin chelis toolchain,
-populates the reef registry with chelis-std + nautilus, and runs
+runs on `macos-latest` for pushes to `main`) downloads the Darwin chelis
+toolchain, installs Nautilus into the Reef registry, and runs
 `chelis reef build` against this repo's source. That's enough to
 prove the artifacts work end-to-end under Darwin chelis. The full
 test suite (`chelis test tests/ --jobs auto`,
@@ -100,8 +81,8 @@ specific:
 
 - chelis missing the darwin-arm64 tarball → upstream release process
   bug.
-- Darwin chelis can't resolve chelis-std or nautilus → registry
-  setup script has a Linux-only assumption that needs fixing.
+- Darwin chelis can't resolve Nautilus → the registry setup has a
+  Linux-only assumption that needs fixing.
 - `chelis reef build` produces different-shaped output on Mac → the
   `.chb` format would no longer be platform-agnostic, contradicting
   the premise of this document.
@@ -121,4 +102,4 @@ proposing a change.
 The sibling shell `Chelis-Lang/nautilus` follows the same policy in
 its own `docs/releases.md`. If you change Coral's policy here,
 mirror the change in nautilus or document the divergence with a
-recorded reason (per the "Scaffolding Drift Rule" in `CLAUDE.md`).
+recorded reason (per the "Scaffolding Drift Rule" in `AGENTS.md`).

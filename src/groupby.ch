@@ -22,6 +22,7 @@ def group_by[n](df: Frame[n], key_name: string) -> GroupedFrame[n] = {
   grouped = group_keys(key_values(df, key_name), [], [])
   GroupedFrame { frame: df, key_name, key_template: template, keys: grouped.0, groups: grouped.1 }
 }
+-- Value columns must be float or int: spec/scope.md Deferrals (D3).
 def agg_sum[n, m](gf: GroupedFrame[n], col: string) -> Frame[m] =
   match gf with {
     | GroupedFrame { frame: df, key_name, key_template, keys, groups } => match get_column(df, col) with {

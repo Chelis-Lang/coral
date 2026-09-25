@@ -2,10 +2,9 @@
 
 ## Float columns
 
-Float NaN values are handled via IEEE 754 semantics (`x != x` is true iff NaN).
-At the 0.18.1 compiler pin, Coral computes the float mask through an O(n)
-scalar host-map because native tensor `neq` is not yet IEEE-correct
-([chelis#630](https://github.com/Chelis-Lang/chelis/issues/630)).
+Float NaN values are handled via IEEE 754 semantics (`x != x` is true iff NaN):
+`is_nan(col)` is the tensor comparison `neq(col, col)`, which is IEEE-correct
+in both the evaluator and native code.
 Note the asymmetry with the column-form helpers below: float helpers operate on
 *tensors* (extract the column with `get_float_col` first), while the `_col`
 helpers take a `Frame` plus a column name.

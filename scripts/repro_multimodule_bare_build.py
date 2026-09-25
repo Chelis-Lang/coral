@@ -1,33 +1,29 @@
 #!/usr/bin/env python3
-"""Validate a trivial-entry stripped multi-module build on the current compiler.
+"""Probe a trivial-entry native build of Coral's stripped modules.
 
-This is an upstream-triage helper, not a CI gate.
+This is an upstream-triage probe, not a CI gate.
 
-It concatenates stripped Coral modules into one temporary file, prefixes
-function names to avoid obvious user-space symbol collisions, adds a constant
-entrypoint, runs `chelis build`, links the generated C with a tiny driver, and
-executes the resulting binary. This is a module/lowering smoke test, not proof
-that invoked recursive generic Frame APIs lower; the production `drop_nan`
-boundary is probed separately under chelis#941.
+It concatenates Coral's Frame, GroupBy, or Join module (plus its Coral and
+Nautilus dependencies) into one temporary file, prefixes function names to
+avoid symbol collisions, adds a constant `main`, runs `chelis build`, compiles
+with the command the compiler prints, runs the binary, and reads the `main`
+observation line. It is a module-lowering smoke test, not proof that invoked
+Frame APIs lower; that boundary is probed by `repro_package_frame_build.py`
+and `repro_native_drop_nan_blocked.py`.
 
-Expected current outcome on the pinned Chelis release:
-- `chelis build` exits rc=0 with no panic in output
-- native C compile/link succeeds
-- binary executes and returns the expected value
+Expected outcome at the current pin: `chelis build` rejects every target with
+the chelis#2097 ownership-signature diagnostic, raised by
+`frame.ch::list_filter_string` passing its function-value parameter through a
+direct call. See docs/UPSTREAM_BUGS.md.
 
-History:
-- v0.1.15–v0.1.17: invalid-C type-collapse caused link failure
-- v0.1.18: invalid-C fixed; Phase 0e RISC DAG panic remained (non-fatal, rc=0)
-- v0.1.19: Phase 0e panic fixed; the trivial-entry smoke is fully clean
-- chelis v0.16.1 / nautilus 0.7.33+: nautilus `stats.ch` imports
-  `chi_squared_cdf` from `Nautilus.Distributions`, so the concat now pulls
-  the transitive nautilus modules (`special.ch`, `distributions.ch`) ahead
-  of `stats.ch`; zstd tarballs fall back to the `zstd` binary on
-  Python < 3.14 (stdlib `tarfile` gained zstd in 3.14)
+The module also owns helpers shared by the other native probes and by
+`parity/run_parity.py`: def extraction, name prefixing, the emitted compile
+command, and the `<name> = <value>` observation parser.
 
 Exit codes:
-- 0: build, link, and run all succeeded cleanly
-- 1: unexpected failure or regression detected
+- 0: the outcome matches docs/UPSTREAM_BUGS.md (blocked by chelis#2097)
+- 1: the outcome changed (FIX-DETECTED, or a different failure) or the probe
+  could not run
 """
 from __future__ import annotations
 
@@ -50,6 +46,10 @@ from scripts.chelis_toolchain import resolve_chelis_bin
 
 
 CHELIS = resolve_chelis_bin()
+
+# Stable substring of the chelis#2097 rejection. The trailing `u<N>` symbol id
+# is volatile and deliberately excluded.
+CHELIS_2097_DIAGNOSTIC = "does not match ownership signature of"
 
 
 def _registry_root() -> Path:
@@ -286,6 +286,9 @@ def main() -> int:
         build = subprocess.run([CHELIS, "build", str(main_ch), "-o", str(out_dir)], capture_output=True, text=True)
         print((build.stdout + build.stderr).strip())
         if build.returncode != 0:
+            if CHELIS_2097_DIAGNOSTIC in (build.stdout or "") + (build.stderr or ""):
+                print(f"expected blocked: {args.target} stops at the chelis#2097 ownership-signature mismatch")
+                return 0
             print("unexpected: `chelis build` failed before native C compile")
             return 1
 
@@ -316,7 +319,8 @@ def main() -> int:
             return 1
 
         print(f"trivial-entry stripped multi-module smoke OK: build clean, link OK, run OK (main = {entry_value})")
-        return 0
+        print("FIX-DETECTED: chelis#2097 no longer blocks this target; de-narrow docs/UPSTREAM_BUGS.md and scripts/repro_native_nan.py")
+        return 1
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
 

@@ -1,0 +1,8 @@
+`gather` axis is not a compile-time integer constant
+Blocker: chelis#741. A `gather` or `sort` axis passed through a zero-argument
+helper (here `zero_i32()`) is rejected by rank monomorphization, while a literal
+or inline `cast(0, i32)` axis is accepted. `chelis check` scores the helper form
+1.0; the evaluator and `chelis build` reject it. `src/frame.ch` inlines
+`cast(0, i32)` at every axis site as the workaround. On pass: restore a named
+axis helper in `src/frame.ch`, promote this source to a regression test under
+`tests/`, and archive the chelis#741 entry in `docs/UPSTREAM_BUGS.md`.

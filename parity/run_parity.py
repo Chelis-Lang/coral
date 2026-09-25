@@ -10,9 +10,11 @@ Scope:
   1. typecheck the shell entrypoints and core module slices
   2. validate checked-in pandas goldens for Frame, GroupBy, IO, Join, Window, Reshape
   3. execute a bare-build runtime parity lane for Window (expected values pandas-derived)
-  4. compile-level integration probe for HAMT-backed Frame ops; stripped
-     bare builds are fully clean on v0.3.0 (build, link, and run all pass)
-  5. negative test suite: check-time error detection (TypeMismatch, UnboundVariable)
+  4. negative test suite: check-time error detection (TypeMismatch, UnboundVariable)
+
+Only the Window lane executes Coral against pandas-derived values; the other
+goldens are checked against pandas but not executed through Coral (see
+spec/scope.md, deferral D7).
 """
 from __future__ import annotations
 
@@ -179,16 +181,11 @@ def window_program(fixture: dict) -> str:
         call_body = f'{op}(values, cast({fixture["window"]}, i64))'
     else:
         call_body = f'{op}(values, cast({fixture["alpha"]!r}, f32))'
-    # chelis 0.17.1 regressed block parsing: an `if ... then X` inside a `{ }`
-    # block whose `else` begins on a *later line* now fails to parse with a
-    # misleading `expected Else, found Eof`, even though the `else` is present.
-    # The same source parses cleanly on 0.16.1 (see chelis#849). Until it is
-    # fixed upstream (still live on 0.18.9), keep every `else` on the same
-    # line as its preceding branch
-    # (this is also the canonical form `chelis fmt` emits). Do not reintroduce a
-    # newline before `else` inside a block. Canonical Surf v0.19 (chelis#1031)
-    # additionally rejects one-expression `{ }` blocks, so a def whose body is
-    # a bare `if` chain must not wrap it in braces.
+    # Keep each `else` on the same line as its branch: that is the canonical
+    # form `chelis fmt` emits, and the program below is formatted in place
+    # before it is built. Canonical Surf rejects one-expression `{ }` blocks
+    # (chelis#1031), so a def whose body is a bare `if` chain must not wrap it
+    # in braces.
     return f"""
 def rt_abs_f32(x: f32) -> f32 = if lt(x, cast(0.0, f32)) then neg(x) else x
 
@@ -266,11 +263,8 @@ def run_window_runtime_checks() -> int:
     return 0
 
 
-# Frame core algorithm runtime parity (fill_int_list, str_lt, enum_insertion_sort,
-# bool_list_to_tensor) was previously executed here via the prefixed-concat bare-build
-# harness. As of v0.3.0 this coverage lives in tests/internal.ch and runs via
-# `chelis test`. The bare-build entry point in scripts/repro_multimodule_bare_build.py
-# remains as an upstream-blocker probe (frame/groupby/join compile cleanly).
+# Frame core algorithm coverage (fill_int_list, str_lt, enum_insertion_sort,
+# bool_list_to_tensor) lives in tests/internal.ch and runs via `chelis test`.
 
 
 NEGATIVE_CASES = [

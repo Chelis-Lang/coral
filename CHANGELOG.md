@@ -8,6 +8,10 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 Public-release cleanup. No change to any public function's behavior.
 
+- Start the Chelis 0.18.12 compiler compatibility review. The Coral pin and
+  Nautilus dependency remain on their published 0.18.11-compatible releases
+  until both 0.18.12 artifacts are published and the pin checklist passes.
+
 - Add a pinned, redacted secret scan for pull requests and branch pushes, with a manual full-history scan.
 
 - Documentation now describes the current pin instead of carrying

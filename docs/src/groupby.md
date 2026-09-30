@@ -1,39 +1,33 @@
 # GroupBy
 
-`Coral.GroupBy` groups a frame by one key column and aggregates the groups.
-Keys are matched by host-side equality and keep first-seen order, like pandas
-with `sort=False`. Key columns may be int, float, or string; bool keys are not
-supported yet. `agg_sum`, `agg_mean`, `agg_min`, and `agg_max` take float or
-int value columns, and masked integer entries are skipped.
+`Coral.GroupBy.group_by(frame, key_name)` groups rows by one integer,
+float, or string column. Groups appear in the order their keys first
+occur. Bool keys fail when grouping runs.
 
-Operations:
+Call `agg_sum`, `agg_mean`, `agg_min`, or `agg_max` with a grouped frame and
+a float or integer value-column name. Masked integer values are skipped.
+`agg_count(grouped)` counts rows, including rows whose value columns have
+missing entries. `value_counts(frame, key_name)` returns the key and a
+`count` column.
 
-- `group_by`
-- `agg_sum`
-- `agg_mean`
-- `agg_count`
-- `agg_min`
-- `agg_max`
-- `agg` for explicit multi-aggregation specs in requested order. Each value
-  column may appear in at most one spec
-  ([coral#37](https://github.com/Chelis-Lang/coral/issues/37)), and an
-  `AggCount` spec needs a float or int column
-  ([coral#38](https://github.com/Chelis-Lang/coral/issues/38))
-- `value_counts` — frequency table for a single column (returns a Frame with the key column and a `"count"` column)
+Use `agg(grouped, specs)` for several results in the order listed. A spec
+pairs a value-column name with `AggSum`, `AggMean`, `AggCount`, `AggMin`, or
+`AggMax`. Each value column may appear only once, and `AggCount` in this
+form also requires a float or integer value column. For a plain row count,
+use `agg_count`.
 
 ```chelis
 module Coral.BookGroupBy
 import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, int_col_of_list)
-import Coral.GroupBy (group_by, agg, AggFn, AggSum, AggMean)
+import Coral.GroupBy (group_by, agg, AggSum, AggMean)
 export (main)
 def main() -> i64 = {
-  frame = from_pairs([("city", StringCol(["london", "paris", "london"])), ("qty", int_col_of_list([cast(5, i64), cast(6, i64), cast(7, i64)])), ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.0, f32), cast(30.0, f32)])))])
+  frame = from_pairs([("city", StringCol(["london", "paris", "london"])), ("qty", int_col_of_list([5i64, 6i64, 7i64])), ("price", FloatCol(to_tensor([10.0f32, 20.0f32, 30.0f32])))])
   grouped = group_by(frame, "city")
   totals = agg(grouped, [("qty", AggSum), ("price", AggMean)])
   nrows(totals)
 }
 ```
 
-The native tests in `tests/groupby.ch` check these operations against
-hand-computed values; `parity/goldens/groupby/` holds the pandas results for
-the same inputs.
+`main` returns `2`, one row per city. The result columns are `city`,
+`qty_sum`, and `price_mean`.

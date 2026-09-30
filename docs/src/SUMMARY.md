@@ -36,6 +36,10 @@
 
 - [Reshape](reshape.md)
 
+# AsOf
+
+- [Sorted-key lookup](asof.md)
+
 # Reference
 
 - [Pandas Comparison](appendix/pandas_comparison.md)

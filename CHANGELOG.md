@@ -8,6 +8,8 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 Public-release cleanup. No change to any public function's behavior.
 
+- Add a pinned, redacted secret scan for pull requests and branch pushes, with a manual full-history scan.
+
 - Documentation now describes the current pin instead of carrying
   per-version receipts. Removed the per-version migration notes
   (`docs/chelis_0_18_{9,10,11}_migration.md`), `docs/status.md`,

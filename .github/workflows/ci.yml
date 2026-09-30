@@ -75,6 +75,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Test secret scan contract
+        run: python3 -m unittest discover -v -s .github/scripts -p test_secret_scan.py
+
       - name: No .py under tests/
         run: |
           if find tests -name '*.py' | grep -q .; then

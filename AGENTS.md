@@ -6,7 +6,7 @@ to this file so Claude-style and Codex-style entry points do not drift.
 ## Repo Identity
 
 <!-- shell-local:exclude:begin -->
-<!-- ### Pull Request Lifecycle -->
+<!-- ## Review And Merge -->
 <!-- ## Spec Authority And Design Discipline -->
 <!-- ## Change Hygiene -->
 <!-- ## Issue Tracking -->
@@ -16,7 +16,7 @@ to this file so Claude-style and Codex-style entry points do not drift.
 <!-- ## Pointers -->
 <!-- shell-local:exclude:end -->
 
-<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.18.12 (sha256:9fca24d7e0aa2b96) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.18.12 (sha256:024191edd26f0388) -->
 # Chelis Agent Contract
 
 Keep this file concise and relevant to every agent working in this repository.
@@ -87,72 +87,6 @@ function of those inputs, and feedback that varies between identical runs is a d
 - After green CI, check what active requirements still lack tests.
 - Audit silent fallbacks, default values, empty error vectors, and `unwrap_or` paths.
 
-## Review And Merge
-
-### Red Team Rounds
-
-Run every round through the [`redteam-exec` skill](agent-skills/redteam-exec/SKILL.md).
-It carries the brief shape, the worktree-reuse rules, and the verify mode.
-
-- Red team against the spec, the code, the tests, the examples, and the CLI behavior.
-  Execute tests and commands; source inspection is not proof.
-- Every pull request, documentation-only work included, gets at least one round before
-  merge. A round is the whole live back-and-forth between one reviewer and the author,
-  not a single review pass:
-  1. A fresh local subagent reviews the exact head from an inline brief and reports
-     its findings.
-  2. The reviewer stays alive. The author repairs the findings in the worktree.
-  3. The author hands the repair back, and the same reviewer verifies it and looks for
-     similar issues the repair may have missed or introduced.
-  4. Any further finding goes back to the author, and steps 2 and 3 repeat.
-  5. The round ends only when that reviewer states it is satisfied.
-  A reviewer that has reported is not finished; it is waiting for the fix. Ending the
-  loop after the first report, or verifying a repair with a different reviewer, is not
-  a round.
-- A pull request gets at most three fresh rounds; a fourth needs the user's explicit
-  approval. A prose-only pull request gets one, and a second needs the same approval.
-  The pull request's round record is the counter. Verification by the standing reviewer
-  does not count; the end-of-pull-request round does.
-- A finding is in scope only when the pull request introduces it, worsens it, or claims
-  to correct it. Discovery during review does not bring a pre-existing defect into scope.
-- A confirmed in-scope P0 or P1 merits a fresh round after the current round finishes,
-  within the cap. Unmigrated assertions, old comments, and minor documentation drift do
-  not. A rebase does not by itself merit a round: send a hand-resolved intersection that
-  stays within files the standing reviewer already read to that reviewer for focused
-  verification, and use a fresh round only when the rebase introduces a new mechanism or
-  touches files that reviewer did not read. A targeted review of substantial rebase
-  overlap needs no permission and never counts toward the cap.
-- For documentation and design reviews, severity follows contract impact. A wrong
-  normative rule, or a plan that cannot close a named in-scope deliverable, is P0 or P1.
-  A design document that misdescribes current `main`, or exposes a sequencing seam while
-  the contract stays achievable, is P2 or P3 and is recorded as residual work, never
-  promoted to a merge blocker. Wording, line-level accuracy of the pull request body,
-  staleness against a sibling pull request's moving head, and anything whose fix would
-  add text without a necessity sentence are out of scope.
-- State a pull request's claim at the granularity its oracle proves. An unbounded
-  universal claim invites sampling in every round and can never be closed.
-- A finding class is the defect category, not its file, line, or wording instance.
-  Every round record names the class of each finding. When two consecutive rounds
-  report the same class, or replace a repaired finding with a different class, stop
-  patching witnesses: change the representation, the oracle, the claim, or the brief
-  before running another round.
-- Repairs may correct, remove, or narrow the pull request's content. They must not add
-  design scope, mechanisms, inventories, or promises merely to absorb a finding. When a
-  correction would need that, reduce the claim and track the rest outside the pull
-  request.
-- Freshness is a property of the reviewer's context, not the filesystem. Hand a
-  reviewer an existing worktree and its warm target only when it is at the exact review
-  head, has a known clean baseline, and has no concurrent writer, and paste the output of
-  `.venv/bin/python scripts/worktree_status.py` into the brief as the evidence. Unknown
-  or not-clean means wait, and free is the probe's best answer rather than a proof: a
-  run that takes no lease, `--fast` among them, is caught only by a scan of the
-  processes it spawned. A reviewer whose probes mutate tracked source gets its own
-  worktree, and you never edit a worktree a reviewer is reading.
-- Before spawning a fresh round, retire only your own stale or failed subagent handles;
-  a standing reviewer awaiting a fix is neither. If a spawn routes to remote
-  infrastructure, errors, or comes back broken, retire it and retry until you have a
-  working fresh local subagent, or state that red-team validation is blocked.
-
 ## Writing Chelis Source
 
 Load the [`example-corpus` skill](agent-skills/example-corpus/SKILL.md) before writing
@@ -189,13 +123,13 @@ AST contract. `spec/02-surf-syntax.md` §0.1 is the authority.
 ## Review and Merge
 
 Use [`agent-skills/redteam-exec/SKILL.md`](agent-skills/redteam-exec/SKILL.md)
-for an independent review before merging a PR. When its worktree status
-probe is needed, run the pinned Chelis source's
-`scripts/worktree_status.py --path <Coral worktree>` with this worktree's
-uv Python 3.11 interpreter. Keep a reviewer's worktree isolated from a
-concurrent writer or build. Before a squash merge, inspect the pushed head,
-applicable hosted CI, review result, and prospective merge tree. Coral's
-Pin Bump Checklist below owns its release validation.
+for a fresh local review of every PR before merge. Keep the reporting reviewer
+through verification of committed, unpushed repairs. For a handoff, record the
+exact head, clean status, and processes scoped to the worktree as the skill
+describes. Keep a reviewer's worktree isolated from a concurrent writer or
+build. Before a squash merge, inspect the pushed head, applicable hosted CI,
+review result, and prospective merge tree. Coral's Pin Bump Checklist below
+owns its release validation.
 
 ## Toolchain Policy
 

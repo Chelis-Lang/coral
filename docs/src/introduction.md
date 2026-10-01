@@ -9,8 +9,10 @@ Extract a numeric column with an accessor such as `get_float_col` to use its
 tensor in a Chelis calculation. Coral's dataframe operations also use host
 lists for grouping, joining, and other row work. Run the value-returning
 examples with `chelis eval`; the file I/O example uses `chelis test`.
-Compiling a program that reads `Frame` columns is not supported by the
-current native build path. GPU execution of Coral operations is not
+At the Chelis 0.18.12 source pin, native probes pass for constructing a
+`Frame`, reading its row count, and matching a retrieved column. An
+invoked `drop_nan` still fails to build, and other dataframe verbs need
+their own native checks. GPU execution of Coral operations is not
 validated.
 
 The [first dataframe](getting-started/first_dataframe.md) builds a frame

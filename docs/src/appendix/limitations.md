@@ -1,12 +1,15 @@
 # Limitations
 
-These boundaries apply to Coral 0.7.43 with Chelis 0.18.11:
+These boundaries apply to the Coral 0.7.44 source checkout with
+Chelis 0.18.12:
 
 - **Execution.** Dataframe examples run through `chelis eval` and
-  `chelis test`. A native `chelis build` program that reads `Frame` columns
-  does not lower. GPU execution and differentiation through Coral's
-  dataframe operations are not validated. Bare tensor Window operations
-  have a narrower generated-C comparison described in
+  `chelis test`. Native construction, `nrows`, and a direct match on a
+  retrieved column build, link, run, and agree with the evaluator.
+  Invoked `drop_nan` still fails to build; other dataframe verbs need
+  their own native checks. GPU execution and differentiation through
+  Coral's dataframe operations are not validated. Bare tensor Window
+  operations have a narrower generated-C comparison described in
   [Pandas comparison](pandas_comparison.md).
 - **Parquet.** `read_parquet_frame` and `write_parquet_frame` are exported
   but fail when called.

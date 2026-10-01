@@ -15,26 +15,36 @@ explains packages and imports.
 
 ## Install
 
-Coral 0.7.43 uses Chelis 0.18.11 and Nautilus 0.7.46. Install the toolchain
-and Coral's published Reef package:
+This source checkout declares Coral 0.7.44, pinned to Chelis 0.18.12 and
+Nautilus 0.7.47. To build it, install `chelisup`, then run from the checkout:
+
+```sh
+chelis reef setup
+chelis reef build
+```
+
+Coral 0.7.44 is not yet published. The current published release is
+Coral 0.7.43, which uses Chelis 0.18.11 and Nautilus 0.7.46. To consume
+that release in a Reef project, install its toolchain and package:
 
 ```sh
 chelisup install 0.18.11
 chelis reef install --from-github Chelis-Lang/coral@v0.7.43
 ```
 
-The GitHub release assets currently require repository access. Authenticate
-with `gh auth login` or set `GITHUB_TOKEN` before installing. In a Reef
-project pinned to Chelis 0.18.11, declare:
+In that project's `reef.toml`, pin `compiler = "=0.18.11"` and declare:
 
 ```toml
 [dependencies]
 coral = { version = "0.7.43" }
 ```
 
-`chelis reef build` resolves the dependency and checks your imports. The
+The GitHub release assets require repository access; authenticate with
+`gh auth login` or set `GITHUB_TOKEN` before installing. Run
+`chelis reef build` in your project to resolve imports. The
 [first dataframe](docs/src/getting-started/first_dataframe.md) shows a
-complete program.
+complete program. See [installation](docs/src/getting-started/installation.md)
+for the source and release workflows.
 
 ## Modules
 
@@ -54,8 +64,10 @@ links the user-facing modules to their chapters.
 ## Availability
 
 Coral's dataframe operations run through `chelis eval` and `chelis test`.
-Native `chelis build` does not yet support reading columns from a `Frame`;
-the tensor payloads do not imply compiled dataframe or GPU support. Parquet
+With Chelis 0.18.12, native probes pass for frame construction, `nrows`,
+and matching a retrieved column. An invoked `drop_nan` still fails to
+build; other dataframe operations need their own native checks. Tensor
+payloads do not establish GPU support. Parquet
 frame functions are exported but fail when called. CSV and JSON writers do
 not preserve integer missing-value masks, and the JSON writer requires
 simple text without characters needing JSON escaping. See the

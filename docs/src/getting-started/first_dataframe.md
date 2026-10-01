@@ -16,12 +16,10 @@ def main() -> i64 = {
 }
 ```
 
-The examples in this guide use `Coral.*` module declarations so they can be
-checked inside the Coral package. To use this program in your own Reef
-project, replace `Coral` in the **module declaration** with your project's
-`module_prefix`, and save the file under the matching `src/` path. Leave the
-`import Coral.Frame` line as written. Run `chelis reef build`, then
-`chelis eval --file <path-to-your-file.ch>` to see the result.
+In your Reef project, replace `Coral` in `module Coral.Doc01` with the
+project's `module_prefix` and save the program as `src/doc01.ch`. Keep
+`import Coral.Frame` unchanged. Run `chelis reef build`, then
+`chelis eval --file src/doc01.ch` to see the result.
 
 `FloatCol` stores a `tensor[n, f32]`; `StringCol` stores a `List[string]`.
 Use `int_col_of_list` for ordinary `i64` columns so Coral creates the

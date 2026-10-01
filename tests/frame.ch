@@ -1,6 +1,6 @@
 module Coral.Tests.Frame
 import Std.Test (assert_true, assert_eq, assert_close)
-import Coral.Frame (Frame, Column, FloatCol, StringCol, BoolCol, ColumnType, from_pairs, nrows, ncols, columns, filter, head, tail, slice, sort_by, with_column, drop_column, rename, concat, describe, get_float_col, get_string_col, int_col_of_list)
+import Coral.Frame (Frame, Column, FloatCol, StringCol, BoolCol, ColumnType, from_pairs, nrows, ncols, columns, filter, head, tail, slice, sort_by, with_column, drop_column, rename, concat, describe, get_float_col, get_int_col, get_bool_col, get_string_col, int_col_of_list)
 def test_construction_nrows_ncols() -> unit ! { Test } = {
   df = from_pairs([("a", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)])))])
   _ = assert_eq(nrows(df), cast(3, i64), "nrows == 3")
@@ -57,6 +57,22 @@ def test_sort_by_float_ascending() -> unit ! { Test } = {
   _ = assert_eq(index(vals, cast(0, i64)), cast(1.0, f32), "first is 1.0")
   _ = assert_eq(index(vals, cast(1, i64)), cast(2.0, f32), "middle is 2.0")
   assert_eq(index(vals, cast(2, i64)), cast(3.0, f32), "last is 3.0")
+}
+def test_sort_by_int_ascending() -> unit ! { Test } = {
+  df = from_pairs([("k", int_col_of_list([cast(3, i64), cast(1, i64), cast(2, i64)]))])
+  sorted = sort_by(df, "k", true)
+  vals = to_list(get_int_col(sorted, "k"))
+  _ = assert_eq(index(vals, cast(0, i64)), cast(1, i64), "first is 1")
+  _ = assert_eq(index(vals, cast(1, i64)), cast(2, i64), "middle is 2")
+  assert_eq(index(vals, cast(2, i64)), cast(3, i64), "last is 3")
+}
+def test_sort_by_bool_ascending() -> unit ! { Test } = {
+  df = from_pairs([("k", BoolCol(to_tensor([true, false, true])))])
+  sorted = sort_by(df, "k", true)
+  vals = to_list(get_bool_col(sorted, "k"))
+  _ = assert_eq(index(vals, cast(0, i64)), false, "first is false")
+  _ = assert_eq(index(vals, cast(1, i64)), true, "middle is true")
+  assert_eq(index(vals, cast(2, i64)), true, "last is true")
 }
 def test_sort_by_string_ascending() -> unit ! { Test } = {
   df = from_pairs([("city", StringCol(["paris", "berlin", "oslo"]))])

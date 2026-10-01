@@ -15,28 +15,27 @@ explains packages and imports.
 
 ## Install
 
-This source checkout declares Coral 0.7.44, pinned to Chelis 0.18.12 and
-Nautilus 0.7.47. To build it, install `chelisup`, then run from the checkout:
+Coral 0.7.44 uses Chelis 0.18.12 and Nautilus 0.7.47. To build this
+checkout, install `chelisup`, then run:
 
 ```sh
 chelis reef setup
 chelis reef build
 ```
 
-Coral 0.7.44 is not yet published. The current published release is
-Coral 0.7.43, which uses Chelis 0.18.11 and Nautilus 0.7.46. To consume
-that release in a Reef project, install its toolchain and package:
+To consume the published release in a Reef project, install its toolchain
+and package:
 
 ```sh
-chelisup install 0.18.11
-chelis reef install --from-github Chelis-Lang/coral@v0.7.43
+chelisup install 0.18.12
+chelis reef install --from-github Chelis-Lang/coral@v0.7.44
 ```
 
-In that project's `reef.toml`, pin `compiler = "=0.18.11"` and declare:
+In that project's `reef.toml`, pin `compiler = "=0.18.12"` and declare:
 
 ```toml
 [dependencies]
-coral = { version = "0.7.43" }
+coral = { version = "0.7.44" }
 ```
 
 The GitHub release assets require repository access; authenticate with

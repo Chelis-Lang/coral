@@ -1,7 +1,6 @@
 # Limitations
 
-These boundaries apply to the Coral 0.7.44 source checkout with
-Chelis 0.18.12:
+These boundaries apply to Coral 0.7.44 with Chelis 0.18.12:
 
 - **Execution.** Dataframe examples run through `chelis eval` and
   `chelis test`. Native construction, `nrows`, and a direct match on a

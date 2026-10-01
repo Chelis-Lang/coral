@@ -58,9 +58,11 @@ The writer boundaries matter when exchanging data:
 - Both writers output the underlying number for an `IntCol` and ignore its
   missing-value mask. A missing integer stored as `0` is written as `0`,
   and reading the file back does not restore the mask.
-- Reading an all-numeric JSON column containing an integer outside `i64`
-  can infer `f32`, with rounding. Keep identifiers that need exact digits
-  in a string column.
+- CSV and JSON readers infer each column from its cell text. A
+  `StringCol` containing only digit strings reads back as an `IntCol`,
+  which can discard leading zeroes. An integer outside `i64` may read
+  back as `FloatCol` with rounding. Do not rely on these readers to
+  preserve digit-only identifiers.
 
 `read_parquet_frame` and `write_parquet_frame` are exported names but fail
 when called. Parquet frame I/O is unavailable.

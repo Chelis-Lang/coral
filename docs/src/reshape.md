@@ -1,36 +1,31 @@
 # Reshape
 
-`Coral.Reshape` provides wide-to-long and long-to-wide transformations on
-`Frame` values.
+`Coral.Reshape` changes a frame between wide and long layouts:
 
-Operations:
+| Operation | Result |
+|---|---|
+| `melt(frame, id_cols, value_cols)` | Repeats string id columns and places float value columns into `variable` and `value` columns |
+| `pivot(frame, index_col, columns_col, values_col)` | Makes one float output column per distinct string value in `columns_col` |
+| `stack(frame)` | Calls `melt` with no id columns and every column as a value column |
+| `unstack(frame, index_col)` | Calls `pivot` using `variable` and `value` |
 
-- `melt` — wide to long: repeat id columns, pivot value columns into `variable`/`value` rows
-- `pivot` — long to wide: unique values of `columns_col` become new column names
-- `stack` — thin shim: `melt` with no id columns, all columns as value columns
-- `unstack` — thin shim: `pivot` on a stacked frame given an explicit index column
-
-Constraints:
-
-- `values_col` for `pivot` must be `FloatCol`; other types fail with a runtime error.
-- `value_cols` for `melt` must all be `FloatCol`.
-- `index_col` and `columns_col` for `pivot` must be `StringCol`.
-- `id_cols` for `melt` must be `StringCol`.
+`melt` needs string id columns and float value columns. It emits all rows
+for the first value column, then all rows for the next. `pivot` needs
+string index and category columns and a float values column. A missing
+index/category combination produces NaN; when several input rows have
+the same combination, the first matching value is used.
 
 ```chelis
 module Coral.BookReshape
-import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols)
+import Coral.Frame (FloatCol, StringCol, from_pairs, nrows)
 import Coral.Reshape (melt)
 export (main)
 def main() -> i64 = {
-  frame = from_pairs([("city", StringCol(["london", "paris", "oslo"])), ("qty", FloatCol(to_tensor([cast(5.0, f32), cast(6.0, f32), cast(7.0, f32)]))), ("price", FloatCol(to_tensor([cast(10.0, f32), cast(20.0, f32), cast(30.0, f32)])))])
+  frame = from_pairs([("city", StringCol(["london", "paris", "oslo"])), ("qty", FloatCol(to_tensor([5.0f32, 6.0f32, 7.0f32]))), ("price", FloatCol(to_tensor([10.0f32, 20.0f32, 30.0f32])))])
   melted = melt(frame, ["city"], ["qty", "price"])
   nrows(melted)
 }
 ```
 
-The output frame has columns `variable`, `value`, and `city` with
-`nrows = 3 * 2 = 6` (one row per original row per value column).
-
-The native tests in `tests/reshape.ch` check these operations;
-`parity/goldens/reshape/` holds the pandas results for the same inputs.
+`main` returns `6`: three source rows for each of two value columns.
+The output column order is `variable`, `value`, then `city`.

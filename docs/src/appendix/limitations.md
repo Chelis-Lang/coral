@@ -1,26 +1,36 @@
 # Limitations
 
-- **Parquet.** `read_parquet_frame` and `write_parquet_frame` fail at runtime
-  until the Chelis standard library implements `Std.Io.Parquet`
-  ([chelis#850](https://github.com/Chelis-Lang/chelis/issues/850)).
-- **Bool columns.** Bool columns cannot be group keys. A bool non-key column
-  fails every join, and a bool key fails `inner_join` and `left_join`.
-- **Multi-aggregation.** `agg` takes each value column at most once
-  ([coral#37](https://github.com/Chelis-Lang/coral/issues/37)), and an
-  `AggCount` spec needs a float or int column
-  ([coral#38](https://github.com/Chelis-Lang/coral/issues/38)).
-- **`outer_join` keys** come back as strings whatever the key type.
-- **Reshape.** `pivot` and `melt` take float value columns and string
-  id/index columns only.
-- **Column order from `from_columns` and `empty`** follows the dictionary's
-  entry order; use `from_pairs` when column order matters.
-- **Native builds.** Coral runs as a Reef package and in the evaluator.
-  Compiling a program that reads `Frame` columns with `chelis build` does not
-  lower yet ([chelis#1226](https://github.com/Chelis-Lang/chelis/issues/1226)).
-- **Wide frames.** Frames with 100 or more columns are slow in the evaluator
-  ([chelis#828](https://github.com/Chelis-Lang/chelis/issues/828)).
-- **Gradients and GPU.** Coral makes no claim that `grad` differentiates
-  through its operations, and no operation is validated on a GPU backend.
+These boundaries apply to Coral 0.7.44 with Chelis 0.18.12:
 
-The repository's `spec/scope.md` lists every deliberate deferral, and
-`docs/UPSTREAM_BUGS.md` tracks every compiler issue that affects Coral.
+- **Execution.** Dataframe examples run through `chelis eval` and
+  `chelis test`. Native construction, `nrows`, and a direct match on a
+  retrieved column build, link, run, and agree with the evaluator.
+  Invoked `drop_nan` still fails to build; other dataframe verbs need
+  their own native checks. GPU execution and differentiation through
+  Coral's dataframe operations are not validated. Bare tensor Window
+  operations have a narrower generated-C comparison described in
+  [Pandas comparison](pandas_comparison.md).
+- **Parquet.** `read_parquet_frame` and `write_parquet_frame` are exported
+  but fail when called.
+- **Concatenation.** Pass frames with the same ordered schema and row
+  count. `concat` uses the first frame's columns without checking every
+  later schema; extra columns in a later frame are omitted. See
+  [Concatenation](../frame/concatenation.md).
+- **File output.** CSV and JSON writers do not encode integer
+  missing-value masks. The JSON writer does not escape column names or
+  string cells and cannot produce valid JSON for non-finite floats. The
+  [I/O chapter](../io.md) gives supported inputs.
+- **Column types.** Bool columns cannot be group keys. Bool non-key
+  columns cannot pass through joins; inner and left joins also reject
+  bool keys. `pivot` and `melt` take float value columns and string
+  id/index columns. String and bool columns have no missing marker.
+- **Output conventions.** `outer_join` returns its key as a string column,
+  whatever the input key type. `from_columns` and `empty` use dictionary
+  entry order for columns; use `from_pairs` for explicit order. In a
+  multi-aggregation, each value column can appear only once, and an
+  `AggCount` spec needs a numeric value column.
+- **Wide frames.** Frames with 100 or more columns can be slow in the
+  evaluator.
+
+The public API is treated as alpha. [Coral's scope](https://github.com/Chelis-Lang/coral/blob/main/spec/scope.md)
+records the longer-term boundaries.

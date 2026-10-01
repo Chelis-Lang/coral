@@ -1,24 +1,38 @@
 # Installation
 
-Coral is a Reef package. Install the Chelis toolchain with `chelisup`, then
-install a Coral release into your local Reef registry. Coral 0.7.43 is built
-for Chelis 0.18.11:
+Coral is a Reef package, separate from the standard library bundled with
+Chelis. Coral 0.7.44 uses Chelis 0.18.12 and Nautilus 0.7.47. To build
+this checkout, install `chelisup`, then run:
 
 ```sh
-chelisup install 0.18.11
-chelis reef install --from-github Chelis-Lang/coral@v0.7.43
+chelisup install 0.18.12
+chelis reef build
 ```
 
-Declare the dependency in your project's `reef.toml`:
+`chelisup install` provides the compiler pinned by `reef.toml`.
+`chelis reef build` fetches the pinned Nautilus release if needed,
+then checks and builds Coral. The
+[Chelis installation guide](https://github.com/Chelis-Lang/chelis/blob/main/docs/book/src/install.md)
+explains how to install `chelisup`.
+
+To consume the published Coral 0.7.44 release in a separate Reef project:
+
+```sh
+chelisup install 0.18.12
+chelis reef install --from-github Chelis-Lang/coral@v0.7.44
+```
+
+The release assets require GitHub repository access. Sign in with
+`gh auth login` or set `GITHUB_TOKEN` before using `--from-github`.
+Set `compiler = "=0.18.12"` under `[package]` in that project's
+`reef.toml`, and add:
 
 ```toml
 [dependencies]
-coral = { version = "0.7.43" }
+coral = { version = "0.7.44" }
 ```
 
-`chelis reef build` fetches Coral's dependency, Nautilus, into the registry if
-it is missing. `--from-github` authenticates with `GITHUB_TOKEN`, falling back
-to `gh auth token`.
-
-To work on Coral itself, see
-[`CONTRIBUTING.md`](https://github.com/Chelis-Lang/coral/blob/main/CONTRIBUTING.md).
+Run `chelis reef build` from that project to resolve imports. Reef also
+resolves Coral's Nautilus dependency. For the project layout and module
+prefix, see the [Chelis Reef guide](https://github.com/Chelis-Lang/chelis/blob/main/docs/book/src/reef.md).
+Continue with [your first dataframe](first_dataframe.md).

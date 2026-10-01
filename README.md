@@ -1,93 +1,88 @@
 # Coral
 
-Typed dataframes for the [Chelis](https://github.com/Chelis-Lang/chelis)
-programming language. Coral is a Reef package (Chelis's package format)
-published under the `Coral` module prefix.
+Coral is a [Chelis](https://github.com/Chelis-Lang/chelis) Reef package for
+typed dataframes. A `Frame` holds float, integer, boolean, or string columns.
+Float and integer columns store Chelis tensors, so a column retrieved from a
+frame can be passed to ordinary tensor operations. Filtering, grouping, and
+joining use host values around those tensor columns.
 
-A Coral `Frame` holds typed columns. Numeric columns are Chelis tensors: a
-float column retrieved with `get_float_col` is a `tensor[n, f32]` that can be
-passed straight into the rest of a tensor program. String columns are host
-lists. Behavior follows pandas unless a difference is documented. See
-[`spec/scope.md`](spec/scope.md) for the design, the acceptance rules, the
-known limitations, and what is deliberately out of scope.
+Start with the [Coral guide](docs/src/SUMMARY.md), especially
+[installation](docs/src/getting-started/installation.md) and
+[your first dataframe](docs/src/getting-started/first_dataframe.md).
+The [Chelis installation guide](https://github.com/Chelis-Lang/chelis/blob/main/docs/book/src/install.md)
+explains `chelisup`; the [Reef guide](https://github.com/Chelis-Lang/chelis/blob/main/docs/book/src/reef.md)
+explains packages and imports.
+
+## Install
+
+Coral 0.7.44 uses Chelis 0.18.12 and Nautilus 0.7.47. To build this
+checkout, install `chelisup`, then run:
+
+```sh
+chelisup install 0.18.12
+chelis reef build
+```
+
+`chelisup install` provides the compiler pinned by `reef.toml`.
+`chelis reef build` fetches the pinned Nautilus release if needed,
+then checks and builds Coral.
+
+To consume the published release in a Reef project, install its toolchain
+and package:
+
+```sh
+chelisup install 0.18.12
+chelis reef install --from-github Chelis-Lang/coral@v0.7.44
+```
+
+In that project's `reef.toml`, pin `compiler = "=0.18.12"` and declare:
+
+```toml
+[dependencies]
+coral = { version = "0.7.44" }
+```
+
+The GitHub release assets require repository access; authenticate with
+`gh auth login` or set `GITHUB_TOKEN` before installing. Run
+`chelis reef build` in your project to resolve imports. The
+[first dataframe](docs/src/getting-started/first_dataframe.md) shows a
+complete program. See [installation](docs/src/getting-started/installation.md)
+for the source and release workflows.
 
 ## Modules
 
 | Module | What it provides |
 |---|---|
-| `Coral.Frame` | Typed columns, construction, accessors, mask filtering, `head` / `tail` / `slice`, `sort_by`, `with_column` / `mutate` / `rename` / `drop_column`, float and integer NaN helpers, vertical `concat`, `describe` |
-| `Coral.GroupBy` | Single-key `group_by` with `sum`, `mean`, `count`, `min`, `max`, multi-aggregation `agg`, and `value_counts` |
-| `Coral.Join` | `inner_join`, `left_join`, `outer_join` on a named key column |
-| `Coral.Reshape` | `pivot`, `melt`, `stack`, `unstack` |
-| `Coral.Window` | Rolling `sum`, `mean`, `std`, `min`, `max`, and exponentially weighted `ewm` |
-| `Coral.Io` | CSV and JSON read and write with column type inference |
-| `Coral.AsOf` | As-of lookup and join over sorted `i64` keys with `f32` values |
-| `Coral.Core` | Package smoke anchor (`version`) |
+| `Coral.Frame` | Typed columns, construction, accessors, filtering, sorting, mutation, missing-value helpers, concatenation, and summaries |
+| `Coral.GroupBy` | Single-key grouping and aggregation |
+| `Coral.Join` | Inner, left, and outer joins on a named key column |
+| `Coral.Reshape` | `pivot`, `melt`, `stack`, and `unstack` |
+| `Coral.Window` | Rolling statistics and exponentially weighted values on `f32` tensors |
+| `Coral.Io` | CSV and JSON frame readers and writers |
+| `Coral.AsOf` | Prior-or-equal lookup and alignment on sorted `i64` key tensors or lists |
 
-[`SKILL.md`](SKILL.md) has the full API inventory and compact examples, and
-the [book](docs/src/SUMMARY.md) has a chapter per module.
+`Coral.Core.version()` returns `1` as a package smoke check. The [API overview](docs/src/appendix/api.md)
+links the user-facing modules to their chapters.
 
-## Using Coral
+## Availability
 
-Install the Chelis toolchain with `chelisup` (see the
-[Chelis installation guide](https://github.com/Chelis-Lang/chelis)). Coral
-0.7.43 is built for Chelis 0.18.11. Install the Coral release into your local
-Reef registry and declare it as a dependency:
-
-```sh
-chelisup install 0.18.11
-chelis reef install --from-github Chelis-Lang/coral@v0.7.43
-```
-
-```toml
-# your project's reef.toml
-[dependencies]
-coral = { version = "0.7.43" }
-```
-
-`chelis reef build` fetches Coral's own dependency, Nautilus, if it is not
-already installed.
-
-```chelis
-module MyProject.Demo
-import Coral.Frame (FloatCol, StringCol, from_pairs, nrows)
-import Coral.GroupBy (group_by, agg_sum)
-export (main)
-def main() -> i64 = {
-  sales = from_pairs([("city", StringCol(["london", "paris", "london"])), ("revenue", FloatCol(to_tensor([cast(10.0, f32), cast(20.0, f32), cast(30.0, f32)])))])
-  totals = agg_sum(group_by(sales, "city"), "revenue")
-  nrows(totals)
-}
-```
-
-`main` returns 2, one row per city.
-
-## Limitations
-
-- Parquet I/O is not available: `read_parquet_frame` and
-  `write_parquet_frame` fail at runtime until the Chelis standard library
-  provides a Parquet runtime (chelis#850).
-- Coral runs as a Reef package and in the Chelis evaluator. Compiling a
-  program that reads `Frame` columns to native code with `chelis build` is not
-  yet supported by the compiler (chelis#1226).
-- Missing values follow a narrower model than pandas: float columns use NaN,
-  integer columns carry a separate missing-value mask, and string and bool
-  columns have no missing-value marker (joins pad unmatched string cells with
-  the empty string).
-- Bool columns are not supported as group keys or as non-key join columns,
-  and `pivot` and `melt` take float value columns only.
-- Frames with 100 or more columns are slow in the evaluator (chelis#828).
-
-[`docs/UPSTREAM_BUGS.md`](docs/UPSTREAM_BUGS.md) tracks every compiler issue
-that affects Coral, and [`spec/scope.md`](spec/scope.md#deferrals) lists the
-deliberate deferrals.
+Coral's dataframe operations run through `chelis eval` and `chelis test`.
+With Chelis 0.18.12, native probes pass for frame construction, `nrows`,
+and matching a retrieved column. An invoked `drop_nan` still fails to
+build; other dataframe operations need their own native checks. Tensor
+payloads do not establish GPU support. Parquet
+frame functions are exported but fail when called. CSV and JSON writers do
+not preserve integer missing-value masks, and the JSON writer requires
+simple text without characters needing JSON escaping. See the
+[I/O chapter](docs/src/io.md) and [limitations](docs/src/appendix/limitations.md)
+before exchanging data.
 
 ## Contributing
 
-[`CONTRIBUTING.md`](CONTRIBUTING.md) covers setup, the test suites, the local
-gate, and how CI is organized. Agent-facing repository rules are in
-[`AGENTS.md`](AGENTS.md).
+[CONTRIBUTING.md](CONTRIBUTING.md) describes setup and checks for library
+changes. The public behavior and planned boundaries are recorded in
+[spec/scope.md](spec/scope.md).
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE).
+MIT. See [LICENSE](LICENSE).

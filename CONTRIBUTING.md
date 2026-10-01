@@ -7,14 +7,14 @@ Coral builds with one exact Chelis compiler version, recorded as the
 toolchain manager, and then from a fresh clone run:
 
 ```sh
-chelis reef setup
+chelisup install 0.18.12
 chelis reef build
 ```
 
-`chelis reef setup` installs the pinned compiler if it is missing and prints a
-health summary. `chelisup` resolves the compiler per repository from
-`reef.toml`, so other Chelis projects on the same machine are unaffected. The
-first `chelis reef build` fetches the Nautilus release named in `reef.toml`
+`chelisup install` provides the compiler pinned by `reef.toml`.
+`chelisup` resolves the compiler per repository from `reef.toml`, so other
+Chelis projects on the same machine are unaffected. The first
+`chelis reef build` fetches the Nautilus release named in `reef.toml`
 into your local Reef registry. To install it explicitly instead:
 
 ```sh

@@ -1,31 +1,31 @@
-# NaN Handling
+# Missing values
 
-## Float columns
+Float columns use IEEE NaN for missing numeric values. The helpers
+`is_nan`, `fill_nan`, `any_nan`, and `count_nan` take the float tensor from
+`get_float_col`; `drop_nan(frame, name)` removes rows from a frame.
+`is_nan` tests each value with `neq(value, value)`, which is true for NaN.
 
-Float NaN values are handled via IEEE 754 semantics (`x != x` is true iff NaN):
-`is_nan(col)` is the tensor comparison `neq(col, col)`, which is IEEE-correct
-in both the evaluator and native code.
-Note the asymmetry with the column-form helpers below: float helpers operate on
-*tensors* (extract the column with `get_float_col` first), while the `_col`
-helpers take a `Frame` plus a column name.
+```chelis
+module Coral.BookMissing
+import Coral.Frame (FloatCol, from_pairs, drop_nan, nrows)
+export (main)
+def main() -> i64 = {
+  frame = from_pairs([("value", FloatCol(to_tensor([1.0f32, div(0.0f32, 0.0f32), 3.0f32])))])
+  kept = drop_nan(frame, "value")
+  nrows(kept)
+}
+```
 
-- `is_nan(col)` — returns a bool tensor (true = missing)
-- `fill_nan(col, fill_val)` — replace NaN with `fill_val` in a float tensor
-- `drop_nan(df, col_name)` — remove rows where the column is NaN
-- `any_nan(col)` — true if any value is NaN
-- `count_nan(col)` — count of NaN values
+`main` returns `2`.
 
-## Integer columns
+Integer columns store an `i64` tensor alongside a bool mask (`true` means
+missing). Use `is_nan_col(frame, name)`, `fill_nan_col`, `drop_nan_col`,
+`any_nan_col`, and `count_nan_col` for those columns. `get_int_col` returns
+only the values tensor, so use the `_col` helpers when the mask matters.
+Grouping skips masked entries for sum, mean, min, and max; counts include
+the rows. Joins and concatenation carry the mask into their results.
 
-Integer columns carry an explicit boolean missing-value mask (`true` = missing).
-The mask is propagated through joins (sentinel rows) and concat. Sum, mean,
-min, and max aggregations skip masked entries; counts include them. Use the `_col` variants:
-
-- `is_nan_col(df, col_name)` — returns the bool mask tensor
-- `fill_nan_col(df, col_name, fill_val)` — replace masked entries with `fill_val`
-- `drop_nan_col(df, col_name)` — remove rows where the mask is true
-- `any_nan_col(df, col_name)` — true if any entry is masked
-- `count_nan_col(df, col_name)` — count of masked entries
-
-To construct an int column directly: `int_col_of_list([1, 2, 3])` creates an
-`IntCol` with an all-false (no missing) mask.
+String and bool columns have no missing-value marker. The CSV and JSON
+writers do not encode an integer mask: they write the underlying number,
+including `0` in a missing position. See [I/O](../io.md) before writing a
+frame with missing integers.

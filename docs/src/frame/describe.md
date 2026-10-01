@@ -1,19 +1,23 @@
 # Describe
 
-`Coral.Frame.describe` is the first Frame feature that depends on published
-Nautilus. It currently targets pandas-style summary rows for numeric columns:
-`count`, `mean`, `std`, `min`, `25%`, `50%`, `75%`, and `max`.
+`Coral.Frame.describe(frame)` summarizes numeric columns and skips string
+and bool columns. The result has a `stat` string column with eight rows:
+`count`, `mean`, `std`, `min`, `25%`, `50%`, `75%`, and `max`. Each numeric
+input column has a corresponding `FloatCol` of results. Coral uses
+`Nautilus.Stats` for these calculations.
 
-For float columns, NaN values are skipped before summary statistics are computed.
-The standard deviation follows pandas and uses sample `ddof=1`.
+NaNs in float columns and masked values in integer columns are left out of
+the summary. Standard deviation uses the sample divisor (`ddof=1`).
 
 ```chelis
 module Coral.BookDescribe
-import Coral.Frame (FloatCol, from_pairs, describe, nrows, get_float_col, int_col_of_list)
+import Coral.Frame (FloatCol, from_pairs, describe, get_float_col)
 export (main)
 def main() -> f32 = {
-  frame = from_pairs([("price", FloatCol(to_tensor([cast(10.0, f32), div(cast(0.0, f32), cast(0.0, f32)), cast(40.0, f32)]))), ("qty", int_col_of_list([cast(1, i64), cast(2, i64), cast(3, i64)]))])
+  frame = from_pairs([("price", FloatCol(to_tensor([10.0f32, div(0.0f32, 0.0f32), 40.0f32])))])
   summary = describe(frame)
-  add(cast(nrows(summary), f32), index(to_list(get_float_col(summary, "price")), cast(0, i64)))
+  index(to_list(get_float_col(summary, "price")), 0i64)
 }
 ```
+
+The first result is the count of non-NaN prices, so `main` returns `2.0`.

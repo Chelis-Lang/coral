@@ -3,10 +3,12 @@
 This file records the upstream Chelis compiler issues that currently shape
 Coral: what each one blocks, how Coral works around it, and when to check it
 again. It describes the state at the current **pin**, the exact compiler
-release that `reef.toml` requires: Coral pins `chelis 0.18.11` with Nautilus
-0.7.46. Every live entry below was re-probed against the installed published
-0.18.11 toolchain on 2026-09-25. Earlier re-probe records are in git history
-and [`CHANGELOG.md`](../CHANGELOG.md).
+release that `reef.toml` requires. Coral pins the published Chelis 0.18.12
+toolchain and Nautilus 0.7.47 package. The pin-bump probes due under the
+cadences below were run on 2026-10-01. The chelis#828 performance measurement
+and parked chelis#850 Parquet check retain their earlier observations until
+their stated triggers. Earlier re-probe records are in git history and
+[`CHANGELOG.md`](../CHANGELOG.md).
 
 ## How this file works
 
@@ -32,9 +34,9 @@ and record whether the limitation is still present.
 | Parked | Missing upstream features Coral stubs out | When upstream signals movement, or at the next minor Coral release |
 | Archived | Fixed limitations kept for regression context | None; revisit only on a reported regression |
 
-§Actively blocking has no entries at 0.18.11. A compiler regression that
-breaks the shipped package, the native test suite, or the parity gate belongs
-there.
+§Actively blocking has no entries at 0.18.12. A compiler regression that
+breaks the shipped package, the native test suite, or the parity gate
+belongs there.
 
 ### Re-probing
 
@@ -53,26 +55,30 @@ records and 1 when it changes:
 
 | Probe | Entry |
 |---|---|
-| `scripts/repro_multimodule_bare_build.py --target {frame,groupby,join}` | chelis#2097 |
-| `scripts/repro_package_frame_build.py --target nrows` | chelis#1226 |
-| `scripts/repro_package_frame_build.py --target construct` | chelis#1226 (positive: construction works) |
-| `scripts/repro_native_drop_nan_blocked.py` | chelis#1226, chelis#730 |
+| `scripts/repro_multimodule_bare_build.py --target {frame,groupby,join}` | chelis#730; chelis#2097 masked |
+| `scripts/repro_package_frame_build.py --target {construct,nrows,match_column}` | Positive native Frame paths; the `nrows` chelis#1226 instance cleared |
+| `scripts/repro_package_frame_build.py --target drop_nan` | chelis#730 in the package lane |
+| `scripts/repro_native_drop_nan_blocked.py` | chelis#730 in the stripped lane |
 | `scripts/repro_native_nan.py`, `scripts/repro_native_neq.py` | chelis#630 regressions (Archived) |
 
 ## Actively blocking
 
 ## Tracking
 
-- **Native C rejects a direct call that passes a function-value parameter
-  ([chelis#2097](https://github.com/Chelis-Lang/chelis/issues/2097)).**
+- **Stripped Frame, GroupBy, and Join builds stop at unresolved host
+  inference ([chelis#730](https://github.com/Chelis-Lang/chelis/issues/730);
+  earlier [chelis#2097](https://github.com/Chelis-Lang/chelis/issues/2097)
+  diagnostic is masked).**
 
   *Reproducer:* `scripts/repro_multimodule_bare_build.py`, all three
   targets. Each concatenates Coral's Frame, GroupBy, or Join modules with
   their dependencies into one file and builds a trivial entrypoint with
-  `chelis build`. On 0.18.11 all three fail with `direct call in
-  frame__list_filter_string does not match ownership signature`.
-  `frame.ch::list_filter_string` passes its `pred: string -> bool`
-  parameter through a direct call to `list_filter_string_acc`.
+  `chelis build`. On 0.18.12 all three fail with `host type did not resolve
+  before the code-generation boundary`. On 0.18.11 they reached the later
+  chelis#2097 ownership-signature diagnostic. An isolated direct call to
+  the production `list_filter_string` with a named predicate also stops
+  at chelis#730, so the new diagnostic is not evidence that chelis#2097
+  is fixed.
 
   *Affected surface:* none that ships. Coral is consumed as a Reef package,
   and its tests run in the evaluator. The limitation affects only these
@@ -83,49 +89,54 @@ records and 1 when it changes:
   still guard chelis#630 natively.
 
   *Re-probe trigger:* every pin bump. When the smokes pass, restore the full
-  Frame module chain in `scripts/repro_native_nan.py`.
+  Frame module chain in `scripts/repro_native_nan.py`; if they reach a
+  different rejection, investigate that boundary before re-citing it.
 
-- **Reading a column out of a `Frame` does not lower to native code
-  ([chelis#1226](https://github.com/Chelis-Lang/chelis/issues/1226),
-  [chelis#1260](https://github.com/Chelis-Lang/chelis/issues/1260),
-  [chelis#730](https://github.com/Chelis-Lang/chelis/issues/730);
+- **Invoked `drop_nan` on a `Frame` still fails native lowering
+  ([chelis#730](https://github.com/Chelis-Lang/chelis/issues/730);
   Coral-side tracker [coral#26](https://github.com/Chelis-Lang/coral/issues/26)).**
 
-  *Reproducer:* `scripts/repro_package_frame_build.py`. In a Reef project
-  that imports `Coral.Frame`, constructing a frame and reading `ncols`
-  builds, links, runs, and agrees with `chelis eval` (`--target construct`).
-  Reading `nrows` does not: `column_len` reaches code generation with no
-  concrete type application (`--target nrows`, chelis#1226). The column
-  type comes back out of `hamt_get[a](Hamt[a], string) -> Option[a]` at
-  `a = Column[n]` without its row dimension. A `match` over that result
-  fails the same way (chelis#1260). `scripts/repro_native_drop_nan_blocked.py`
-  shows the same boundary for an invoked `drop_nan`, where it surfaces as
-  an unresolved host inference variable (chelis#730).
+  *Reproducer:* `scripts/repro_package_frame_build.py` imports
+  `Coral.Frame` in a Reef project. `--target construct` builds, links,
+  runs, and agrees with eval at `ncols = 2`. `--target nrows` now does the
+  same at `nrows = 3`: the former chelis#1226 diagnostic no longer occurs
+  for this Coral instance. A direct match on a retrieved `Column[n]` also
+  builds and runs, returning its three-element length. These probes do
+  not establish a class-wide fix for chelis#1226 or the older
+  [chelis#1260](https://github.com/Chelis-Lang/chelis/issues/1260)
+  match diagnostic. `--target drop_nan` still rejects with chelis#730.
+  `scripts/repro_native_drop_nan_blocked.py` confirms that boundary in
+  the separate stripped-module lane.
 
-  *Affected surface:* native `chelis build` of programs that read Frame
-  columns. The package, the evaluator, and the test suites are unaffected.
+  *Affected surface:* native `chelis build` of the invoked Frame
+  `drop_nan` path. The Reef package, evaluator, and test suites are
+  unaffected. Other Frame verbs need their own native probes before
+  claiming coverage.
 
   *Workaround:* none in Coral's source. The native NaN regression compiles
   the NaN helpers on bare tensors instead of through a `Frame`.
 
-  *Re-probe trigger:* every pin bump. When `--target nrows` reports a fix,
-  promote a native compile-link-run of a Frame read to a CI regression.
+  *Re-probe trigger:* every pin bump. The now-positive `nrows` read runs
+  in CI. When `--target drop_nan` reports a fix, compile, link, run, and
+  compare that invoked path with eval before changing its expectation.
 
-- **A `gather` or `sort` axis passed through a helper call is rejected
+- **A `gather` axis passed through a helper call is rejected
   ([chelis#741](https://github.com/Chelis-Lang/chelis/issues/741)).**
 
   *Reproducer:* `tests_blocked/lowering/gather_axis_helper.ch`. With
   `def zero_i32() -> i32 = cast(0, i32)`, `gather(xs, idx, zero_i32())`
-  fails with `` `gather` axis is not a compile-time integer constant ``,
-  while the inline `gather(xs, idx, cast(0, i32))` evaluates and builds.
-  On 0.18.11 `chelis check` still scores the helper form 1.0, but the
-  evaluator now rejects it as well as `chelis build`; through 0.18.6 only
-  the bare build did.
+  fails with `` `gather` axis is not a compile-time integer constant ``.
+  On 0.18.12 the blocked suite still matches this diagnostic; inline
+  gather axes remain exercised by Coral's positive tests. The sibling
+  `sort(xs, zero_i32())` form now evaluates and builds; a direct native
+  compile, link, and run agreed with eval, and `tests/internal.ch` guards
+  its evaluator behavior.
 
   *Affected surface:* none visible to users.
 
   *Workaround:* `src/frame.ch` writes `cast(0, i32)` inline at every
-  `gather` and `sort` axis instead of calling a named helper.
+  `gather` axis. Its three numeric `sort` sites now call the named
+  `axis_zero()` helper.
 
   *Re-probe trigger:* the blocked probe runs in CI on every change.
 

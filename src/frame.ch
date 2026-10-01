@@ -21,6 +21,7 @@ type Frame[n] =
   | Frame { cols: Hamt[Column[n]], col_order: List[string] }
 def zero_i64() -> i64 = cast(0, i64)
 def one_i64() -> i64 = cast(1, i64)
+def axis_zero() -> i32 = cast(0, i32)
 def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))
 def bool_list_to_tensor[n](values: List[bool]) -> tensor[n, bool] = {
   ints = to_tensor(map(fn (flag: bool) -> if flag then one_i64() else zero_i64(), values))
@@ -129,7 +130,7 @@ def extract_named_column[n](pairs: List[(string, Column[n])], target: string, ac
     if eq(head_pair.0, target) then (head_pair.1, append_pair_list(acc, skip(pairs, one_i64()))) else extract_named_column(skip(pairs, one_i64()), target, append(acc, head_pair))
   }
 def append_pair_list[n](lhs: List[(string, Column[n])], rhs: List[(string, Column[n])]) -> List[(string, Column[n])] = if eq(len(rhs), zero_i64()) then lhs else append_pair_list(append(lhs, index(rhs, zero_i64())), skip(rhs, one_i64()))
--- gather/sort axes are written inline as cast(0, i32), not through a helper (chelis#741).
+-- gather axes remain inline because a helper is rejected (chelis#741).
 def column_tail[n, k](col: Column[n], count: i64) -> Column[k] =
   match col with {
     | IntCol(xs, mask) => {
@@ -262,20 +263,20 @@ def perm_from_key_column[n](col: Column[n], ascending: bool) -> (tensor[n, i64],
     | FloatCol(xs) => {
     xs_list = to_list(xs)
     fresh_tensor = to_tensor(xs_list)
-    perm = orient_perm(sort(fresh_tensor, cast(0, i32)).1, ascending)
+    perm = orient_perm(sort(fresh_tensor, axis_zero()).1, ascending)
     (perm, FloatCol(to_tensor(xs_list)))
   }
     | IntCol(xs, mask) => {
     xs_list = to_list(xs)
     mask_list = to_list(mask)
     fresh_tensor = to_tensor(xs_list)
-    perm = orient_perm(sort(fresh_tensor, cast(0, i32)).1, ascending)
+    perm = orient_perm(sort(fresh_tensor, axis_zero()).1, ascending)
     (perm, IntCol(to_tensor(xs_list), bool_list_to_tensor(mask_list)))
   }
     | BoolCol(xs) => {
     xs_list = to_list(xs)
     fresh_tensor = to_tensor(map(fn (b: bool) -> if b then one_i64() else zero_i64(), xs_list))
-    perm = orient_perm(sort(fresh_tensor, cast(0, i32)).1, ascending)
+    perm = orient_perm(sort(fresh_tensor, axis_zero()).1, ascending)
     (perm, BoolCol(bool_list_to_tensor(xs_list)))
   }
     | StringCol(xs) => {

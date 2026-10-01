@@ -20,3 +20,6 @@ test_io_*.csv
 test_io_*.json
 skill-io.csv
 skill-io.json
+.reef-write.lock
+.*.reef-tmp-*
+.*.reef-backup-*

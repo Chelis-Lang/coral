@@ -4,9 +4,17 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.7.44] - 2026-10-01
 
 Public-release cleanup. No change to any public function's behavior.
+
+- Pin Coral 0.7.44 to the published Chelis 0.18.12 compiler and Nautilus
+  0.7.47 package. A native `Frame` column read through `nrows` now builds,
+  links, runs, and agrees with evaluation; the same is true for a match on
+  a retrieved column. The named axis helper now works for `sort` and
+  replaces three inline sort axes. Invoked `drop_nan` and stripped
+  full-module builds remain blocked by chelis#730; the gather-axis helper
+  still fails as expected under chelis#741.
 
 - Add a pinned, redacted secret scan for pull requests and branch pushes, with a manual full-history scan.
 

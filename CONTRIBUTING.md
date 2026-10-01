@@ -18,7 +18,7 @@ first `chelis reef build` fetches the Nautilus release named in `reef.toml`
 into your local Reef registry. To install it explicitly instead:
 
 ```sh
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.46
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.47
 ```
 
 `--from-github` authenticates with `GITHUB_TOKEN`, falling back to

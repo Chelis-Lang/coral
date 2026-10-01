@@ -51,3 +51,20 @@ def test_describe_skip_nan_count() -> unit ! { Test } = {
   count_val = index(to_list(get_float_col(d, "v")), cast(0, i64))
   assert_close(count_val, cast(4.0, f32), cast(0.00001, f32), "skip-nan count == 4")
 }
+def axis_zero() -> i32 = cast(0, i32)
+def permutation_with_named_axis(xs: tensor[3, f32]) -> tensor[3, i64] = sort(xs, axis_zero()).1
+def permutation_with_named_axis_i64(xs: tensor[3, i64]) -> tensor[3, i64] = sort(xs, axis_zero()).1
+def test_sort_accepts_named_axis_helper() -> unit ! { Test } = {
+  values = to_tensor([cast(3.0, f32), cast(1.0, f32), cast(2.0, f32)])
+  perm = to_list(permutation_with_named_axis(values))
+  _ = assert_eq(index(perm, cast(0, i64)), cast(1, i64), "smallest value starts at row 1")
+  _ = assert_eq(index(perm, cast(1, i64)), cast(2, i64), "middle value starts at row 2")
+  assert_eq(index(perm, cast(2, i64)), cast(0, i64), "largest value starts at row 0")
+}
+def test_sort_accepts_named_axis_helper_for_i64() -> unit ! { Test } = {
+  values = to_tensor([cast(3, i64), cast(1, i64), cast(2, i64)])
+  perm = to_list(permutation_with_named_axis_i64(values))
+  _ = assert_eq(index(perm, cast(0, i64)), cast(1, i64), "smallest value starts at row 1")
+  _ = assert_eq(index(perm, cast(1, i64)), cast(2, i64), "middle value starts at row 2")
+  assert_eq(index(perm, cast(2, i64)), cast(0, i64), "largest value starts at row 0")
+}

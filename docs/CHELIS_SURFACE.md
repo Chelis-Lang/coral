@@ -1,6 +1,6 @@
 # Chelis Capability Surface (this shell)
 
-<!-- BEGIN CHELIS MANAGED BLOCK: chelis-surface-header chelis@0.18.11 (sha256:28011bed9ccb5778) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: chelis-surface-header chelis@0.18.12 (sha256:28011bed9ccb5778) -->
 This file is a domain-scoped view of the canonical Chelis capability surface,
 generated for the pinned toolchain. Each capability row is marked `@pin` (usable
 at the current pin) or `@upstream` (lands at the next bump). **Read it before
@@ -12,17 +12,18 @@ in `Chelis-Lang/chelis`.
 
 ## Version scope
 
-Coral pins Chelis **0.18.11** (`compiler = "=0.18.11"` in `reef.toml`) and
-depends on Nautilus **0.7.46**, the Nautilus release built for that compiler.
+Coral pins Chelis **0.18.12** (`compiler = "=0.18.12"` in `reef.toml`)
+and depends on Nautilus **0.7.47**, the published release built for that
+compiler.
 
 | Artifact | Identity |
 |---|---|
-| Chelis `v0.18.11` | tag commit `a7e592f88a148d8323b8f9a8f679c8e163ad3ee7` |
-| `chelis-v0.18.11-linux-x86_64-glibc2.31.tar.gz` (CI) | SHA-256 `5b97fdf8d20582f022b945bccdc8020d222ad16cbc90047aa369e0d54fd3afd3` |
-| `chelis-v0.18.11-darwin-arm64.tar.gz` | SHA-256 `386b2912d21f2b4a2fc6f7f42ab71625c5f1258b2d90c48c2e263b3fc435c289` |
-| Nautilus `v0.7.46` | commit `ead1d65e2d7e5763e5c7f90e8c417aa36fd552e2` |
-| `nautilus-0.7.46.chb` | SHA-256 `b581332e726ebec25a851bb7d453882dfa0c39c2cb5f640a4327d51d1b821b7a` |
-| `nautilus-0.7.46.tar.zst` | SHA-256 `8a37bccd8c57e8d0b727a0f23f8de7082008aef43ebc77f899e647290fb0b71f` |
+| Chelis `v0.18.12` | tag commit `c81d8188de6ebad032c1bb1c0a427eb0408feee3` |
+| `chelis-v0.18.12-linux-x86_64-glibc2.31.tar.gz` (CI) | SHA-256 `f82ab4e2a9667cc08047a2732d61aec02501d29c9355b195bee6a64186a81c66` |
+| `chelis-v0.18.12-darwin-arm64.tar.gz` | SHA-256 `8cdcbf598c3f04e37a9a211e7abaa67fbaf6d4c135a34f00c1944b1e43b8e90d` |
+| Nautilus `v0.7.47` | commit `76a66ae921cafeef538e1ff48ea53fdc253c1724` |
+| `nautilus-0.7.47.chb` | SHA-256 `cd5c04ecfcd2445b7f7a7e0a997d721f20c85aac4524ae626571c3db96008603` |
+| `nautilus-0.7.47.tar.zst` | SHA-256 `dfe18e834c2d6e49282afd682e0452e51575c3d1dcefd4db3267098e98bba716` |
 
 The archive hashes match the publisher's `.sha256` sidecars on each release.
 
@@ -30,8 +31,8 @@ The archive hashes match the publisher's `.sha256` sidecars on each release.
 runs; they do not claim gradient or GPU support (see
 [`spec/scope.md`](../spec/scope.md#deferrals)). `@upstream` capabilities need
 a fresh probe before use. The
-[canonical inventory](https://github.com/Chelis-Lang/chelis/blob/a7e592f88a148d8323b8f9a8f679c8e163ad3ee7/docs/CHELIS_SURFACE.md)
-owns the compiler-wide surface. Last refreshed: 2026-09-25.
+[canonical inventory](https://github.com/Chelis-Lang/chelis/blob/v0.18.12/docs/CHELIS_SURFACE.md)
+owns the compiler-wide surface. Last refreshed: 2026-10-01.
 
 ## Capability inventory
 
@@ -53,7 +54,7 @@ owns the compiler-wide surface. Last refreshed: 2026-09-25.
 | Comparisons and logic | `eq`, `neq`, `lt`, `lte`, `gt`, `gte`, `and`, `or`, `not` | Row filtering, join keys, sort comparators, NaN detection. `is_nan` is `neq(col, col)` on a float tensor, which is IEEE-correct at NaN in both the evaluator and native C (`scripts/repro_native_neq.py`). Borrowed/borrowed `neq` infers `tensor[n, bool]` (`tests/types.ch`). Integer masks and mask inversion use tensor `not` directly. Tensor operands must have matching shapes; there is no tensor/scalar comparison, so scalar thresholds are mapped over the elements (`tests_neg/frame/tensor_scalar_gt_neg.ch`). | `@pin` |
 | Host-list operations | `len`, `index`, `append`, `skip`, `range`, `map`, `fold`, `filter` | Coral's Frame algorithms are host-list-first; tensors are used for bulk payloads. Host lists retain `len`; tensor row counts use O(1) `numel`. | `@pin` |
 | Tensor/host bridges and queries | `to_tensor`, `to_list`, `numel` | Column payloads round-trip between tensors (storage/gather) and host lists (algorithms). Empty-tensor `numel` returns zero, so Frame and IO row counts use it directly. | `@pin` |
-| Tensor movement | `gather`, `sort` | Row selection (`head`/`tail`/`slice`, sort-permutation application) and sort-by. **Constraint** (chelis#741): the axis argument must be a literal or an inline `cast(<int>, i32)`; a helper call is rejected by rank monomorphization in the evaluator and in `chelis build`, which is why `frame.ch` inlines `cast(0, i32)` at every axis site. Pinned by `tests_blocked/lowering/gather_axis_helper.ch`. | `@pin` |
+| Tensor movement | `gather`, `sort` | Row selection (`head`/`tail`/`slice`, sort-permutation application) and sort-by. **Constraint** (chelis#741): `gather` needs a literal or inline `cast(<int>, i32)` axis; the helper form remains blocked. The `sort` helper form works at this pin, so `frame.ch` calls `axis_zero()` at its three numeric sort sites. The gather rejection is pinned by `tests_blocked/lowering/gather_axis_helper.ch`, and `tests/internal.ch` exercises the sort helper. | `@pin` |
 | String ordering | `str_lt`, `str_lt_pos`, `str_char_lt` | Lexicographic sort-by on `StringCol` and stable key ordering in GroupBy/Join. | `@pin` |
 | Failure | `fail` | Guard rails for schema mismatches and the intentional Parquet stubs (`read_parquet_frame` / `write_parquet_frame`). | `@pin` |
 
@@ -73,5 +74,5 @@ owns the compiler-wide surface. Last refreshed: 2026-09-25.
 |---|---|---|
 | Evaluator (`chelis test`) | The positive suite (`tests/*.ch`), the negative suite (`tests_neg/`), and the blocked-probe suite (`tests_blocked/`). | `@pin` |
 | Package build (`chelis reef build`) | Release artifact (`dist/coral-<ver>.chb` + `.tar.zst`). | `@pin` |
-| Native C build (`chelis build` + native link) | Not a shipping lane. Constructing a `Frame` and reading `ncols` builds, links, runs, and agrees with eval; reading a column (`nrows`, `drop_nan`) does not lower yet (chelis#1226, chelis#730). The stripped Frame/GroupBy/Join module smokes stop at chelis#2097. The native float-NaN and Window parity regressions pass on bare tensors; they do not prove full Frame lowering. | `@pin` |
+| Native C build (`chelis build` + native link) | Not a shipping lane. Construction plus `ncols`, `nrows`, and a match on a retrieved column build, link, run, and agree with eval in package-context probes. Invoked `drop_nan` and stripped Frame/GroupBy/Join smokes still stop at chelis#730. The earlier chelis#1226 `nrows` instance cleared; chelis#2097 is masked in the stripped smokes. Native float-NaN and Window parity regressions pass on bare tensors; they do not prove full Frame lowering. | `@pin` |
 | `grad` / AD | Not part of Coral's surface. Scalar `grad` builds natively at this pin (chelis#405 is archived), but Coral makes no claim that `grad` differentiates through its host-list algorithms (`spec/scope.md` deferral D5). | `@pin` |

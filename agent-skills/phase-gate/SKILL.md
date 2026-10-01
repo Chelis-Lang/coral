@@ -17,32 +17,6 @@ Before judging a phase, identify its single authoritative oracle:
 
 Treat all other evidence as supporting material, not the completion decision itself.
 
-## Default Gate
-
-The gate is `scripts/gate.py`; do not hand-type `cargo test --workspace` in its place:
-
-```sh
-python3 scripts/gate.py --fast        # before every push
-python3 scripts/gate.py --validation  # optional troubleshooting and extra validation
-python3 scripts/gate.py --list        # the canonical command list with local/CI ownership
-```
-
-The workspace nextest stage is CI-owned and macOS Smoke is the authoritative workspace
-oracle. Completion evidence is CI green on the candidate head plus the phase's named
-oracle, never a local workspace run alone. A `--validation` run is not required per PR;
-the phase's acceptance oracle and manual gates remain required.
-
-## Additional Required Checks
-
-- verify phase-specific acceptance commands or manual runners
-- inspect ignored tests and confirm they are explicitly documented
-- verify top-level executable examples still pass `chelis fmt` and `chelis check`
-- check that docs do not overclaim behavior the repo does not ship
-- verify that the named phase oracle is reflected consistently in plan docs and current-state docs
-- On the current repo workstation, HIP manual gates should be treated as locally runnable:
-  `rocminfo` exposes a `gfx1100` AMD Radeon 8060S GPU and `hipcc` is installed.
-  Do not excuse ignored HIP suites on the assumption that this machine is CPU-only.
-
 ## Completion Rule
 
 Do not call the phase complete if any of these remain:
@@ -52,3 +26,16 @@ Do not call the phase complete if any of these remain:
 - hidden manual-only acceptance criteria not documented as such
 - false-perfect machine-facing reports
 - examples/docs whose meaning contradicts the actual implementation
+<!-- shell-local:begin -->
+<!-- shell-local:exclude:begin -->
+<!-- ## Default Gate -->
+<!-- ## Additional Required Checks -->
+<!-- shell-local:exclude:end -->
+
+## Coral Gate And Acceptance
+
+Run the local gate documented in `CONTRIBUTING.md` with the compiler pinned
+by `reef.toml`, then inspect applicable hosted CI on the exact candidate
+head. For a phase-completion claim, also run the named acceptance oracle in
+`spec/scope.md` and record any manual gates as separate evidence.
+<!-- shell-local:end -->

@@ -6,13 +6,12 @@ this checkout, install `chelisup`, then run:
 
 ```sh
 chelisup install 0.18.12
-chelis reef setup
 chelis reef build
 ```
 
 `chelisup install` provides the compiler pinned by `reef.toml`.
-`chelis reef setup` installs Nautilus from `reef.lock`, and
-`chelis reef build` checks and builds Coral. The
+`chelis reef build` fetches the pinned Nautilus release if needed,
+then checks and builds Coral. The
 [Chelis installation guide](https://github.com/Chelis-Lang/chelis/blob/main/docs/book/src/install.md)
 explains how to install `chelisup`.
 

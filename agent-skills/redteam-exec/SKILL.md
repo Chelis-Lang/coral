@@ -110,18 +110,27 @@ validation pass, or verification of a fix that a red team reported.
 ## Coral Worktree Handoff And Verification
 
 - In the worktree being handed over, capture `git rev-parse HEAD` and
-  `git status --porcelain --untracked-files=all`. Inventory all processes
-  with a working directory or open file under the worktree with
-  `lsof -nP -x f +D "$PWD"`; `-x f` includes mounted
-  subdirectories. Check a shared target separately with
-  `lsof -nP -x f +D "$target"`. Do not filter by executable name before this
-  ownership check. Use `ps -p PID -o pid,ppid,command` to identify each
-  returned PID; disregard only the scan processes after they exit. Inspect
-  `lsof` output even when it exits nonzero. If the scan is unavailable or its
-  scope is uncertain, choose a separate worktree and target. Paste the
-  command output and timestamp into the brief. A dirty tree or active owner
-  forbids reuse. The author and reviewer never write or build in the same
-  worktree concurrently.
+  `git status --porcelain --untracked-files=all`. From anywhere in that
+  worktree, set `review_worktree="$(realpath "$(git rev-parse --show-toplevel)")"`
+  and `review_git_dir="$(realpath "$(git rev-parse --path-format=absolute --git-dir)")"`.
+  From outside those paths, scan each with `lsof -nP -x f +D <path>`.
+  The physical root scan includes mounted children; the Git-dir scan covers
+  the linked index and locks. Check remaining locks with
+  `find "$review_git_dir" -name '*.lock' -print`; any lock forbids reuse.
+  Use `git -C "$review_worktree" ls-files -s` to identify tracked
+  symlinks (mode `120000`), resolving their paths from the worktree root.
+  Resolve and separately scan any external source directory with
+  `lsof -nP -x f +D <resolved-directory>`, or an external source file with
+  `lsof -nP -- <resolved-file>`. Resolve a shared target to a physical path
+  and scan it separately with `lsof -nP -x f +D <target>`. An unscanned
+  external target forbids reuse. Do not filter by executable name before
+  these checks. Identify each returned PID with
+  `ps -p PID -o pid,ppid,command`; disregard only scan processes after
+  they exit. Inspect stdout and stderr even when `lsof` exits nonzero.
+  If a scan is unavailable or its scope is uncertain, choose a separate
+  worktree and target. Paste the command output and timestamp into the brief.
+  A dirty tree, active owner, or Git lock forbids reuse. The author and
+  reviewer never write or build in the same worktree concurrently.
 - A fresh-round brief names the PR and round, pushed SHA, changed paths,
   bounded claims, exact worktree and target, clean status and process
   evidence, report budget, delivery channel, required executed probes, and

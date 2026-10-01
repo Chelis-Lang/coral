@@ -36,6 +36,9 @@ Do not call the phase complete if any of these remain:
 
 Run the local gate documented in `CONTRIBUTING.md` with the compiler pinned
 by `reef.toml`, then inspect applicable hosted CI on the exact candidate
-head. For a phase-completion claim, also run the named acceptance oracle in
-`spec/scope.md` and record any manual gates as separate evidence.
+head. For public-surface acceptance, check each applicable criterion in
+`spec/scope.md` §Acceptance, including the example validators in
+`CONTRIBUTING.md`, and record manual criteria separately. `spec/scope.md`
+names no single phase-completion oracle; do not claim a phase complete on
+this evidence alone.
 <!-- shell-local:end -->

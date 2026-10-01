@@ -110,12 +110,17 @@ validation pass, or verification of a fix that a red team reported.
 ## Coral Worktree Handoff And Verification
 
 - In the worktree being handed over, capture `git rev-parse HEAD` and
-  `git status --porcelain --untracked-files=all`. Inspect
-  `ps -axo pid,ppid,command` for Chelis, Python, Cargo, and gate processes;
-  use `lsof -a -d cwd -p PID` to check whether a process owns that worktree.
-  Paste the command output and timestamp into the brief. A dirty tree,
-  active owner, or uncertain process scope forbids reuse. The author and
-  reviewer never write or build in the same worktree concurrently.
+  `git status --porcelain --untracked-files=all`. Inventory all processes
+  whose working directory is under the worktree with
+  `lsof -nP -a -d cwd +D "$PWD"`; check a shared target separately with
+  `lsof -nP +D "$target"`. Do not filter by executable name before this
+  ownership check. Use `ps -p PID -o pid,ppid,command` to identify each
+  returned PID; disregard only the scan processes after they exit. Inspect
+  `lsof` output even when it exits nonzero. If the scan is unavailable or its
+  scope is uncertain, choose a separate worktree and target. Paste the
+  command output and timestamp into the brief. A dirty tree or active owner
+  forbids reuse. The author and reviewer never write or build in the same
+  worktree concurrently.
 - A fresh-round brief names the PR and round, pushed SHA, changed paths,
   bounded claims, exact worktree and target, clean status and process
   evidence, report budget, delivery channel, required executed probes, and

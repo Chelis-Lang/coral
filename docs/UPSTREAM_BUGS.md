@@ -3,10 +3,12 @@
 This file records the upstream Chelis compiler issues that currently shape
 Coral: what each one blocks, how Coral works around it, and when to check it
 again. It describes the state at the current **pin**, the exact compiler
-release that `reef.toml` requires: Coral pins `chelis 0.18.11` with Nautilus
-0.7.46. Every live entry below was re-probed against the installed published
-0.18.11 toolchain on 2026-09-25. Earlier re-probe records are in git history
-and [`CHANGELOG.md`](../CHANGELOG.md).
+release that `reef.toml` requires. This draft pins Chelis 0.18.12 but still
+declares Nautilus 0.7.46, which was built for 0.18.11. The complete live-entry
+re-probe below was last done on the published 0.18.11 toolchain on 2026-09-25.
+On 2026-10-01, the 0.18.12 gather-axis blocked probe and compiler-only native
+NaN regressions passed; package-dependent entries await Nautilus 0.7.47.
+Earlier re-probe records are in git history and [`CHANGELOG.md`](../CHANGELOG.md).
 
 ## How this file works
 
@@ -32,7 +34,7 @@ and record whether the limitation is still present.
 | Parked | Missing upstream features Coral stubs out | When upstream signals movement, or at the next minor Coral release |
 | Archived | Fixed limitations kept for regression context | None; revisit only on a reported regression |
 
-§Actively blocking has no entries at 0.18.11. A compiler regression that
+§Actively blocking had no entries at the last validated pin, 0.18.11. A compiler regression that
 breaks the shipped package, the native test suite, or the parity gate belongs
 there.
 
@@ -120,7 +122,8 @@ records and 1 when it changes:
   while the inline `gather(xs, idx, cast(0, i32))` evaluates and builds.
   On 0.18.11 `chelis check` still scores the helper form 1.0, but the
   evaluator now rejects it as well as `chelis build`; through 0.18.6 only
-  the bare build did.
+  the bare build did. The isolated 0.18.12 blocked probe still matches this
+  diagnostic; the package suite awaits the matching Nautilus release.
 
   *Affected surface:* none visible to users.
 

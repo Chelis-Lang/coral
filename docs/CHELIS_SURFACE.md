@@ -1,6 +1,6 @@
 # Chelis Capability Surface (this shell)
 
-<!-- BEGIN CHELIS MANAGED BLOCK: chelis-surface-header chelis@0.18.11 (sha256:28011bed9ccb5778) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: chelis-surface-header chelis@0.18.12 (sha256:28011bed9ccb5778) -->
 This file is a domain-scoped view of the canonical Chelis capability surface,
 generated for the pinned toolchain. Each capability row is marked `@pin` (usable
 at the current pin) or `@upstream` (lands at the next bump). **Read it before
@@ -12,26 +12,31 @@ in `Chelis-Lang/chelis`.
 
 ## Version scope
 
-Coral pins Chelis **0.18.11** (`compiler = "=0.18.11"` in `reef.toml`) and
-depends on Nautilus **0.7.46**, the Nautilus release built for that compiler.
+This draft pins Chelis **0.18.12** (`compiler = "=0.18.12"` in `reef.toml`)
+and prepares Coral **0.7.44**. Nautilus **0.7.46** is still the declared
+dependency, but it was built for Chelis 0.18.11 and cannot validate this
+candidate. The capability rows below record the last fully validated
+inventory at 0.18.11; revalidation and a matching Nautilus release are
+required before this draft is ready for review.
 
 | Artifact | Identity |
 |---|---|
-| Chelis `v0.18.11` | tag commit `a7e592f88a148d8323b8f9a8f679c8e163ad3ee7` |
-| `chelis-v0.18.11-linux-x86_64-glibc2.31.tar.gz` (CI) | SHA-256 `5b97fdf8d20582f022b945bccdc8020d222ad16cbc90047aa369e0d54fd3afd3` |
-| `chelis-v0.18.11-darwin-arm64.tar.gz` | SHA-256 `386b2912d21f2b4a2fc6f7f42ab71625c5f1258b2d90c48c2e263b3fc435c289` |
-| Nautilus `v0.7.46` | commit `ead1d65e2d7e5763e5c7f90e8c417aa36fd552e2` |
+| Chelis `v0.18.12` | tag commit `c81d8188de6ebad032c1bb1c0a427eb0408feee3` |
+| `chelis-v0.18.12-linux-x86_64-glibc2.31.tar.gz` (CI) | SHA-256 `f82ab4e2a9667cc08047a2732d61aec02501d29c9355b195bee6a64186a81c66` |
+| `chelis-v0.18.12-darwin-arm64.tar.gz` | SHA-256 `8cdcbf598c3f04e37a9a211e7abaa67fbaf6d4c135a34f00c1944b1e43b8e90d` |
+| Nautilus `v0.7.46` (incompatible with candidate pin) | commit `ead1d65e2d7e5763e5c7f90e8c417aa36fd552e2` |
 | `nautilus-0.7.46.chb` | SHA-256 `b581332e726ebec25a851bb7d453882dfa0c39c2cb5f640a4327d51d1b821b7a` |
 | `nautilus-0.7.46.tar.zst` | SHA-256 `8a37bccd8c57e8d0b727a0f23f8de7082008aef43ebc77f899e647290fb0b71f` |
 
 The archive hashes match the publisher's `.sha256` sidecars on each release.
 
-`@pin` rows describe what Coral uses at this pin, within the checks Coral
-runs; they do not claim gradient or GPU support (see
+`@pin` rows below describe the last validated 0.18.11 package surface,
+pending revalidation at the candidate pin; they do not claim gradient or GPU support (see
 [`spec/scope.md`](../spec/scope.md#deferrals)). `@upstream` capabilities need
 a fresh probe before use. The
-[canonical inventory](https://github.com/Chelis-Lang/chelis/blob/a7e592f88a148d8323b8f9a8f679c8e163ad3ee7/docs/CHELIS_SURFACE.md)
-owns the compiler-wide surface. Last refreshed: 2026-09-25.
+[canonical inventory](https://github.com/Chelis-Lang/chelis/blob/v0.18.12/docs/CHELIS_SURFACE.md)
+owns the compiler-wide surface. Compiler provenance refreshed: 2026-10-01;
+package capability review pending.
 
 ## Capability inventory
 

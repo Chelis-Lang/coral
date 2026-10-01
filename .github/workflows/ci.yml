@@ -16,7 +16,7 @@ env:
   # below fails immediately if these drift from reef.toml.
   CHELIS_TAG: v0.18.12
   CHELIS_VERSION: 0.18.12
-  NAUTILUS_TAG: v0.7.46
+  NAUTILUS_TAG: v0.7.47
   CORAL_VERSION: 0.7.44
 
 jobs:
@@ -146,6 +146,9 @@ jobs:
 
       - name: native tensor neq preserves IEEE NaN inequality
         run: python scripts/repro_native_neq.py
+
+      - name: native package Frame reads and drop boundary
+        run: python scripts/repro_package_frame_build.py --target all
 
   mac-smoke:
     needs: lint

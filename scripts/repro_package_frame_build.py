@@ -1,36 +1,13 @@
 #!/usr/bin/env python3
-"""Compile, link, and run a real `Coral.Frame` entrypoint through the package lane.
+"""Re-probe real `Coral.Frame` entrypoints through the Reef package lane.
 
-This is the lane coral#26 reports against: a reef project that imports
-`Coral.Frame` and runs `chelis build`. It is distinct from
-`repro_multimodule_bare_build.py`, which concatenates stripped and
-symbol-prefixed modules into one bare file and therefore does not exercise
-package module resolution at all.
-
-Two claims are pinned here, both re-measured at every pin bump:
-
-`--target construct` is the **positive** de-narrowing. Through chelis 0.18.4 a
-`Frame` could not even be constructed in this lane: `from_pairs` reaches
-`Coral.Internal.Hamt.from_pairs_rec`, and a recursive generic host call was
-rejected at the branded chelis#941 / [05-UNS-1] boundary. chelis 0.18.5 lands
-bounded memoized monomorphization (chelis#1158), the non-recursive inlining
-fix (chelis#1201), and recursive dimension-generic monomorphization
-(chelis#1216), so construction plus `ncols` now builds, links, runs, and
-agrees with `chelis eval`.
-
-`--target nrows` is the **expected-failure** probe for what is still blocked.
-`nrows` reads a column back out of the HAMT through
-`hamt_get[a](Hamt[a], string) -> Option[a]` instantiated at `a = Column[n]`,
-and the dimension does not survive that round trip: `column_len` arrives at
-lowering with no concrete checked type application. That residue is the open
-chelis#1226 class. A clean build here is FIX-DETECTED and de-narrows the
-`UPSTREAM_BUGS` entry.
-
-chelis 0.18.6 emits its own `main` for the C target, so the native lane is
-built with the compile command the compiler prints and its value is read off
-the compiled program's `main = <value>` observation line -- the same line
-shape `chelis eval` prints, which is what makes the two lanes directly
-comparable.
+Construction, `nrows`, and a match on a column returned from the HAMT build,
+link, run, and agree with `chelis eval` on the pinned compiler. The `nrows`
+path was blocked by chelis#1226 before 0.18.12; the match is a separate
+positive guard and does not establish a chelis#1260 class-wide fix. Invoked
+`drop_nan` still stops at the unresolved host type boundary, chelis#730.
+This lane imports `Coral.Frame`; the stripped module smokes have a separate
+probe in `repro_multimodule_bare_build.py`.
 
 Exit codes:
 - 0: every selected target matched its expected outcome
@@ -85,11 +62,32 @@ TARGETS = {
             "import Coral.Frame (FloatCol, from_pairs, nrows)\n"
             f"def main() -> i64 = nrows(from_pairs({TWO_COLUMNS}))\n"
         ),
-        "expect_build": False,
-        "expect_diagnostic": (
-            "generic host call `pkg__coral__Coral__Frame__column_len` has no "
-            "concrete checked type application to specialize (chelis#1226; [05-UNS-1])"
+        "expect_build": True,
+        "expect_value": 3,
+    },
+    "match_column": {
+        "source": (
+            f"module {ENTRY_MODULE}\n"
+            "import Coral.Frame (FloatCol, from_pairs, get_column)\n"
+            "def main() -> i64 =\n"
+            f'  match get_column(from_pairs({TWO_COLUMNS}), "a") with {{\n'
+            "    | FloatCol(xs) => numel(xs)\n"
+            "    | _ => cast(-1, i64)\n"
+            "  }\n"
         ),
+        "expect_build": True,
+        "expect_value": 3,
+    },
+    "drop_nan": {
+        "source": (
+            f"module {ENTRY_MODULE}\n"
+            "import Coral.Frame (FloatCol, from_pairs, drop_nan, nrows)\n"
+            "def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))\n"
+            'def main() -> i64 = nrows(drop_nan(from_pairs([("value", FloatCol(to_tensor([nan_f32(), cast(2.0, f32)])))]), "value"))\n'
+        ),
+        "expect_build": False,
+        "expect_diagnostic": "host type did not resolve before the code-generation boundary",
+        "blocker": "chelis#730",
     },
 }
 
@@ -131,7 +129,7 @@ def _run_target(name: str, spec: dict) -> int:
                 print(output)
                 print(f"{name}: failure diagnostic drifted")
                 return 1
-            print(f"{name}: still blocked at the expected boundary (chelis#1226)")
+            print(f"{name}: still blocked at the expected boundary ({spec['blocker']})")
             return 0
 
         if build.returncode != 0:

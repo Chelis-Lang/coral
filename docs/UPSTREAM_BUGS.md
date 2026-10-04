@@ -92,11 +92,20 @@ records and 1 when it changes:
   Frame module chain in `scripts/repro_native_nan.py`; if they reach a
   different rejection, investigate that boundary before re-citing it.
 
-- **Six invoked `Frame` verbs still fail native lowering
+- **Invoked `Frame` verbs still fail native lowering
   ([chelis#3153](https://github.com/Chelis-Lang/chelis/issues/3153);
   Coral-side tracker [coral#26](https://github.com/Chelis-Lang/coral/issues/26)).**
 
-  `drop_nan`, `filter`, `head`, `slice`, `sort_by`, and `with_column`.
+  Pinned by the probe: `drop_nan`, `filter`, `head`, `slice`, `sort_by`,
+  `with_column`. **Six further exported verbs reject at the identical boundary
+  and are knowingly unpinned:** `tail`, `mutate`, `concat`, `drop_nan_col`,
+  `fill_nan_col`, `key_values` — measured on 0.18.12, each `chelis check`-clean
+  and rejected only at host lowering. `mutate` delegates to `with_column` and
+  `drop_nan_col` to `filter`, so they are the same instance reached by another
+  name. **Twelve exported verbs sit on this boundary, not six**; the six pins
+  are enough to detect a chelis#3153 fix, and extending them is tracked on
+  coral#26 rather than claimed here.
+
   chelis#3153 is one defect: a bare `[]` passed as the accumulator of a
   recursive dimension-generic function whose element type is a
   dimension-generic ADT — in Coral, `(string, Column[n])`. Upstream controls
@@ -131,16 +140,25 @@ records and 1 when it changes:
   Coral defect, and the six rejections above were confirmed still present
   on `main` once the lock was regenerated.
 
-  *Affected surface:* native `chelis build` of those six invoked Frame
-  paths. The Reef package, evaluator, and test suites are unaffected.
-  `nrows`, `ncols`, `get_column`, `get_float_col`, `column_type`, and
-  `rename` do build, link, and run. Frame verbs with no probe above still
-  need their own before claiming coverage.
+  *Affected surface:* native `chelis build` of the twelve invoked Frame
+  paths named above. The Reef package, evaluator, and test suites are
+  unaffected. `nrows`, `ncols`, `get_column`, `get_float_col`,
+  `column_type`, and `rename` do build, link, and run. Frame verbs with no
+  probe above still need their own before claiming coverage.
 
   *Not this entry:* `drop_column` also rejects, but with a different
-  diagnostic (`unsupported: anonymous function value `fn``, from
-  `list_filter_string`). chelis#3153 does not cover it and no upstream
-  issue yet owns it, so it is deliberately not pinned.
+  diagnostic — `unsupported: anonymous function value `fn``, from
+  `list_filter_string`. It is owned upstream by
+  [chelis#879](https://github.com/Chelis-Lang/chelis/issues/879) (general
+  C-host first-class function-value ABI), which the diagnostic itself
+  cites: `unimplemented chelis#879`. That is a different defect from
+  chelis#3153, so it is not pinned by this entry's targets; pinning it on
+  #879 is tracked on coral#26.
+
+  `describe` rejects at a third boundary,
+  [chelis#1226](https://github.com/Chelis-Lang/chelis/issues/1226), which
+  is still open — so the caution above that these probes do not establish a
+  class-wide #1226 fix is load-bearing, not boilerplate.
 
   *Workaround:* none in Coral's source. The native NaN regression compiles
   the NaN helpers on bare tensors instead of through a `Frame`.

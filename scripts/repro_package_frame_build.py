@@ -8,18 +8,27 @@ positive guard and does not establish a chelis#1260 class-wide fix.
 This lane imports `Coral.Frame`; the stripped module smokes have a separate
 probe in `repro_multimodule_bare_build.py`.
 
-Six Frame verbs still stop at the unresolved host type boundary, and they are
-one defect: chelis#3153, a bare `[]` accumulator of a recursive
-dimension-generic function whose element type is a dimension-generic ADT --
-here `(string, Column[n])`. Each is pinned as an expected failure so an
-upstream fix is detected rather than landing unnoticed. The compiler prints
-`chelis#730` in this diagnostic because that citation is hard-coded into the
-format string in `crates/chelis-ir/src/host.rs`; #730 is a tracking hub, so the
-printed number names the plan rather than the defect. Track #3153.
+Six Frame verbs are pinned here as expected failures on chelis#3153, so an
+upstream fix is detected rather than landing unnoticed: `drop_nan`, `filter`,
+`head`, `slice`, `sort_by`, `with_column`. chelis#3153 is one defect -- a bare
+`[]` accumulator of a recursive dimension-generic function whose element type is
+a dimension-generic ADT, here `(string, Column[n])`.
 
-`drop_column` is deliberately NOT pinned here: it fails with a different
-diagnostic (`unsupported: anonymous function value `fn``, from
-`list_filter_string`), which chelis#3153 does not cover and no issue yet owns.
+**Twelve exported verbs sit on that boundary, not six.** `tail`, `mutate`,
+`concat`, `drop_nan_col`, `fill_nan_col`, and `key_values` reject identically
+and are knowingly unpinned (`mutate` delegates to `with_column`,
+`drop_nan_col` to `filter`). The six pins suffice to detect a #3153 fix;
+see `docs/UPSTREAM_BUGS.md`, and do not read this target list as the surface.
+
+The compiler prints `chelis#730` in this diagnostic because that citation is
+hard-coded into the format string in `crates/chelis-ir/src/host.rs`; #730 is a
+tracking hub, so the printed number names the plan rather than the defect.
+Track #3153.
+
+Two other verbs reject at DIFFERENT boundaries and are out of this entry:
+`drop_column` at chelis#879 (general C-host function-value ABI, which its own
+diagnostic cites as `unimplemented chelis#879`), and `describe` at chelis#1226.
+Neither is chelis#3153; do not fold them into these targets.
 
 Exit codes:
 - 0: every selected target matched its expected outcome

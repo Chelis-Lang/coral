@@ -57,7 +57,7 @@ records and 1 when it changes:
 |---|---|
 | `scripts/repro_multimodule_bare_build.py --target {frame,groupby,join}` | chelis#730; chelis#2097 masked |
 | `scripts/repro_package_frame_build.py --target {construct,nrows,match_column}` | Positive native Frame paths; the `nrows` chelis#1226 instance cleared |
-| `scripts/repro_package_frame_build.py --target drop_nan` | chelis#730 in the package lane |
+| `scripts/repro_package_frame_build.py --target {drop_nan,filter,head,slice,sort_by,with_column}` | chelis#3153 in the package lane |
 | `scripts/repro_native_drop_nan_blocked.py` | chelis#730 in the stripped lane |
 | `scripts/repro_native_nan.py`, `scripts/repro_native_neq.py` | chelis#630 regressions (Archived) |
 
@@ -92,9 +92,24 @@ records and 1 when it changes:
   Frame module chain in `scripts/repro_native_nan.py`; if they reach a
   different rejection, investigate that boundary before re-citing it.
 
-- **Invoked `drop_nan` on a `Frame` still fails native lowering
-  ([chelis#730](https://github.com/Chelis-Lang/chelis/issues/730);
+- **Six invoked `Frame` verbs still fail native lowering
+  ([chelis#3153](https://github.com/Chelis-Lang/chelis/issues/3153);
   Coral-side tracker [coral#26](https://github.com/Chelis-Lang/coral/issues/26)).**
+
+  `drop_nan`, `filter`, `head`, `slice`, `sort_by`, and `with_column`.
+  chelis#3153 is one defect: a bare `[]` passed as the accumulator of a
+  recursive dimension-generic function whose element type is a
+  dimension-generic ADT — in Coral, `(string, Column[n])`. Upstream controls
+  show seeding that accumulator, or dropping the ADT wrapper, both build.
+
+  **The diagnostic prints `chelis#730`, which is not the defect.** That
+  citation is hard-coded into the format string in
+  `crates/chelis-ir/src/host.rs`, and
+  [chelis#730](https://github.com/Chelis-Lang/chelis/issues/730) is a
+  tracking hub (77 sub-issues), so the number the compiler emits names the
+  plan rather than the thing that would close this. None of the hub's open
+  children owned this shape, which is why #3153 was filed. Track #3153; do
+  not re-cite #730 from the diagnostic text.
 
   *Reproducer:* `scripts/repro_package_frame_build.py` imports
   `Coral.Frame` in a Reef project. `--target construct` builds, links,
@@ -104,21 +119,35 @@ records and 1 when it changes:
   builds and runs, returning its three-element length. These probes do
   not establish a class-wide fix for chelis#1226 or the older
   [chelis#1260](https://github.com/Chelis-Lang/chelis/issues/1260)
-  match diagnostic. `--target drop_nan` still rejects with chelis#730.
+  match diagnostic. The six expected-failure targets above each reject
+  with `host type did not resolve before the code-generation boundary`.
   `scripts/repro_native_drop_nan_blocked.py` confirms that boundary in
   the separate stripped-module lane.
 
-  *Affected surface:* native `chelis build` of the invoked Frame
-  `drop_nan` path. The Reef package, evaluator, and test suites are
-  unaffected. Other Frame verbs need their own native probes before
-  claiming coverage.
+  *Pinned to the 0.18.12 compiler.* Reproducing against chelis `main`
+  needs a regenerated `reef.lock`: `SHELL_FORMAT_VERSION` moved 5 → 6
+  upstream, so `main` rejects every published 0.18.12-era shell with
+  `shell format version 5 is unsupported; expected 6`. That wall is not a
+  Coral defect, and the six rejections above were confirmed still present
+  on `main` once the lock was regenerated.
+
+  *Affected surface:* native `chelis build` of those six invoked Frame
+  paths. The Reef package, evaluator, and test suites are unaffected.
+  `nrows`, `ncols`, `get_column`, `get_float_col`, `column_type`, and
+  `rename` do build, link, and run. Frame verbs with no probe above still
+  need their own before claiming coverage.
+
+  *Not this entry:* `drop_column` also rejects, but with a different
+  diagnostic (`unsupported: anonymous function value `fn``, from
+  `list_filter_string`). chelis#3153 does not cover it and no upstream
+  issue yet owns it, so it is deliberately not pinned.
 
   *Workaround:* none in Coral's source. The native NaN regression compiles
   the NaN helpers on bare tensors instead of through a `Frame`.
 
   *Re-probe trigger:* every pin bump. The now-positive `nrows` read runs
-  in CI. When `--target drop_nan` reports a fix, compile, link, run, and
-  compare that invoked path with eval before changing its expectation.
+  in CI. When any of the six targets reports a fix, compile, link, run,
+  and compare that invoked path with eval before changing its expectation.
 
 - **A `gather` axis passed through a helper call is rejected
   ([chelis#741](https://github.com/Chelis-Lang/chelis/issues/741)).**

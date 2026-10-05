@@ -54,7 +54,16 @@ The writer boundaries matter when exchanging data:
   round-trip embedded CR or LF in a field.
 - The JSON writer inserts column names and string values without JSON
   escaping. Avoid quotes, backslashes, and control characters in those
-  strings. Use finite float values; a non-finite float is not valid JSON.
+  strings. JSON has no `NaN` or `Infinity` literal, so the writer renders
+  a non-finite float as `null`, the same encoding pandas `to_json` uses.
+  That keeps a non-finite float inside the grammar, but it does not
+  distinguish `NaN` from `inf` or `-inf`. Reading the document back gives
+  a missing float cell as long as the column holds at least one finite
+  value; a column whose every cell is non-finite reads back as a string
+  column, because inference then sees only empty cells. This also applies
+  to a number the reader could not represent: float cells are `f32`, so a
+  JSON value outside the `f32` range, such as `1e39`, becomes an infinity
+  on the way in and is therefore written back as `null`.
 - Both writers output the underlying number for an `IntCol` and ignore its
   missing-value mask. A missing integer stored as `0` is written as `0`,
   and reading the file back does not restore the mask.

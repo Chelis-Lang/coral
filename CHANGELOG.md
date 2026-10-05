@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- `write_json_frame` renders a non-finite float cell as the JSON `null`
+  literal instead of emitting a bare `NaN`, `inf` or `-inf` token, which no
+  conforming JSON parser accepts. The writer used to report success and
+  produce a document that `read_json_frame` itself could not load; a CSV
+  file with a blank numeric cell reached this path without any user error,
+  because missing floats are stored as `NaN`. `null` matches pandas
+  `to_json`, and reads back as a missing float cell when the column holds
+  at least one finite value; a column whose every cell is non-finite reads
+  back as a string column, where the pre-fix document could not be read at
+  all. It does not distinguish `NaN` from the infinities. Both
+  `docs/src/io.md` and the limitations appendix now state the encoding and
+  both losses. Finite floats, including signed zero, keep their numeric
+  spelling, and CSV output is unchanged and pinned by a test (coral#51).
+
 ## [0.7.45] - 2026-10-05
 
 - Advance the compiler pin to published Chelis 0.18.13 and prepare the

@@ -79,7 +79,7 @@ before exchanging data.
 
 ## Contributing
 
-[CONTRIBUTING.md](CONTRIBUTING.md) describes setup and checks for library
+The [maintainer guide](docs/maintainer-guide.md) describes setup and checks for library
 changes. The public behavior and planned boundaries are recorded in
 [spec/scope.md](spec/scope.md).
 

@@ -30,7 +30,6 @@ from __future__ import annotations
 import argparse
 import os
 import re
-import shlex
 import shutil
 import subprocess
 import sys
@@ -222,34 +221,19 @@ def build_prefixed_modules(specs: list[tuple[str, str]]) -> str:
     return "\n".join(parts)
 
 
-COMPILE_PREFIX = "Compile: "
+BUILT_PREFIX = "Built executable "
 
 
-def emitted_compile_cmd(build_output: str) -> list[str]:
-    """The native compile command `chelis build` printed for its own output.
-
-    chelis 0.18.6 emits a complete executable: the generated `main` evaluates
-    every effect-free nullary definition and prints one `<name> = <value>`
-    line per observed root. A hand-maintained link line went stale with that
-    change (the emitted program now references the platform vector-math
-    library through nautilus's tensor specializations), so the probe uses the
-    command the compiler itself reports instead of restating one.
-    """
+def built_executable_path(build_output: str) -> Path:
+    """Return the executable that `chelis build` compiled and linked."""
     for line in build_output.splitlines():
         stripped = line.strip()
-        if stripped.startswith(COMPILE_PREFIX):
-            return shlex.split(stripped[len(COMPILE_PREFIX) :])
-    raise RuntimeError(
-        "`chelis build` printed no `Compile:` line; the native lane cannot be "
-        "reproduced without the compiler's own compile command"
-    )
-
-
-def compiled_binary_path(command: list[str]) -> Path:
-    """The `-o` target of an emitted compile command."""
-    if "-o" not in command:
-        raise RuntimeError(f"emitted compile command names no output: {command}")
-    return Path(command[command.index("-o") + 1])
+        if stripped.startswith(BUILT_PREFIX):
+            binary = Path(stripped[len(BUILT_PREFIX) :])
+            if binary.is_file():
+                return binary
+            raise RuntimeError(f"`chelis build` reported a missing executable: {binary}")
+    raise RuntimeError("`chelis build` reported no executable")
 
 
 def observed_root(stdout: str, name: str) -> str | None:
@@ -298,13 +282,7 @@ def main() -> int:
             print("regression: Phase 0e RISC DAG panic reappeared in chelis build output")
             return 1
 
-        command = emitted_compile_cmd(build_output)
-        binary = compiled_binary_path(command)
-        link = subprocess.run(command, capture_output=True, text=True)
-        if link.returncode != 0:
-            print(link.stderr.strip())
-            print("regression: native compile/link failed (invalid-C regression?)")
-            return 1
+        binary = built_executable_path(build_output)
 
         run = subprocess.run([str(binary)], capture_output=True, text=True, timeout=60)
         if run.returncode != 0:

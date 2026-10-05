@@ -7,7 +7,7 @@ Coral builds with one exact Chelis compiler version, recorded as the
 toolchain manager, and then from a fresh clone run:
 
 ```sh
-chelisup install 0.18.12
+chelisup install 0.18.13
 chelis reef build
 ```
 
@@ -18,7 +18,7 @@ Chelis projects on the same machine are unaffected. The first
 into your local Reef registry. To install it explicitly instead:
 
 ```sh
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.47
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.48
 ```
 
 `--from-github` authenticates with `GITHUB_TOKEN`, falling back to
@@ -35,7 +35,7 @@ pandas parity harness is a separate uv project under `parity/`.
 |---|---|---|
 | Native tests | `chelis test tests/ --timeout 600 --jobs auto` | Identities, hand-computed values, structural properties, and round trips, written in Chelis. Use `--jobs 1` to debug serially |
 | Negative tests | `chelis test tests_neg/ --expect neg` | Each `tests_neg/<area>/<name>.ch` must fail to compile with the diagnostic on line 1 of its `.expect` file |
-| Blocked probes | `chelis test tests_blocked/ --expect blocked` | Reproducers of open upstream compiler issues. Each must keep failing the way its `.expect` file says; see [`docs/UPSTREAM_BUGS.md`](UPSTREAM_BUGS.md#re-probing) |
+| Blocked probes | `chelis test tests_blocked/ --expect blocked` | The static gather-axis contract must reject with the diagnostic in its `.expect` sidecar; see [`docs/UPSTREAM_BUGS.md`](UPSTREAM_BUGS.md#re-probing) |
 | pandas parity | `uv run --project parity --frozen python parity/run_parity.py --strict` | Checked-in goldens still match pandas, and native `rolling_mean` and `ewm` match their goldens by execution; see [`spec/scope.md`](../spec/scope.md#what-the-parity-harness-proves) |
 
 `tests/` must never contain Python, and pandas, SciPy, or other oracle

@@ -1,7 +1,5 @@
-`gather` axis is not a compile-time integer constant
-Blocker: chelis#741. A `gather` axis passed through a zero-argument helper
-(here `zero_i32()`) is rejected by rank monomorphization, while an inline
-`cast(0, i32)` axis is accepted. `src/frame.ch` inlines the gather axis as
-the workaround. The sibling `sort` helper works at this pin and is tested
-in `tests/internal.ch`. On pass: restore a named gather axis helper, promote
-this source to `tests/`, and archive the chelis#741 entry.
+gather axis must be an i32 integer constant
+
+[05-AXIS-2] requires a literal or integer-cast-wrapped literal at checking.
+A helper call cannot determine the result shape. `sort` permits a computed
+axis and its helper form remains covered by `tests/internal.ch`.

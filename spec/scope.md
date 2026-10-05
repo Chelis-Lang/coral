@@ -103,13 +103,11 @@ user is most likely to notice:
 
 - **Parquet** is unavailable (chelis#850).
 - **Native builds of the full Frame API.** Coral is consumed as a Reef
-  package and its test suites run in the evaluator. At the Chelis 0.18.12
-  pin, constructing a `Frame`, reading `nrows`, and directly matching a
-  retrieved column build, link, run, and agree with eval. Invoked
-  `drop_nan` still stops at chelis#730. The stripped multi-module native
-  smokes also stop at chelis#730, masking the earlier chelis#2097
-  diagnostic; these probes do not establish a class-wide chelis#1226 or
-  chelis#1260 fix.
+  package and its test suites run in the evaluator. The 0.18.13 compiler
+  includes the chelis#3153 repair for twelve Frame verbs. Six positive
+  package-lane probes await the Nautilus 0.7.48 release. `describe`
+  (chelis#3169) and `drop_column` (chelis#879) remain distinct native gaps.
+  The stripped multi-module smokes also await a fresh dependency re-probe.
 - **Evaluator cost of the HAMT.** Frames with 100 or more columns are slow in
   the evaluator (chelis#828); 50 to 100 columns is the design range.
 

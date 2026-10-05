@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.45] - 2026-10-05
+
+- Advance the compiler pin to published Chelis 0.18.13 and prepare the
+  Nautilus 0.7.48 dependency cascade. Refresh inherited Chelis guidance,
+  skills, and the capability inventory with `reef conform sync`.
+- Update native probes and the Window parity gate for `chelis build` compiling
+  its own executable. Convert six Frame probes formerly blocked by
+  chelis#3153 to native/evaluator comparisons.
+- Keep `gather`'s literal-axis rule under `[05-AXIS-2]` as a checking
+  rejection, move chelis#741 to the archived issue record, and retain
+  computed-axis coverage for `sort`.
+- Rename the maintainer guide to satisfy the 0.18.13 document filename rule.
+
 ## [0.7.44] - 2026-10-01
 
 Public-release cleanup. No change to any public function's behavior.

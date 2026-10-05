@@ -19,8 +19,7 @@ sys.path.insert(0, str(REPO))
 
 from scripts.chelis_toolchain import resolve_chelis_bin
 from scripts.repro_multimodule_bare_build import (
-    compiled_binary_path,
-    emitted_compile_cmd,
+    built_executable_path,
     observed_root,
 )
 
@@ -82,13 +81,7 @@ def main() -> int:
             print("native neq regression: chelis build failed")
             return 1
 
-        command = emitted_compile_cmd(build_output)
-        binary = compiled_binary_path(command)
-        link = subprocess.run(command, capture_output=True, text=True, timeout=900)
-        if link.returncode != 0:
-            print(link.stderr.strip())
-            print("native neq regression: C compile/link failed")
-            return 1
+        binary = built_executable_path(build_output)
 
         run = subprocess.run([str(binary)], capture_output=True, text=True, timeout=60)
         if run.returncode != 0:

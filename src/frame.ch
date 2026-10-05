@@ -130,7 +130,7 @@ def extract_named_column[n](pairs: List[(string, Column[n])], target: string, ac
     if eq(head_pair.0, target) then (head_pair.1, append_pair_list(acc, skip(pairs, one_i64()))) else extract_named_column(skip(pairs, one_i64()), target, append(acc, head_pair))
   }
 def append_pair_list[n](lhs: List[(string, Column[n])], rhs: List[(string, Column[n])]) -> List[(string, Column[n])] = if eq(len(rhs), zero_i64()) then lhs else append_pair_list(append(lhs, index(rhs, zero_i64())), skip(rhs, one_i64()))
--- gather axes remain inline because a helper is rejected (chelis#741).
+-- Gather result geometry requires a constant axis at checking ([05-AXIS-2]).
 def column_tail[n, k](col: Column[n], count: i64) -> Column[k] =
   match col with {
     | IntCol(xs, mask) => {

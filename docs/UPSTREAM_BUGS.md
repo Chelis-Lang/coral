@@ -10,12 +10,11 @@ Every limitation Coral works around is filed upstream and cited by number, as
 `chelis#NNN` for the compiler or as `<repo>#NNN` for a sibling Chelis package
 (written without a space, for example `coral#26`). A limitation that is not yet
 filed is cited by the path of its draft under
-[`docs/issue_drafts/`](issue_drafts/README.md). The same citation appears at
-the **narrowing site**, the place in Coral where a feature is restricted or
-replaced because of the limitation, so that `chelis reef conform audit` can
-match the two mechanically. Narrowings that are Coral's own choice rather than
-a compiler limitation are listed as deferrals in
-[`spec/scope.md`](../spec/scope.md#deferrals) instead.
+[`docs/issue_drafts/`](issue_drafts/README.md). The narrowing site in Coral
+cites the issue or a dated deferral in
+[`spec/scope.md`](../spec/scope.md#deferrals). A deferral caused by an
+upstream limitation identifies the issue recorded here. Coral-owned choices
+without an upstream blocker also live in that deferral list.
 
 Re-run each listed probe at every compiler pin bump and before a Coral
 release. The native package probes use the published Nautilus dependency;

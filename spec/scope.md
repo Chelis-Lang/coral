@@ -114,8 +114,9 @@ user is most likely to notice:
 ## Deferrals
 
 Each deliberate narrowing of Coral's own surface has an entry here. Sites
-that fail at runtime cite it as `spec/scope.md` § Deferrals (Dn). All were recorded
-on 2026-09-25 and are revisited when a user needs the capability.
+that fail at runtime cite it as `spec/scope.md` § Deferrals (Dn). D1-D9 were
+recorded on 2026-09-25; D10 is dated below. Revisit them when a user needs
+the capability or the cited upstream limitation changes.
 
 - **D1: Bool group keys.** `group_by` and `value_counts` accept int, float,
   and string key columns. A bool key column fails at runtime
@@ -142,3 +143,7 @@ on 2026-09-25 and are revisited when a user needs the capability.
 - **D9: `outer_join` key type.** `outer_join` returns the key column as a
   string column whatever the key type (an int key `2` becomes `"2"`), where
   pandas keeps the key's type. `inner_join` and `left_join` keep it.
+- **D10 (2026-10-05): Parquet file I/O.** `read_parquet_frame` and
+  `write_parquet_frame` are exported but fail explicitly. `Std.Io.Parquet`
+  provides no working file I/O implementation (chelis#850); the upstream
+  reproduction and re-probe trigger are in `docs/UPSTREAM_BUGS.md`.

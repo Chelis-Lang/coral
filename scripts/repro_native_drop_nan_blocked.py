@@ -32,10 +32,14 @@ chelis#1260 asks for this diagnostic to be branded the same way.
   `.expect` substring is re-cited to the stable phrase below (the volatile
   inference-variable id is excluded from the pin).
 
+- chelis 0.18.13 reaches the chelis#2097 ownership-signature rejection in the
+  stripped lane. The package lane builds and runs this `drop_nan` call against
+  the Nautilus 0.7.48 candidate; this probe keeps the stripped-lane boundary
+  visible without claiming that the wider chelis#730 class is fixed.
+
 This probe drives the bare concatenated-module lane. The package lane -- the
 one downstream projects actually use, and the one coral#26 reports against --
-is measured separately by `repro_package_frame_build.py`, which reproduces the
-same residue on the same `drop_nan` shape.
+is measured separately by `repro_package_frame_build.py`.
 """
 from __future__ import annotations
 
@@ -47,10 +51,8 @@ from pathlib import Path
 from repro_multimodule_bare_build import CHELIS, MODULE_PRESETS, build_prefixed_modules
 
 
-# chelis 0.18.9 boundary diagnostic. The trailing inference-variable id is
-# volatile, so the pin is the stable descriptive phrase (see the module
-# docstring for the 0.18.6 -> 0.18.9 drift).
-EXPECTED = "host type did not resolve before the code-generation boundary"
+# chelis 0.18.13 boundary diagnostic. The local function id is volatile.
+EXPECTED = "does not match ownership signature"
 
 
 def main() -> int:
@@ -86,7 +88,7 @@ def main() -> i64 = {
             print(output.strip())
             print("native drop_nan blocker probe: failure diagnostic drifted")
             return 1
-        print("expected blocked: production drop_nan still does not lower; the host type does not resolve before the code-generation boundary ([05-UNS-1]; chelis#730, drifted on 0.18.9 from the 0.18.6 dim-generic `Column` match, chelis#1226 class)")
+        print("expected blocked: stripped production drop_nan still does not lower at the chelis#2097 ownership-signature boundary")
         return 0
     finally:
         shutil.rmtree(workdir, ignore_errors=True)

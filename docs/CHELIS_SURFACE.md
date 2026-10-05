@@ -810,8 +810,8 @@ round-trip witness. `chelis deep`/`surf` are the CLI views; `spec/02`
 ## Version scope
 
 Coral pins Chelis **0.18.13** (`compiler = "=0.18.13"` in `reef.toml`)
-and targets Nautilus **0.7.48**. That dependency release is pending, so
-package-dependent capability rows await validation.
+and requires Nautilus **0.7.48**. Package-dependent release validation
+requires that published Nautilus artifact.
 
 | Artifact | Identity |
 |---|---|
@@ -849,7 +849,7 @@ owns the compiler-wide surface. Last refreshed: 2026-10-05.
 | Comparisons and logic | `eq`, `neq`, `lt`, `lte`, `gt`, `gte`, `and`, `or`, `not` | Row filtering, join keys, sort comparators, NaN detection. `is_nan` is `neq(col, col)` on a float tensor, which is IEEE-correct at NaN in both the evaluator and native C (`scripts/repro_native_neq.py`). Borrowed/borrowed `neq` infers `tensor[n, bool]` (`tests/types.ch`). Integer masks and mask inversion use tensor `not` directly. Tensor operands must have matching shapes; there is no tensor/scalar comparison, so scalar thresholds are mapped over the elements (`tests_neg/frame/tensor_scalar_gt_neg.ch`). | `@pin` |
 | Host-list operations | `len`, `index`, `append`, `skip`, `range`, `map`, `fold`, `filter` | Coral's Frame algorithms are host-list-first; tensors are used for bulk payloads. Host lists retain `len`; tensor row counts use O(1) `numel`. | `@pin` |
 | Tensor/host bridges and queries | `to_tensor`, `to_list`, `numel` | Column payloads round-trip between tensors (storage/gather) and host lists (algorithms). Empty-tensor `numel` returns zero, so Frame and IO row counts use it directly. | `@pin` |
-| Tensor movement | `gather`, `sort` | Row selection (`head`/`tail`/`slice`, sort-permutation application) and sort-by. `gather` requires a literal or integer-cast-wrapped literal axis at checking ([05-AXIS-2]); `sort` accepts a computed i32 axis. `tests_blocked/lowering/gather_axis_helper.ch` guards the deliberate gather rejection, and `tests/internal.ch` exercises the sort helper. | `@pin` |
+| Tensor movement | `gather`, `sort` | Row selection (`head`/`tail`/`slice`, sort-permutation application) and sort-by. `gather` requires a literal or integer-cast-wrapped literal axis at checking ([05-AXIS-2]); `sort` accepts a computed i32 axis. `tests_neg/frame/gather_axis_helper_neg.ch` guards the deliberate gather rejection, and `tests/internal.ch` exercises the sort helper. | `@pin` |
 | String ordering | `str_lt`, `str_lt_pos`, `str_char_lt` | Lexicographic sort-by on `StringCol` and stable key ordering in GroupBy/Join. | `@pin` |
 | Failure | `fail` | Guard rails for schema mismatches and the intentional Parquet stubs (`read_parquet_frame` / `write_parquet_frame`). | `@pin` |
 
@@ -859,15 +859,15 @@ owns the compiler-wide surface. Last refreshed: 2026-10-05.
 |---|---|---|
 | `Std.Io` (`write_text`) + `Std.Io.Csv` (`read_csv`) | CSV read path and all file writes (CSV/JSON emit via `write_text`). Round-trips are golden-tested against pandas in `parity/`. | `@pin` |
 | `Std.Test` (`assert_true`, `assert_false`, `assert_eq`, `assert_close`) | The whole `tests/` suite. `assert_eq` is generic over the compared type; `assert_close` is restricted to the active float types, which Coral's `f32` tolerances satisfy. Coral uses neither `assert_close_tensor` nor `assert_eq_tensor`. | `@pin` |
-| `Std.Io.Json` (`Json` ADT, `load_json`, `json_array`, `json_object`) | JSON read/write for `Coral.Io`. An integer token outside `i64` range ingests as `JsonBigInt(string)` carrying its exact decimal spelling. `Coral.Io.render_json_value` matches all eight `Json` variants explicitly rather than through a wildcard, so a future variant is a compile error here instead of a silently empty cell; `tests/io.ch` pins the exact-digit passthrough and the resulting column inference. | `@pin` |
-| `Std.Io.Parquet` | **Signatures only** (chelis#850). The import checks clean, but `libchelis_runtime.a` has no Parquet symbol (re-probed at 0.18.11); Coral ships intentional `fail(...)` stubs (`UPSTREAM_BUGS` §Tracking). | `@pin` |
+| `Std.Io.Json` (`Json` ADT, `load_json`, `json_array`, `json_object`) | JSON read/write for `Coral.Io`. An integer token outside `i64` range ingests as `JsonBigInt(string)` carrying its exact decimal spelling. `JsonFloat(f64, string)` carries the original decimal or exponent token beside the numeric value; Coral uses that text when reading cells. `Coral.Io.render_json_value` matches all eight `Json` variants explicitly rather than through a wildcard; `tests/io.ch` pins the exact-token passthrough and resulting column inference. | `@pin` |
+| `Std.Io.Parquet` | The calls check and build, then fail at runtime with an explicit unsupported message (chelis#850). Coral ships matching `fail(...)` stubs for its Frame API (`UPSTREAM_BUGS` §Tracking). | `@pin` |
 | `Nautilus.Stats` (`mean_vec`, `min_vec`, `max_vec`, `quantile_vec`, `std_vec`) | `describe` delegates its summary statistics to Nautilus; the GroupBy aggregations are Coral's own. Reef requires the dependency to declare the same compiler pin as Coral, so Nautilus is bumped first. | `@pin` |
 
 ### Lanes
 
 | Lane | Coral usage | Status |
 |---|---|---|
-| Evaluator (`chelis test`) | The positive suite (`tests/*.ch`), the negative suite (`tests_neg/`), and the static gather-axis rejection probe (`tests_blocked/`). | `@pin` |
+| Evaluator (`chelis test`) | The positive suite (`tests/*.ch`) and negative suite (`tests_neg/`), which includes the static gather-axis rejection. | `@pin` |
 | Package build (`chelis reef build`) | Release artifact (`dist/coral-<ver>.chb` + `.tar.zst`). | `@pin` |
-| Native C build (`chelis build` + native link) | Not a shipping lane. Construction plus `ncols`, `nrows`, and a match on a retrieved column build, link, run, and agree with eval in package-context probes. Six formerly blocked Frame verbs have positive native/eval probes awaiting the Nautilus 0.7.48 release. `describe` (chelis#3169) and `drop_column` (chelis#879) remain tracked. The stripped Frame/GroupBy/Join smokes also await the dependency re-probe. Native float-NaN and Window parity regressions pass on bare tensors; they do not prove full Frame lowering. | `@pin` |
+| Native C build (`chelis build` + native link) | Not a shipping lane. Package probes build, run, and agree with eval for construction, `nrows`, column matching, `drop_nan`, `filter`, `head`, `slice`, `sort_by`, and `with_column` against a same-pin Nautilus candidate; repeat with the published 0.7.48 artifact. `describe` rejects at chelis#3169 and `drop_column` at chelis#879. Stripped Frame/GroupBy/Join builds reject at chelis#2097. Native float-NaN and Window parity probes cover bare tensors only. | `@pin` |
 | `grad` / AD | Not part of Coral's surface. Scalar `grad` builds natively at this pin (chelis#405 is archived), but Coral makes no claim that `grad` differentiates through its host-list algorithms (`spec/scope.md` deferral D5). | `@pin` |

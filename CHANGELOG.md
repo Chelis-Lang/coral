@@ -11,11 +11,20 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   skills, and the capability inventory with `reef conform sync`.
 - Update native probes and the Window parity gate for `chelis build` compiling
   its own executable. Convert six Frame probes formerly blocked by
-  chelis#3153 to native/evaluator comparisons.
+  chelis#3153 to native/evaluator comparisons. Pin the stripped Frame,
+  GroupBy, Join, and `drop_nan` probes to chelis#2097's current
+  ownership-signature rejection; `describe` and `drop_column` retain their
+  separate native limitations.
+- Match the two-field `JsonFloat(f64, string)` constructor and use its original
+  token text when reading JSON cells, preserving decimal and exponent spelling
+  in mixed columns.
 - Keep `gather`'s literal-axis rule under `[05-AXIS-2]` as a checking
-  rejection, move chelis#741 to the archived issue record, and retain
-  computed-axis coverage for `sort`.
+  rejection, move its probe into the negative suite, archive chelis#741,
+  and retain computed-axis coverage for `sort`.
 - Rename the maintainer guide to satisfy the 0.18.13 document filename rule.
+- Describe the Parquet limitation as an explicit runtime stub: the standalone
+  `Std.Io.Parquet` call checks and builds but fails when run; a bare signature
+  without a definition now rejects at checking.
 
 ## [0.7.44] - 2026-10-01
 

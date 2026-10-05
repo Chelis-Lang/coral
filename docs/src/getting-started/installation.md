@@ -6,16 +6,17 @@ this checkout, install `chelisup`, then run:
 
 ```sh
 chelisup install 0.18.13
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.48
 chelis reef build
 ```
 
 `chelisup install` provides the compiler pinned by `reef.toml`.
-`chelis reef build` fetches the pinned Nautilus release if needed,
-then checks and builds Coral. The
+`chelis reef install` populates the local package registry; `reef build`
+checks and builds Coral from the installed dependency. The
 [Chelis installation guide](https://github.com/Chelis-Lang/chelis/blob/main/docs/book/src/install.md)
 explains how to install `chelisup`.
 
-After Coral 0.7.45 is published, consume it in a separate Reef project:
+To use a published Coral 0.7.45 release, install it in a separate Reef project:
 
 ```sh
 chelisup install 0.18.13

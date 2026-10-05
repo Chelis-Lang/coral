@@ -5,8 +5,9 @@ These boundaries apply to Coral 0.7.45 with Chelis 0.18.13:
 - **Execution.** Dataframe examples run through `chelis eval` and
   `chelis test`. Native construction, `nrows`, and a direct match on a
   retrieved column build, link, run, and agree with the evaluator.
-  Six more Frame paths have positive native probes pending the Nautilus
-  0.7.48 release; `describe` and `drop_column` remain tracked gaps.
+  Native package probes also cover `drop_nan`, `filter`, `head`, `slice`,
+  `sort_by`, and `with_column`. `describe` and `drop_column` reject under
+  native build; full native Frame support is not claimed.
   GPU execution and differentiation through
   Coral's dataframe operations are not validated. Bare tensor Window
   operations have a narrower generated-C comparison described in

@@ -199,7 +199,7 @@ for dependency, package, lockfile, and release-workflow surfaces too.
 4. Re-probe every `docs/UPSTREAM_BUGS.md` entry due under its section
    cadence, **per verb and per surface**. A changelog claim is not
    verification. Re-probe manually when a reproducer cannot be expressed
-   as a probe (e.g. the Parquet runtime-symbol check, the bare-build
+   as a probe (e.g. the Parquet runtime-stub check, the bare-build
    lane via `scripts/repro_multimodule_bare_build.py`).
 5. Refresh `docs/CHELIS_SURFACE.md`: pinned and upstream versions plus
    every `@pin` / `@upstream` marker.

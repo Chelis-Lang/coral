@@ -57,7 +57,7 @@ converted out of a separate dataframe runtime.
 |---|---|---|
 | GroupBy by `argsort` plus segmented `scatter` | Host-list key equality, first-seen order | Simpler and correct for all supported key types; matches pandas `sort=False` ordering |
 | Sort-merge joins | Host-list key equality joins | Same |
-| Parquet through a runtime `parquet2` FFI | `read_parquet_frame` / `write_parquet_frame` fail at runtime | `Std.Io.Parquet` has no runtime backing (chelis#850) |
+| Parquet through a runtime `parquet2` FFI | `read_parquet_frame` / `write_parquet_frame` fail at runtime | `Std.Io.Parquet` has an explicit unsupported stub rather than file support (chelis#850) |
 | Gradients through filter and aggregate pipelines | Not claimed or tested | Deferral D5 below |
 | GPU execution of numeric column operations | Not validated | Deferral D6 below |
 | Acceptance oracle `phase3k_coral_oracle` in the monorepo | Coral-owned test suites below | The monorepo oracle was never wired |
@@ -103,11 +103,11 @@ user is most likely to notice:
 
 - **Parquet** is unavailable (chelis#850).
 - **Native builds of the full Frame API.** Coral is consumed as a Reef
-  package and its test suites run in the evaluator. The 0.18.13 compiler
-  includes the chelis#3153 repair for twelve Frame verbs. Six positive
-  package-lane probes await the Nautilus 0.7.48 release. `describe`
-  (chelis#3169) and `drop_column` (chelis#879) remain distinct native gaps.
-  The stripped multi-module smokes also await a fresh dependency re-probe.
+  package and its test suites run in the evaluator. Native package probes
+  cover construction, `nrows`, column matching, `drop_nan`, `filter`, `head`,
+  `slice`, `sort_by`, and `with_column`. `describe` (chelis#3169) and
+  `drop_column` (chelis#879) reject in native builds. Stripped Frame,
+  GroupBy, and Join builds stop at chelis#2097.
 - **Evaluator cost of the HAMT.** Frames with 100 or more columns are slow in
   the evaluator (chelis#828); 50 to 100 columns is the design range.
 

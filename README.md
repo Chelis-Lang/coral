@@ -20,15 +20,16 @@ checkout, install `chelisup`, then run:
 
 ```sh
 chelisup install 0.18.13
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.48
 chelis reef build
 ```
 
 `chelisup install` provides the compiler pinned by `reef.toml`.
-`chelis reef build` fetches the pinned Nautilus release if needed,
-then checks and builds Coral.
+`chelis reef install` populates the local package registry; `reef build`
+checks and builds Coral from the installed dependency.
 
-After Coral 0.7.45 is published, install its toolchain and package in a Reef
-project:
+To use a published Coral 0.7.45 release in a Reef project, install its
+toolchain and package:
 
 ```sh
 chelisup install 0.18.13
@@ -67,11 +68,11 @@ links the user-facing modules to their chapters.
 ## Availability
 
 Coral's dataframe operations run through `chelis eval` and `chelis test`.
-At the preceding pin, native probes passed for frame construction, `nrows`,
-and matching a retrieved column. Six more Frame paths have positive probes
-awaiting the Nautilus 0.7.48 release;
-`describe` and `drop_column` remain tracked native gaps. Tensor
-payloads do not establish GPU support. Parquet
+Native package probes cover construction, `nrows`, column matching,
+`drop_nan`, `filter`, `head`, `slice`, `sort_by`, and `with_column`.
+`describe` and `drop_column` reject under native build; the full native API
+is not a supported release path. Tensor payloads do not establish GPU
+support. Parquet
 frame functions are exported but fail when called. CSV and JSON writers do
 not preserve integer missing-value masks, and the JSON writer requires
 simple text without characters needing JSON escaping. See the

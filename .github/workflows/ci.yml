@@ -133,9 +133,6 @@ jobs:
       - name: chelis test (negative contracts)
         run: chelis test tests_neg/ --expect neg
 
-      - name: chelis test (static gather axis contract)
-        run: chelis test tests_blocked/ --expect blocked
-
       - name: native float NaN regression
         run: python scripts/repro_native_nan.py
 

@@ -8,9 +8,10 @@ positive guard and does not establish a chelis#1260 class-wide fix.
 This lane imports `Coral.Frame`; the stripped module smokes have a separate
 probe in `repro_multimodule_bare_build.py`.
 
-Six Frame verbs formerly blocked by chelis#3153 are positive native/eval
-regressions at the 0.18.13 pin: `drop_nan`, `filter`, `head`, `slice`,
-`sort_by`, and `with_column`. This probe builds, runs, and compares each lane.
+Six Frame verbs formerly blocked by chelis#3153 have native/eval witnesses at
+the 0.18.13 pin: `drop_nan`, `filter`, `head`, `slice`, `sort_by`, and
+`with_column`. Each witness checks a selected output value or ordering, as well
+as the resulting shape where relevant.
 Six further verbs sharing the former boundary need their own witnesses before
 claiming native coverage; see `docs/UPSTREAM_BUGS.md` and coral#26.
 
@@ -90,58 +91,82 @@ TARGETS = {
     "drop_nan": {
         "source": (
             f"module {ENTRY_MODULE}\n"
-            "import Coral.Frame (FloatCol, from_pairs, drop_nan, nrows)\n"
+            "import Coral.Frame (FloatCol, from_pairs, drop_nan, get_float_col, nrows)\n"
             "def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))\n"
-            'def main() -> i64 = nrows(drop_nan(from_pairs([("value", FloatCol(to_tensor([nan_f32(), cast(2.0, f32)])))]), "value"))\n'
+            'def main() -> i64 = {\n'
+            '  kept = drop_nan(from_pairs([("value", FloatCol(to_tensor([nan_f32(), cast(2.0, f32)])))]), "value")\n'
+            '  values = to_list(get_float_col(kept, "value"))\n'
+            '  add(mul(nrows(kept), cast(100, i64)), cast(index(values, cast(0, i64)), i64))\n'
+            '}\n'
         ),
         "expect_build": True,
-        "expect_value": 1,
+        "expect_value": 102,
     },
     "filter": {
         "source": (
             f"module {ENTRY_MODULE}\n"
-            "import Coral.Frame (FloatCol, from_pairs, filter, nrows)\n"
-            f"def main() -> i64 = nrows(filter(from_pairs({TWO_COLUMNS}), to_tensor([true, false, true])))\n"
+            "import Coral.Frame (FloatCol, from_pairs, filter, get_float_col, nrows)\n"
+            "def main() -> i64 = {\n"
+            f"  kept = filter(from_pairs({TWO_COLUMNS}), to_tensor([true, false, true]))\n"
+            '  values = to_list(get_float_col(kept, "a"))\n'
+            '  add(mul(nrows(kept), cast(100, i64)), cast(index(values, cast(1, i64)), i64))\n'
+            '}\n'
         ),
         "expect_build": True,
-        "expect_value": 2,
+        "expect_value": 203,
     },
     "head": {
         "source": (
             f"module {ENTRY_MODULE}\n"
-            "import Coral.Frame (FloatCol, from_pairs, head, nrows)\n"
-            f"def main() -> i64 = nrows(head(from_pairs({TWO_COLUMNS}), cast(2, i64)))\n"
+            "import Coral.Frame (FloatCol, from_pairs, get_float_col, head, nrows)\n"
+            "def main() -> i64 = {\n"
+            f"  kept = head(from_pairs({TWO_COLUMNS}), cast(2, i64))\n"
+            '  values = to_list(get_float_col(kept, "a"))\n'
+            '  add(mul(nrows(kept), cast(100, i64)), cast(index(values, cast(1, i64)), i64))\n'
+            '}\n'
         ),
         "expect_build": True,
-        "expect_value": 2,
+        "expect_value": 202,
     },
     "slice": {
         "source": (
             f"module {ENTRY_MODULE}\n"
-            "import Coral.Frame (FloatCol, from_pairs, slice, nrows)\n"
-            f"def main() -> i64 = nrows(slice(from_pairs({TWO_COLUMNS}), cast(0, i64), cast(2, i64)))\n"
+            "import Coral.Frame (FloatCol, from_pairs, get_float_col, nrows, slice)\n"
+            "def main() -> i64 = {\n"
+            f"  kept = slice(from_pairs({TWO_COLUMNS}), cast(1, i64), cast(3, i64))\n"
+            '  values = to_list(get_float_col(kept, "a"))\n'
+            '  add(mul(nrows(kept), cast(100, i64)), cast(index(values, cast(0, i64)), i64))\n'
+            '}\n'
         ),
         "expect_build": True,
-        "expect_value": 2,
+        "expect_value": 202,
     },
     "sort_by": {
         "source": (
             f"module {ENTRY_MODULE}\n"
-            "import Coral.Frame (FloatCol, from_pairs, sort_by, ncols)\n"
-            f'def main() -> i64 = ncols(sort_by(from_pairs({TWO_COLUMNS}), "a", true))\n'
+            "import Coral.Frame (FloatCol, from_pairs, get_float_col, sort_by)\n"
+            "def main() -> i64 = {\n"
+            '  unsorted = from_pairs([("a", FloatCol(to_tensor([cast(3.0, f32), cast(1.0, f32), cast(2.0, f32)]))), ("b", FloatCol(to_tensor([cast(30.0, f32), cast(10.0, f32), cast(20.0, f32)])))])\n'
+            '  ordered = sort_by(unsorted, "a", true)\n'
+            '  values = to_list(get_float_col(ordered, "b"))\n'
+            '  add(mul(cast(index(values, cast(0, i64)), i64), cast(100, i64)), add(mul(cast(index(values, cast(1, i64)), i64), cast(10, i64)), cast(index(values, cast(2, i64)), i64)))\n'
+            '}\n'
         ),
         "expect_build": True,
-        "expect_value": 2,
+        "expect_value": 1230,
     },
     "with_column": {
         "source": (
             f"module {ENTRY_MODULE}\n"
-            "import Coral.Frame (FloatCol, from_pairs, with_column, ncols)\n"
-            f"def main() -> i64 = ncols(with_column(from_pairs({TWO_COLUMNS}), \"c\","
-            " FloatCol(to_tensor([cast(7.0, f32), cast(8.0, f32), cast(9.0, f32)]))))\n"
+            "import Coral.Frame (FloatCol, from_pairs, get_float_col, with_column, ncols)\n"
+            "def main() -> i64 = {\n"
+            f'  result = with_column(from_pairs({TWO_COLUMNS}), "c", FloatCol(to_tensor([cast(7.0, f32), cast(8.0, f32), cast(9.0, f32)])))\n'
+            '  values = to_list(get_float_col(result, "c"))\n'
+            '  add(mul(ncols(result), cast(100, i64)), cast(index(values, cast(1, i64)), i64))\n'
+            '}\n'
         ),
         "expect_build": True,
-        "expect_value": 3,
+        "expect_value": 308,
     },
 }
 

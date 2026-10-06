@@ -8,10 +8,8 @@ for checking it again.
 
 Every limitation Coral works around is filed upstream and cited by number, as
 `chelis#NNN` for the compiler or as `<repo>#NNN` for a sibling Chelis package
-(written without a space, for example `coral#26`). A limitation that is not yet
-filed is cited by the path of its draft under
-[`docs/issue_drafts/`](issue_drafts/README.md). The narrowing site in Coral
-cites the issue or a dated deferral in
+(written without a space, for example `coral#26`). The narrowing site in Coral
+cites the issue or a deferral in
 [`spec/scope.md`](../spec/scope.md#deferrals). A deferral caused by an
 upstream limitation identifies the issue recorded here. Coral-owned choices
 without an upstream blocker also live in that deferral list.
@@ -84,13 +82,12 @@ when the outcome matches this file and 1 when it changes:
   tracker [coral#16](https://github.com/Chelis-Lang/coral/issues/16)).**
 
   *Reproducer:* a `chelis test` case that builds a 100-column frame with
-  `from_pairs` and applies one `with_column`. Re-measured on 0.18.11
-  (Apple silicon): about 164 seconds, far beyond the 30-second default
-  per-test budget. The cost is per-call evaluator overhead in the recursive
-  HAMT helpers, not the algorithm; native code is unaffected.
+  `from_pairs` and applies one `with_column`. The recursive HAMT helpers can
+  exceed the default 30-second per-test evaluator budget; this entry does
+  not claim a timing measurement at the pinned compiler. Native execution
+  has a separate validation boundary.
 
-  *Affected surface:* evaluator workloads with wide frames. The design range
-  is 50 to 100 columns.
+  *Affected surface:* evaluator workloads with wide frames.
 
   *Workaround:* none; Coral's tests use narrow frames.
 
@@ -120,5 +117,3 @@ when the outcome matches this file and 1 when it changes:
   alone does not establish working Parquet I/O.
 
 ## Archived
-
-Resolved records live in [`docs/archive/UPSTREAM_BUGS.md`](archive/UPSTREAM_BUGS.md).

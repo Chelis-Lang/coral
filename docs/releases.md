@@ -49,10 +49,10 @@ No platform-specific Coral artifact is needed:
    the published tag.
 3. Declare `coral = { version = "X.Y.Z" }` under `[dependencies]` in the
    consumer project's `reef.toml`, using the same published version.
-4. `chelis reef build` fetches Coral's own dependency (Nautilus) if it is
-   missing, resolves the platform-agnostic `.chb` and sources, and the
-   consumer's compiler produces whatever native code that platform needs
-   (Mach-O on Darwin, ELF on Linux).
+4. Install Coral's Nautilus dependency at the version in the release
+   manifest. `chelis reef build` then reads the installed `.chb` and source
+   packages, and the consumer's compiler produces native code for its
+   platform (Mach-O on Darwin, ELF on Linux).
 
 ## Verification
 

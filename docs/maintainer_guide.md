@@ -8,13 +8,14 @@ toolchain manager, and then from a fresh clone run:
 
 ```sh
 chelisup install 0.19.0
-chelis reef build
 ```
 
 `chelisup install` provides the compiler pinned by `reef.toml`.
 `chelisup` resolves the compiler per repository from `reef.toml`, so other
-Chelis projects on the same machine are unaffected. `reef build` resolves
-the Nautilus dependency named in `reef.toml`.
+Chelis projects on the same machine are unaffected. Install the published
+Nautilus tag named in `reef.toml` with
+`chelis reef install --from-github Chelis-Lang/nautilus@vX.Y.Z`, substituting
+the version, then run `chelis reef build`.
 
 `--from-github` authenticates with `GITHUB_TOKEN`, falling back to
 `gh auth token`.

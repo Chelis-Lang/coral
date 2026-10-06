@@ -21,17 +21,20 @@ checkout, install `chelisup`, then run:
 
 ```sh
 chelisup install 0.19.0
-chelis reef build
 ```
 
 `chelisup install` provides the compiler pinned by `reef.toml`.
-`reef build` resolves the Nautilus dependency and builds Coral.
+Install the Nautilus tag named in `reef.toml` with
+`chelis reef install --from-github Chelis-Lang/nautilus@vX.Y.Z`, substituting
+its published version, then run `chelis reef build`. Reef uses the installed
+dependency; it does not fetch it during build.
 
 To use a published Coral 0.7.45 release in a Reef project, install its
 toolchain and package:
 
 ```sh
 chelisup install 0.18.13
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.48
 chelis reef install --from-github Chelis-Lang/coral@v0.7.45
 ```
 
@@ -42,7 +45,7 @@ In that project's `reef.toml`, pin `compiler = "=0.18.13"` and declare:
 coral = { version = "0.7.45" }
 ```
 
-The GitHub release assets require repository access; authenticate with
+Reef authenticates GitHub release requests even for public repositories. Use
 `gh auth login` or set `GITHUB_TOKEN` before installing. Run
 `chelis reef build` in your project to resolve imports. The
 [first dataframe](docs/src/getting-started/first_dataframe.md) shows a

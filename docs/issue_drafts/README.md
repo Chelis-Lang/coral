@@ -6,8 +6,6 @@ While a draft is parked, Coral cites it by path
 (`docs/issue_drafts/<file>.md`) at the narrowing site and in
 [`docs/UPSTREAM_BUGS.md`](../UPSTREAM_BUGS.md).
 
-No drafts are currently parked.
-
 Before filing a draft, search the upstream tracker for duplicates. After
 filing, delete the draft and replace every citation of its path with the new
 `chelis#NNN` in the same change.

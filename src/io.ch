@@ -2,7 +2,7 @@ module Coral.Io
 import Coral.Frame (Column, IntCol, FloatCol, StringCol, BoolCol, Frame, from_pairs, columns, get_column)
 import Std.Io (write_text)
 import Std.Io.Csv (read_csv)
-import Std.Io.Json (Json, JsonString, JsonInt, JsonBigInt, JsonFloat, JsonBool, JsonNull, JsonArray, JsonObject, json_array, json_object, load_json)
+import Std.Io.Json (Json, JsonString, JsonInt, JsonBigInt, JsonFloat, JsonBool, JsonNull, JsonArray, JsonObject, json_array, json_object, load_json, to_json)
 export (read_csv_frame, write_csv_frame, read_json_frame, write_json_frame, read_parquet_frame, write_parquet_frame)
 def zero_i64() -> i64 = cast(0, i64)
 def one_i64() -> i64 = cast(1, i64)
@@ -118,25 +118,57 @@ def csv_escape_quotes(s: string, idx: i64, acc: string) -> string =
   }
 def render_json[n](df: Frame[n]) -> string = string_concat("[", string_concat(join_strings(json_rows_out(df, cast(0, i64), []), ","), "]"))
 def json_rows_out[n](df: Frame[n], idx: i64, acc: List[string]) -> List[string] = if gte(idx, row_count(df)) then acc else json_rows_out(df, add(idx, one_i64()), append(acc, json_row(df, columns(df), idx, [])))
+-- Every key and every value is serialized by `Std.Io.Json.to_json`, so quoting,
+-- escaping and number spelling are the stdlib's rules and not Coral's.
+-- Only the object and array framing is assembled here, because
+-- `to_json` on a whole `JsonObject` emits keys in Unicode scalar-key order
+-- while `read_json_frame` preserves document order: a whole-document tree build
+-- would make write-then-read permute a frame's columns, which CSV does not do.
+-- The framing carries no value-dependent behaviour, so no cell content can
+-- change meaning in it.
 def json_row[n](df: Frame[n], names: List[string], idx: i64, acc: List[string]) -> string =
   if eq(len(names), zero_i64()) then string_concat("{", string_concat(join_strings(acc, ","), "}")) else {
     name = index(names, zero_i64())
-    cell = string_concat("\"", string_concat(name, string_concat("\":", json_cell(get_column(df, name), idx))))
+    cell = string_concat(to_json(JsonString(name)), string_concat(":", to_json(json_cell(get_column(df, name), idx))))
     json_row(df, skip(names, one_i64()), idx, append(acc, cell))
   }
-def json_cell[n](col: Column[n], idx: i64) -> string =
+-- Returning `Json` rather than rendered text is the structural half of that
+-- separation: the CSV writer's `column_value_string` returns `string`, so
+-- neither helper can be reached from the other format's writer by accident. A
+-- one-line substitution between the two is a type error instead of a silent
+-- change of output.
+def json_cell[n](col: Column[n], idx: i64) -> Json =
   match col with {
-    | IntCol(xs, imask) => to_string(index(to_list(xs), idx))
-    | FloatCol(xs) => json_float_cell(index(to_list(xs), idx))
-    | StringCol(xs) => string_concat("\"", string_concat(index(xs, idx), "\""))
-    | BoolCol(xs) => to_string(index(to_list(xs), idx))
+    | IntCol(xs, imask) => JsonInt(index(to_list(xs), idx))
+    | FloatCol(xs) => json_float_value(index(to_list(xs), idx))
+    | StringCol(xs) => JsonString(index(xs, idx))
+    | BoolCol(xs) => JsonBool(index(to_list(xs), idx))
   }
--- RFC 8259 has no NaN or Infinity literal, so a non-finite float cell renders
--- as `null`, the encoding pandas `to_json` uses for the same values. Reading
+-- RFC 8259 has no NaN or Infinity literal, so a non-finite float cell becomes
+-- `JsonNull`, the encoding pandas `to_json` uses for the same values. Reading
 -- the document back turns that null into a missing float cell, unless no cell in
 -- the column is finite, in which case inference sees only empty cells and gives a
 -- string column. CSV output keeps its own spelling and is unaffected.
-def json_float_cell(x: f32) -> string = if is_finite_f32(x) then to_string(x) else "null"
+--
+-- `JsonFloat(value, text)` is serializable only when `text` is a float-form
+-- token -- it must carry a fraction or an exponent -- whose correctly rounded
+-- f64 prints back to `value`. A Coral float cell is f32, and an f32's shortest
+-- text is not the widened f64's shortest text: 0.1f32 widens to an f64 that
+-- prints `0.10000000149011612`, so pairing the f32 text with the widened value
+-- is rejected, and pairing the widened value with its own text would rewrite
+-- every spelling the file used to carry. The cell's own text is therefore
+-- paired with the f64 that text parses to, which is what the read path's
+-- `parse_number` stores for the same token. `to_float` cannot fail here --
+-- `to_string` of a finite f32 is always a parseable float token -- so an
+-- unparseable text is a real defect and fails loudly rather than becoming null.
+def json_float_value(x: f32) -> Json =
+  if not(is_finite_f32(x)) then JsonNull else {
+    text = to_string(x)
+    match to_float(text) with {
+      | Some(value) => JsonFloat(value, text)
+      | None => fail("write_json_frame: a finite float cell produced text that is not a JSON number token")
+    }
+  }
 -- `sub(x, x)` is zero for every finite float and NaN for NaN and both
 -- infinities, so this rejects exactly the three values JSON cannot spell. No
 -- ordering bound does: a finite bound wrongly rejects the f32 extremes, and

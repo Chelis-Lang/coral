@@ -4,6 +4,35 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- `write_json_frame` serializes every object key and every cell value with
+  `Std.Io.Json.to_json` instead of interpolating them into hand-assembled
+  text, so quotes, backslashes and control characters are escaped by the
+  stdlib's rules ([coral#55](https://github.com/Chelis-Lang/coral/issues/55)).
+  A cell or column name containing a quote, a newline or a tab used to produce
+  a document no JSON parser accepts, and the writer reported success. The
+  backslash case was worse and silent: the three characters `a`, `\`, `b` were
+  written as `"a\b"`, which is *valid* JSON in which `\b` is the backspace
+  escape, so `read_json_frame` returned `a` on Coral's own output with both
+  calls reporting success.
+- `Coral.Io.json_cell` now returns `Json` rather than rendered text, and
+  `json_float_cell` becomes `json_float_value`. The CSV writer's
+  `column_value_string` still returns `string`, so substituting one cell
+  helper for the other is a type error rather than a silent change of output
+  in the other format.
+
+Object keys keep the frame's column order, which `read_json_frame` preserves.
+Only the object and array framing is assembled by Coral: `to_json` on a whole
+`JsonObject` emits keys in Unicode scalar-key order, so a whole-document tree
+build would make write-then-read permute a frame's columns. Finite float cells
+keep the exact spelling they had before: a cell's f32 text is paired with the
+f64 that text parses to, because an f32's shortest text is not the widened
+f64's shortest text and the widened pairing would rewrite `0.1` as
+`0.10000000149011612`.
+
 ## [0.7.46] - 2026-10-06
 
 - Pin published Chelis 0.19.0, Nautilus 0.7.49, and shell format 7. The 21

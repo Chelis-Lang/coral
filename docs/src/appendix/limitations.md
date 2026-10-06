@@ -23,10 +23,10 @@ These boundaries apply to the Coral package and compiler versions in
 - **File output.** CSV and JSON writers emit an integer column's stored
   numbers without its missing-value mask. A masked zero writes as `0`, and
   reading it back does not restore the mask. CSV column names are joined
-  without quoting. The JSON writer inserts column names and string cells
-  without escaping them: quotes or control characters can make invalid JSON,
-  while a backslash can produce valid JSON that parses to a different value
-  ([coral#55](https://github.com/Chelis-Lang/coral/issues/55)). It writes
+  without quoting. The JSON writer escapes column names and string cells
+  through `Std.Io.Json.to_json`, so quotes, backslashes and control
+  characters round-trip unchanged, and object keys follow the frame's column
+  order. It writes
   `NaN`, `inf`, and `-inf` as `null`, losing the distinction. Reading those
   cells back produces missing `f32` values when a column also has finite
   numbers; an all-null column instead becomes a string column of empty cells.

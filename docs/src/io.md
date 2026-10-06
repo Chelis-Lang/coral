@@ -52,9 +52,11 @@ The writer boundaries matter when exchanging data:
 - The CSV writer quotes commas and double quotes in cell values, but does
   not quote headers. Use simple column names. Its line-based reader cannot
   round-trip embedded CR or LF in a field.
-- The JSON writer inserts column names and string values without JSON
-  escaping. Avoid quotes, backslashes, and control characters in those
-  strings. JSON has no `NaN` or `Infinity` literal, so the writer renders
+- The JSON writer serializes every column name and every cell with
+  `Std.Io.Json.to_json`, so quotes, backslashes and control characters are
+  escaped and read back as themselves. Object keys follow the frame's column
+  order, which `read_json_frame` preserves. JSON has no `NaN` or `Infinity`
+  literal, so the writer renders
   a non-finite float as `null`, the same encoding pandas `to_json` uses.
   That keeps a non-finite float inside the grammar, but it does not
   distinguish `NaN` from `inf` or `-inf`. Reading the document back gives

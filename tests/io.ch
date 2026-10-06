@@ -132,3 +132,83 @@ def test_json_csv_missing_numeric_cell_writes_valid_null() -> unit ! { Test, IO 
   text = read_text("test_io_missing_cell.json")
   assert_eq(text, "[{\"v\":1.5,\"k\":\"a\"},{\"v\":null,\"k\":\"b\"},{\"v\":2.5,\"k\":\"c\"}]", "a blank numeric CSV cell reaches JSON as null, not as a bare NaN token")
 }
+-- coral#55: every column name and string cell reaches the file through
+-- `Std.Io.Json.to_json`, so the escaping rules are the stdlib's. These tests
+-- assert the written bytes and the read-back value, because the backslash case
+-- below produced a *valid* document with a changed value: both halves have to
+-- be pinned or the silent half passes again.
+def test_json_quote_in_string_cell_is_escaped() -> unit ! { Test, IO } = {
+  df = from_pairs([("note", StringCol(["say \"hi\"", "plain"]))])
+  _ = write_json_frame(df, "test_io_quote_cell.json")
+  text = read_text("test_io_quote_cell.json")
+  back = read_json_frame("test_io_quote_cell.json")
+  notes = get_string_col(back, "note")
+  _ = assert_eq(text, "[{\"note\":\"say \\\"hi\\\"\"},{\"note\":\"plain\"}]", "a quote inside a cell is written as the two-character escape, not raw")
+  _ = assert_eq(index(notes, zero_i64()), "say \"hi\"", "the quoted cell reads back with both quotes intact")
+  assert_eq(index(notes, one_i64()), "plain", "the sibling cell that needs no escaping is unchanged")
+}
+def test_json_backslash_cell_roundtrips_without_losing_characters() -> unit ! { Test, IO } = {
+  df = from_pairs([("note", StringCol(["a\\b"]))])
+  _ = write_json_frame(df, "test_io_backslash_cell.json")
+  text = read_text("test_io_backslash_cell.json")
+  back = read_json_frame("test_io_backslash_cell.json")
+  notes = get_string_col(back, "note")
+  _ = assert_eq(text, "[{\"note\":\"a\\\\b\"}]", "a backslash is doubled, so `\\b` cannot be read as the JSON backspace escape")
+  _ = assert_eq(index(notes, zero_i64()), "a\\b", "the three characters survive the roundtrip")
+  assert_eq(string_len(index(notes, zero_i64())), cast(3, i64), "three characters, not the one that an unescaped backslash left behind")
+}
+def test_json_control_characters_in_cells_are_escaped() -> unit ! { Test, IO } = {
+  df = from_pairs([("note", StringCol(["l1\nl2", "t\tb", "r\rn"]))])
+  _ = write_json_frame(df, "test_io_control_cell.json")
+  text = read_text("test_io_control_cell.json")
+  back = read_json_frame("test_io_control_cell.json")
+  notes = get_string_col(back, "note")
+  _ = assert_eq(text, "[{\"note\":\"l1\\nl2\"},{\"note\":\"t\\tb\"},{\"note\":\"r\\rn\"}]", "newline, tab and carriage return each use their two-character escape; RFC 8259 forbids the raw control byte")
+  _ = assert_eq(index(notes, zero_i64()), "l1\nl2", "the newline cell reads back exactly")
+  _ = assert_eq(index(notes, one_i64()), "t\tb", "the tab cell reads back exactly")
+  assert_eq(index(notes, cast(2, i64)), "r\rn", "the carriage-return cell reads back exactly")
+}
+def test_json_quote_in_column_name_is_escaped() -> unit ! { Test, IO } = {
+  df = from_pairs([("na\"me", StringCol(["x"]))])
+  _ = write_json_frame(df, "test_io_quote_name.json")
+  text = read_text("test_io_quote_name.json")
+  back = read_json_frame("test_io_quote_name.json")
+  _ = assert_eq(text, "[{\"na\\\"me\":\"x\"}]", "a quote inside a column name is escaped in the object key, not left to truncate the key")
+  _ = assert_eq(ncols(back), one_i64(), "the escaped key parses back as exactly one column")
+  assert_eq(index(columns(back), zero_i64()), "na\"me", "the column name survives the roundtrip")
+}
+def test_json_safe_text_is_not_over_escaped() -> unit ! { Test, IO } = {
+  df = from_pairs([("p", StringCol(["a/b", "c d", "e-f_g"]))])
+  _ = write_json_frame(df, "test_io_safe_text.json")
+  text = read_text("test_io_safe_text.json")
+  assert_eq(text, "[{\"p\":\"a/b\"},{\"p\":\"c d\"},{\"p\":\"e-f_g\"}]", "the forward slash and ordinary punctuation stay as themselves: RFC 8259 permits an unescaped solidus and nothing here is doubled")
+}
+-- coral#55: `JsonFloat(f64, string)` is only serializable when its text is a
+-- float-form token whose correctly rounded f64 prints back to the stored value.
+-- An f32 cell's shortest text is not the widened f64's shortest text -- 0.1f32
+-- widens to an f64 that prints 0.10000000149011612 -- so the writer pairs the
+-- f32's own text with the f64 that text parses to. Integral cells matter
+-- separately: a float-form token must carry a fraction or an exponent, so a
+-- spelling without `.0` would be rejected outright.
+def test_json_float_spellings_survive_the_json_value_path() -> unit ! { Test, IO } = {
+  df = from_pairs([("v", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(100.0, f32), cast(0.1, f32), cast(1e20, f32)])))])
+  _ = write_json_frame(df, "test_io_float_spellings.json")
+  text = read_text("test_io_float_spellings.json")
+  assert_eq(text, "[{\"v\":1.0},{\"v\":2.0},{\"v\":100.0},{\"v\":0.1},{\"v\":1e20}]", "an integral float keeps its `.0`, a value whose f32 and f64 shortest texts differ keeps the f32 one, and e-notation is unchanged")
+}
+-- coral#55 deliberately did NOT adopt a whole-document `JsonObject` build:
+-- `Std.Io.Json`'s object rendering emits keys in Unicode scalar-key order,
+-- while `read_json_frame` preserves document order, so a tree build would make
+-- write-then-read permute a frame's columns. Column order is observable Coral
+-- behaviour and CSV preserves it; this pins that JSON agrees.
+def test_json_preserves_frame_column_order() -> unit ! { Test, IO } = {
+  df = from_pairs([("v", StringCol(["1"])), ("k", StringCol(["2"])), ("aa", StringCol(["3"]))])
+  _ = write_json_frame(df, "test_io_column_order.json")
+  text = read_text("test_io_column_order.json")
+  back = read_json_frame("test_io_column_order.json")
+  names = columns(back)
+  _ = assert_eq(text, "[{\"v\":\"1\",\"k\":\"2\",\"aa\":\"3\"}]", "the object keys follow the frame's column order, not a sorted order")
+  _ = assert_eq(index(names, zero_i64()), "v", "read-back column 0 is still v")
+  _ = assert_eq(index(names, one_i64()), "k", "read-back column 1 is still k")
+  assert_eq(index(names, cast(2, i64)), "aa", "read-back column 2 is still aa")
+}

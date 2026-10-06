@@ -1,6 +1,7 @@
 # Limitations
 
-These boundaries apply to Coral 0.7.45 with Chelis 0.18.13:
+These boundaries apply to the Coral package and compiler versions in
+[`reef.toml`](../../../reef.toml):
 
 - **Execution.** Dataframe examples run through `chelis eval` and
   `chelis test`. Native construction, `nrows`, and a direct match on a

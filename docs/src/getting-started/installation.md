@@ -1,18 +1,17 @@
 # Installation
 
 Coral is a Reef package, separate from the standard library bundled with
-Chelis. Coral 0.7.45 uses Chelis 0.18.13 and Nautilus 0.7.48. To build
+Chelis. Coral 0.7.46 uses Chelis 0.19.0 and the Nautilus release named in
+`reef.toml`. To build
 this checkout, install `chelisup`, then run:
 
 ```sh
-chelisup install 0.18.13
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.48
+chelisup install 0.19.0
 chelis reef build
 ```
 
 `chelisup install` provides the compiler pinned by `reef.toml`.
-`chelis reef install` populates the local package registry; `reef build`
-checks and builds Coral from the installed dependency. The
+`reef build` resolves the Nautilus dependency and builds Coral. The
 [Chelis installation guide](https://github.com/Chelis-Lang/chelis/blob/main/docs/book/src/install.md)
 explains how to install `chelisup`.
 

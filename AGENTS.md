@@ -224,12 +224,10 @@ and history lives in `CHANGELOG.md`, pull requests, and git.
 
 ## Scope and Acceptance
 
-[`spec/scope.md`](spec/scope.md) owns Coral's intent, architecture as built,
-acceptance rules, known limitations, and dated deferrals. `SKILL.md` §5 is the
-public API inventory. The [maintainer guide](docs/maintainer_guide.md) lists the local gate
-commands. The original Phase 3k design plan lives in the Chelis monorepo
-(`spec/design/chelis_phase3_plan.md` §3k); `spec/scope.md` records where Coral
-as built departs from it.
+[`spec/scope.md`](spec/scope.md) owns Coral's intent, architecture,
+acceptance rules, and known limitations. `SKILL.md` §5 is the public API
+inventory. The [maintainer guide](docs/maintainer_guide.md) lists the local
+gate commands.
 
 ## Upstream Chelis Bugs
 

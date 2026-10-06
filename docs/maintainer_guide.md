@@ -7,15 +7,14 @@ Coral builds with one exact Chelis compiler version, recorded as the
 toolchain manager, and then from a fresh clone run:
 
 ```sh
-chelisup install 0.18.13
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.48
+chelisup install 0.19.0
 chelis reef build
 ```
 
 `chelisup install` provides the compiler pinned by `reef.toml`.
 `chelisup` resolves the compiler per repository from `reef.toml`, so other
-Chelis projects on the same machine are unaffected. `reef install` populates
-the local registry; `reef build` reads its dependency from there.
+Chelis projects on the same machine are unaffected. `reef build` resolves
+the Nautilus dependency named in `reef.toml`.
 
 `--from-github` authenticates with `GITHUB_TOKEN`, falling back to
 `gh auth token`.
@@ -41,9 +40,7 @@ libraries may be imported only under `parity/`. CI enforces both rules.
 Run the whole gate before opening a pull request that changes library code:
 
 ```sh
-for f in $(git ls-files 'src/*.ch' 'tests/*.ch' 'tests_neg/*.ch' 'tests_blocked/*.ch'); do
-  chelis fmt --check "$f" || echo "unformatted: $f"
-done
+rg --files -g '*.ch' -0 | xargs -0 -n1 chelis fmt --check
 chelis lint --check .
 chelis reef build
 chelis test tests/ --timeout 600 --jobs auto
@@ -57,6 +54,7 @@ uv run --python 3.11 --no-project python scripts/repro_native_nan.py
 uv run --python 3.11 --no-project python scripts/repro_native_neq.py
 uv run --python 3.11 --no-project python scripts/repro_native_drop_nan_blocked.py
 chelis reef conform audit
+chelis reef conform bump-check --base origin/main
 ```
 
 When you change documentation, also run the example validators, which
@@ -71,7 +69,8 @@ uv run --python 3.11 --no-project python scripts/validate_book_examples.py
 A compiler upgrade additionally runs the native-lane probes listed in
 [`docs/UPSTREAM_BUGS.md`](UPSTREAM_BUGS.md#re-probing), including
 `scripts/repro_package_frame_build.py` and all three targets of
-`scripts/repro_multimodule_bare_build.py`.
+`scripts/repro_multimodule_bare_build.py`. Run the documentation validators
+above on every compiler upgrade, including one without prose edits.
 
 ## Continuous integration
 

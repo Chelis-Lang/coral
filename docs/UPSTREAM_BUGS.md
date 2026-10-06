@@ -1,7 +1,7 @@
 # Upstream Chelis Bugs
 
-This file names the upstream limitations that affect Coral at its Chelis
-0.18.13 pin. Each entry gives the affected surface, a probe, and the condition
+This file names the upstream limitations that affect Coral at the compiler
+pin in [`reef.toml`](../reef.toml). Each entry gives the affected surface, a probe, and the condition
 for checking it again.
 
 ## How this file works

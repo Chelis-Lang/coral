@@ -18,8 +18,9 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   written as `"a\b"`, which is *valid* JSON in which `\b` is the backspace
   escape, so `read_json_frame` returned `a` on Coral's own output with both
   calls reporting success.
-- `Coral.Io.json_cell` now returns `Json` rather than rendered text, and
-  `json_float_cell` becomes `json_float_value`. The CSV writer's
+- `Coral.Io`'s private `json_cell` helper now returns `Json` rather than
+  rendered text, and `json_float_cell` becomes `json_float_value`. Neither is
+  exported, so the module's public surface is unchanged. The CSV writer's
   `column_value_string` still returns `string`, so substituting one cell
   helper for the other is a type error rather than a silent change of output
   in the other format.

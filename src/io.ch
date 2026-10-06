@@ -158,9 +158,13 @@ def json_cell[n](col: Column[n], idx: i64) -> Json =
 -- is rejected, and pairing the widened value with its own text would rewrite
 -- every spelling the file used to carry. The cell's own text is therefore
 -- paired with the f64 that text parses to, which is what the read path's
--- `parse_number` stores for the same token. `to_float` cannot fail here --
--- `to_string` of a finite f32 is always a parseable float token -- so an
--- unparseable text is a real defect and fails loudly rather than becoming null.
+-- `parse_number` stores for the same token. That pairing satisfies the
+-- round-trip half of the rule by construction, because the stored value *is*
+-- the text's parse; the float-token half stays `to_json`'s to enforce, and a
+-- text it rejects aborts there with the stdlib's own message. The `None` arm
+-- below is unreachable for a finite f32 -- `to_string` of one is always a
+-- parseable number -- and fails loudly rather than becoming null so that a
+-- future change which does reach it cannot pass silently.
 def json_float_value(x: f32) -> Json =
   if not(is_finite_f32(x)) then JsonNull else {
     text = to_string(x)

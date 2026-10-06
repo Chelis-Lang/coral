@@ -1,0 +1,5 @@
+gather axis must be an i32 integer constant
+
+[05-AXIS-2] requires a literal or integer-cast-wrapped literal at checking.
+A helper call cannot determine the result shape. `sort` permits a computed
+axis and its helper form remains covered by `tests/internal.ch`.

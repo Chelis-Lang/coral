@@ -32,8 +32,7 @@ sys.path.insert(0, str(REPO))
 
 from scripts.chelis_toolchain import resolve_chelis_bin
 from scripts.repro_multimodule_bare_build import (
-    compiled_binary_path,
-    emitted_compile_cmd,
+    built_executable_path,
     observed_root,
 )
 
@@ -227,16 +226,9 @@ def run_window_runtime_fixture(fixture_name: str) -> int:
         if build.returncode != 0:
             print(f"window runtime build failed for {fixture_name}: {build_output.strip()}")
             return 1
-        # chelis 0.18.6 emits its own `main` for the C target and prints one
-        # `<name> = <value>` line per observed root, so the verdict is read off
-        # that observation and the program is built with the compile command
-        # the compiler itself reports.
-        command = emitted_compile_cmd(build_output)
-        binary = compiled_binary_path(command)
-        link = subprocess.run(command, capture_output=True, text=True)
-        if link.returncode != 0:
-            print(f"window runtime link failed for {fixture_name}: {link.stderr.strip()}")
-            return 1
+        # The native executable observes each effect-free nullary root as
+        # `<name> = <value>`; `chelis build` compiles and links it directly.
+        binary = built_executable_path(build_output)
         run_bin = subprocess.run([str(binary)], capture_output=True, text=True)
         verdict = observed_root(run_bin.stdout, "main")
         if run_bin.returncode != 0 or verdict is None or float(verdict) != 1.0:

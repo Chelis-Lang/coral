@@ -27,8 +27,7 @@ from pathlib import Path
 from repro_multimodule_bare_build import (
     CHELIS,
     REPO,
-    compiled_binary_path,
-    emitted_compile_cmd,
+    built_executable_path,
     extract_named_defs,
     observed_root,
     prefix_defs,
@@ -85,13 +84,7 @@ def main() -> i64 = {
             print("native NaN regression: chelis build failed")
             return 1
 
-        command = emitted_compile_cmd(build_output)
-        binary = compiled_binary_path(command)
-        link = subprocess.run(command, capture_output=True, text=True)
-        if link.returncode != 0:
-            print(link.stderr.strip())
-            print("native NaN regression: C compile/link failed")
-            return 1
+        binary = built_executable_path(build_output)
 
         run = subprocess.run([str(binary)], capture_output=True, text=True, timeout=60)
         if run.returncode != 0:

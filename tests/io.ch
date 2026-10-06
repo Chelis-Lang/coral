@@ -87,3 +87,11 @@ def test_json_bigint_only_column_infers_float() -> unit ! { Test, IO } = {
   _ = assert_close(index(ids, zero_i64()), cast(1e20, f32), cast(1000000000000000.0, f32), "out-of-int64 id infers as f32, not as an empty cell")
   assert_close(index(ids, one_i64()), cast(123.0, f32), cast(0.001, f32), "in-range sibling id survives the same inference")
 }
+def test_json_float_preserves_exact_token_text() -> unit ! { Test, IO } = {
+  _ = write_text("test_io_float_token.json", "[{\"value\": 1.2500e+02}, {\"value\": \"n/a\"}]")
+  back = read_json_frame("test_io_float_token.json")
+  values = get_string_col(back, "value")
+  _ = assert_eq(nrows(back), cast(2, i64), "float-token JSON nrows == 2")
+  _ = assert_eq(index(values, zero_i64()), "1.2500e+02", "JsonFloat keeps the original exponent token")
+  assert_eq(index(values, one_i64()), "n/a", "mixed string sibling stays unchanged")
+}

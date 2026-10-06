@@ -1,6 +1,6 @@
-dimension mismatch:
+argument 1, axis 0: expected 3, got 4
 
 Assumption: Coral.Window rolling operations preserve the input tensor extent.
-Assigning rolling_mean(tensor[4, f32], ...) to tensor[3, f32] must fail during
-checking. If the checker accepts this program, the public signature has
-regressed to an unconstrained output dimension.
+Passing rolling_mean(tensor[4, f32], ...) to a tensor[3, f32] parameter must
+fail during checking. If the checker accepts this program, the public
+signature has regressed to an unconstrained output dimension.

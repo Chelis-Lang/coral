@@ -8,22 +8,12 @@ positive guard and does not establish a chelis#1260 class-wide fix.
 This lane imports `Coral.Frame`; the stripped module smokes have a separate
 probe in `repro_multimodule_bare_build.py`.
 
-Six Frame verbs are pinned here as expected failures on chelis#3153, so an
-upstream fix is detected rather than landing unnoticed: `drop_nan`, `filter`,
-`head`, `slice`, `sort_by`, `with_column`. chelis#3153 is one defect -- a bare
-`[]` accumulator of a recursive dimension-generic function whose element type is
-a dimension-generic ADT, here `(string, Column[n])`.
-
-**Twelve exported verbs sit on that boundary, not six.** `tail`, `mutate`,
-`concat`, `drop_nan_col`, `fill_nan_col`, and `key_values` reject identically
-and are knowingly unpinned (`mutate` delegates to `with_column`,
-`drop_nan_col` to `filter`). The six pins suffice to detect a #3153 fix;
-see `docs/UPSTREAM_BUGS.md`, and do not read this target list as the surface.
-
-The compiler prints `chelis#730` in this diagnostic because that citation is
-hard-coded into the format string in `crates/chelis-ir/src/host.rs`; #730 is a
-tracking hub, so the printed number names the plan rather than the defect.
-Track #3153.
+Six Frame verbs formerly blocked by chelis#3153 have native/eval witnesses at
+the 0.18.13 pin: `drop_nan`, `filter`, `head`, `slice`, `sort_by`, and
+`with_column`. Each witness checks a selected output value or ordering, as well
+as the resulting shape where relevant.
+Six further verbs sharing the former boundary need their own witnesses before
+claiming native coverage; see `docs/UPSTREAM_BUGS.md` and coral#26.
 
 Two other verbs reject at DIFFERENT boundaries and are out of this entry:
 `drop_column` at chelis#879 (general C-host function-value ABI, which its own
@@ -49,8 +39,7 @@ sys.path.insert(0, str(REPO))
 
 from scripts.chelis_toolchain import resolve_chelis_bin
 from scripts.repro_multimodule_bare_build import (
-    compiled_binary_path,
-    emitted_compile_cmd,
+    built_executable_path,
     observed_root,
 )
 
@@ -66,12 +55,6 @@ TWO_COLUMNS = (
     '[("a", FloatCol(to_tensor([cast(1.0, f32), cast(2.0, f32), cast(3.0, f32)])))'
     ', ("b", FloatCol(to_tensor([cast(4.0, f32), cast(5.0, f32), cast(6.0, f32)])))]'
 )
-
-# Every expected failure below is one upstream defect, so the diagnostic and the
-# blocker are named once. A drift in either is a real signal, not a typo to fix
-# locally: see this module's docstring for why the printed citation is the hub.
-HOST_TYPE_UNRESOLVED = "host type did not resolve before the code-generation boundary"
-BLOCKER = "chelis#3153"
 
 TARGETS = {
     "construct": {
@@ -108,64 +91,82 @@ TARGETS = {
     "drop_nan": {
         "source": (
             f"module {ENTRY_MODULE}\n"
-            "import Coral.Frame (FloatCol, from_pairs, drop_nan, nrows)\n"
+            "import Coral.Frame (FloatCol, from_pairs, drop_nan, get_float_col, nrows)\n"
             "def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))\n"
-            'def main() -> i64 = nrows(drop_nan(from_pairs([("value", FloatCol(to_tensor([nan_f32(), cast(2.0, f32)])))]), "value"))\n'
+            'def main() -> i64 = {\n'
+            '  kept = drop_nan(from_pairs([("value", FloatCol(to_tensor([nan_f32(), cast(2.0, f32)])))]), "value")\n'
+            '  values = to_list(get_float_col(kept, "value"))\n'
+            '  add(mul(nrows(kept), cast(100, i64)), cast(index(values, cast(0, i64)), i64))\n'
+            '}\n'
         ),
-        "expect_build": False,
-        "expect_diagnostic": HOST_TYPE_UNRESOLVED,
-        "blocker": BLOCKER,
+        "expect_build": True,
+        "expect_value": 102,
     },
     "filter": {
         "source": (
             f"module {ENTRY_MODULE}\n"
-            "import Coral.Frame (FloatCol, from_pairs, filter, nrows)\n"
-            f"def main() -> i64 = nrows(filter(from_pairs({TWO_COLUMNS}), to_tensor([true, false, true])))\n"
+            "import Coral.Frame (FloatCol, from_pairs, filter, get_float_col, nrows)\n"
+            "def main() -> i64 = {\n"
+            f"  kept = filter(from_pairs({TWO_COLUMNS}), to_tensor([true, false, true]))\n"
+            '  values = to_list(get_float_col(kept, "a"))\n'
+            '  add(mul(nrows(kept), cast(100, i64)), cast(index(values, cast(1, i64)), i64))\n'
+            '}\n'
         ),
-        "expect_build": False,
-        "expect_diagnostic": HOST_TYPE_UNRESOLVED,
-        "blocker": BLOCKER,
+        "expect_build": True,
+        "expect_value": 203,
     },
     "head": {
         "source": (
             f"module {ENTRY_MODULE}\n"
-            "import Coral.Frame (FloatCol, from_pairs, head, nrows)\n"
-            f"def main() -> i64 = nrows(head(from_pairs({TWO_COLUMNS}), cast(2, i64)))\n"
+            "import Coral.Frame (FloatCol, from_pairs, get_float_col, head, nrows)\n"
+            "def main() -> i64 = {\n"
+            f"  kept = head(from_pairs({TWO_COLUMNS}), cast(2, i64))\n"
+            '  values = to_list(get_float_col(kept, "a"))\n'
+            '  add(mul(nrows(kept), cast(100, i64)), cast(index(values, cast(1, i64)), i64))\n'
+            '}\n'
         ),
-        "expect_build": False,
-        "expect_diagnostic": HOST_TYPE_UNRESOLVED,
-        "blocker": BLOCKER,
+        "expect_build": True,
+        "expect_value": 202,
     },
     "slice": {
         "source": (
             f"module {ENTRY_MODULE}\n"
-            "import Coral.Frame (FloatCol, from_pairs, slice, nrows)\n"
-            f"def main() -> i64 = nrows(slice(from_pairs({TWO_COLUMNS}), cast(0, i64), cast(2, i64)))\n"
+            "import Coral.Frame (FloatCol, from_pairs, get_float_col, nrows, slice)\n"
+            "def main() -> i64 = {\n"
+            f"  kept = slice(from_pairs({TWO_COLUMNS}), cast(1, i64), cast(3, i64))\n"
+            '  values = to_list(get_float_col(kept, "a"))\n'
+            '  add(mul(nrows(kept), cast(100, i64)), cast(index(values, cast(0, i64)), i64))\n'
+            '}\n'
         ),
-        "expect_build": False,
-        "expect_diagnostic": HOST_TYPE_UNRESOLVED,
-        "blocker": BLOCKER,
+        "expect_build": True,
+        "expect_value": 202,
     },
     "sort_by": {
         "source": (
             f"module {ENTRY_MODULE}\n"
-            "import Coral.Frame (FloatCol, from_pairs, sort_by, ncols)\n"
-            f'def main() -> i64 = ncols(sort_by(from_pairs({TWO_COLUMNS}), "a", true))\n'
+            "import Coral.Frame (FloatCol, from_pairs, get_float_col, sort_by)\n"
+            "def main() -> i64 = {\n"
+            '  unsorted = from_pairs([("a", FloatCol(to_tensor([cast(3.0, f32), cast(1.0, f32), cast(2.0, f32)]))), ("b", FloatCol(to_tensor([cast(30.0, f32), cast(10.0, f32), cast(20.0, f32)])))])\n'
+            '  ordered = sort_by(unsorted, "a", true)\n'
+            '  values = to_list(get_float_col(ordered, "b"))\n'
+            '  add(mul(cast(index(values, cast(0, i64)), i64), cast(100, i64)), add(mul(cast(index(values, cast(1, i64)), i64), cast(10, i64)), cast(index(values, cast(2, i64)), i64)))\n'
+            '}\n'
         ),
-        "expect_build": False,
-        "expect_diagnostic": HOST_TYPE_UNRESOLVED,
-        "blocker": BLOCKER,
+        "expect_build": True,
+        "expect_value": 1230,
     },
     "with_column": {
         "source": (
             f"module {ENTRY_MODULE}\n"
-            "import Coral.Frame (FloatCol, from_pairs, with_column, ncols)\n"
-            f"def main() -> i64 = ncols(with_column(from_pairs({TWO_COLUMNS}), \"c\","
-            " FloatCol(to_tensor([cast(7.0, f32), cast(8.0, f32), cast(9.0, f32)]))))\n"
+            "import Coral.Frame (FloatCol, from_pairs, get_float_col, with_column, ncols)\n"
+            "def main() -> i64 = {\n"
+            f'  result = with_column(from_pairs({TWO_COLUMNS}), "c", FloatCol(to_tensor([cast(7.0, f32), cast(8.0, f32), cast(9.0, f32)])))\n'
+            '  values = to_list(get_float_col(result, "c"))\n'
+            '  add(mul(ncols(result), cast(100, i64)), cast(index(values, cast(1, i64)), i64))\n'
+            '}\n'
         ),
-        "expect_build": False,
-        "expect_diagnostic": HOST_TYPE_UNRESOLVED,
-        "blocker": BLOCKER,
+        "expect_build": True,
+        "expect_value": 308,
     },
 }
 
@@ -220,13 +221,7 @@ def _run_target(name: str, spec: dict) -> int:
             print(f"{name}: chelis eval did not produce an integer value")
             return 1
 
-        command = emitted_compile_cmd(output)
-        binary = compiled_binary_path(command)
-        link = subprocess.run(command, capture_output=True, text=True, timeout=900)
-        if link.returncode != 0:
-            print(link.stderr.strip())
-            print(f"{name}: C compile/link failed")
-            return 1
+        binary = built_executable_path(output)
 
         run = subprocess.run([str(binary)], capture_output=True, text=True, timeout=60)
         if run.returncode != 0:

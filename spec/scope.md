@@ -57,7 +57,7 @@ converted out of a separate dataframe runtime.
 |---|---|---|
 | GroupBy by `argsort` plus segmented `scatter` | Host-list key equality, first-seen order | Simpler and correct for all supported key types; matches pandas `sort=False` ordering |
 | Sort-merge joins | Host-list key equality joins | Same |
-| Parquet through a runtime `parquet2` FFI | `read_parquet_frame` / `write_parquet_frame` fail at runtime | `Std.Io.Parquet` has no runtime backing (chelis#850) |
+| Parquet through a runtime `parquet2` FFI | `read_parquet_frame` / `write_parquet_frame` fail at runtime | `Std.Io.Parquet` has an explicit unsupported stub rather than file support (chelis#850) |
 | Gradients through filter and aggregate pipelines | Not claimed or tested | Deferral D5 below |
 | GPU execution of numeric column operations | Not validated | Deferral D6 below |
 | Acceptance oracle `phase3k_coral_oracle` in the monorepo | Coral-owned test suites below | The monorepo oracle was never wired |
@@ -103,21 +103,20 @@ user is most likely to notice:
 
 - **Parquet** is unavailable (chelis#850).
 - **Native builds of the full Frame API.** Coral is consumed as a Reef
-  package and its test suites run in the evaluator. At the Chelis 0.18.12
-  pin, constructing a `Frame`, reading `nrows`, and directly matching a
-  retrieved column build, link, run, and agree with eval. Invoked
-  `drop_nan` still stops at chelis#730. The stripped multi-module native
-  smokes also stop at chelis#730, masking the earlier chelis#2097
-  diagnostic; these probes do not establish a class-wide chelis#1226 or
-  chelis#1260 fix.
+  package and its test suites run in the evaluator. Native package probes
+  cover construction, `nrows`, column matching, `drop_nan`, `filter`, `head`,
+  `slice`, `sort_by`, and `with_column`. `describe` (chelis#3169) and
+  `drop_column` (chelis#879) reject in native builds. Stripped Frame,
+  GroupBy, and Join builds stop at chelis#2097.
 - **Evaluator cost of the HAMT.** Frames with 100 or more columns are slow in
   the evaluator (chelis#828); 50 to 100 columns is the design range.
 
 ## Deferrals
 
 Each deliberate narrowing of Coral's own surface has an entry here. Sites
-that fail at runtime cite it as `spec/scope.md` § Deferrals (Dn). All were recorded
-on 2026-09-25 and are revisited when a user needs the capability.
+that fail at runtime cite it as `spec/scope.md` § Deferrals (Dn). D1-D9 were
+recorded on 2026-09-25; D10 is dated below. Revisit them when a user needs
+the capability or the cited upstream limitation changes.
 
 - **D1: Bool group keys.** `group_by` and `value_counts` accept int, float,
   and string key columns. A bool key column fails at runtime
@@ -144,3 +143,7 @@ on 2026-09-25 and are revisited when a user needs the capability.
 - **D9: `outer_join` key type.** `outer_join` returns the key column as a
   string column whatever the key type (an int key `2` becomes `"2"`), where
   pandas keeps the key's type. `inner_join` and `left_join` keep it.
+- **D10 (2026-10-05): Parquet file I/O.** `read_parquet_frame` and
+  `write_parquet_frame` are exported but fail explicitly. `Std.Io.Parquet`
+  provides no working file I/O implementation (chelis#850); the upstream
+  reproduction and re-probe trigger are in `docs/UPSTREAM_BUGS.md`.

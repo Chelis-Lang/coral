@@ -16,7 +16,7 @@ to this file so Claude-style and Codex-style entry points do not drift.
 <!-- ## Pointers -->
 <!-- shell-local:exclude:end -->
 
-<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.18.12 (sha256:024191edd26f0388) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.18.13 (sha256:63dc71e671d4158b) -->
 # Chelis Agent Contract
 
 Keep this file concise and relevant to every agent working in this repository.
@@ -28,14 +28,18 @@ not drift.
 
 ## What Chelis Is
 
-Chelis is a functional language for AI research, built for a workflow where a coding
-agent is the primary author and a human is the supervisor, and where the programs are
-themselves AI systems: models, training loops, search spaces, learned functions. The
-bet is that a type system, representation, and compilation model designed around AI
-primitives from the start beat ones bolted onto Python or a systems language later. It
-is not a general-purpose language, a systems language, a web framework, or a Python
-replacement. `spec/00-context.md` and `spec/design/chelis_canonical_reference.md` own
-the full statement; their specifics may lag, their intent does not. When a tradeoff
+Chelis is a numerical computing language for code that agents write and people
+supervise. Tensors carry named dimensions and precision in their type; the compiler
+checks shapes, precision, effects, and ownership before anything runs, and `chelis
+prove` checks the properties an author states, naming the method behind each result.
+The bet is that numerical code an agent can reason about, and a person can review
+through its types and properties, beats code whose mistakes first surface at run time.
+Chelis is general purpose within numerical computing; the worked examples come from
+quantitative finance. Differentiation and machine-learning programs are research
+directions, not the definition of the language. It is not a systems language, a web
+framework, a deep-learning framework, or a general scripting replacement for Python.
+`spec/00-context.md` and `spec/design/chelis_canonical_reference.md` own the full
+statement; their specifics may lag, their intent does not. When a tradeoff
 appears, apply these in order:
 
 1. **Unambiguity over ergonomics.** The author is an agent. The friction a human feels
@@ -101,8 +105,10 @@ AST contract. `spec/02-surf-syntax.md` §0.1 is the authority.
 - Type system: no implicit precision promotion, named tensor dimensions match by name,
   no implicit broadcasting (explicit `expand` only), integer literals default to `i32`
   and float literals to `f32`.
-- `chelis build` emits C, a header, runtime artifacts, and compile flags; `--target hip`
-  emits host code with embedded kernel strings. Neither invokes the native compiler.
+- `chelis build` invokes the native compiler for C, HIP, or Metal and produces an
+  executable or static library, retaining sources and runtime artifacts. `--emit-c`
+  stops after source emission. CPU is the acceptance priority; GPU targets remain
+  prerelease. See `docs/book/src/backends.md`.
 
 <!-- END CHELIS MANAGED BLOCK: agents-inheritance -->
 
@@ -121,6 +127,10 @@ AST contract. `spec/02-surf-syntax.md` §0.1 is the authority.
   reef conform sync` keeps the retained instructions current.
 
 ## Review and Merge
+
+Keep the primary checkout read-only. Create a task-owned worktree before any
+write, with its own Python 3.11 environment (`uv venv --python 3.11`); do not
+share another checkout's `.venv` or use `git stash` in the shared clone.
 
 Use [`agent-skills/redteam-exec/SKILL.md`](agent-skills/redteam-exec/SKILL.md)
 for a fresh local review of every PR before merge. Keep the reporting reviewer
@@ -168,6 +178,8 @@ owns its release validation.
 A pin bump is a **de-narrowing event**, not a version edit. Complete all
 of these steps in one change set and land the bump through a pull
 request, never by editing the pin directly on `main`.
+Apply the pinned Chelis `spec/design/shell_repo_contract.md` §7.1 audit
+for dependency, package, lockfile, and release-workflow surfaces too.
 
 1. Run `chelis reef conform bump <version>`. Confirm that `reef.toml`
    and every toolchain-installing workflow's `CHELIS_TAG` /
@@ -187,7 +199,7 @@ request, never by editing the pin directly on `main`.
 4. Re-probe every `docs/UPSTREAM_BUGS.md` entry due under its section
    cadence, **per verb and per surface**. A changelog claim is not
    verification. Re-probe manually when a reproducer cannot be expressed
-   as a probe (e.g. the Parquet runtime-symbol check, the bare-build
+   as a probe (e.g. the Parquet runtime-stub check, the bare-build
    lane via `scripts/repro_multimodule_bare_build.py`).
 5. Refresh `docs/CHELIS_SURFACE.md`: pinned and upstream versions plus
    every `@pin` / `@upstream` marker.
@@ -214,7 +226,7 @@ and history lives in `CHANGELOG.md`, pull requests, and git.
 
 [`spec/scope.md`](spec/scope.md) owns Coral's intent, architecture as built,
 acceptance rules, known limitations, and dated deferrals. `SKILL.md` §5 is the
-public API inventory. The [maintainer guide](docs/maintainer-guide.md) lists the local gate
+public API inventory. The [maintainer guide](docs/maintainer_guide.md) lists the local gate
 commands. The original Phase 3k design plan lives in the Chelis monorepo
 (`spec/design/chelis_phase3_plan.md` §3k); `spec/scope.md` records where Coral
 as built departs from it.
@@ -235,7 +247,7 @@ Project-local skills live in `agent-skills/`. `.claude/skills` and
 load the same skill library. `.claude/commands/` and `.codex/commands/`
 mirror each other. The complete shared set (`redteam-exec`, `spec-sync`,
 `phase-gate`, `backend-numerics`, `example-corpus`, `cli-surface`,
-`packaging-install`, and `issue-resolution`) is toolchain-owned material,
+`packaging-install`, `issue-resolution`, and `chelis-std`) is toolchain-owned material,
 regenerated by `chelis reef conform sync`, and stamped in
 `agent-skills/UPSTREAM.toml`; do not edit its managed content as a copied
 fork. Keep the `red-team` alias wired to `redteam-exec`.

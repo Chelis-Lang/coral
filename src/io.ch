@@ -174,7 +174,7 @@ def render_json_value(value: Json) -> string =
     | JsonString(text) => text
     | JsonInt(n) => to_string(n)
     | JsonBigInt(digits) => digits
-    | JsonFloat(n) => to_string(n)
+    | JsonFloat(_, text) => text
     | JsonBool(flag) => to_string(flag)
     | JsonNull => ""
     | JsonArray(items) => ""
@@ -186,6 +186,6 @@ def bools_to_tensor[n](values: List[bool]) -> tensor[n, bool] = {
   __borrow_migration_out_1 = neq(ints, zeros)
   __borrow_migration_out_1
 }
--- Parquet stubs: Std.Io.Parquet has no runtime implementation (chelis#850).
-def read_parquet_frame[n](path: string) -> Frame[n] = fail("read_parquet_frame requires Std.Io.Parquet (not in current runtime)")
-def write_parquet_frame[n](df: Frame[n], path: string) -> string = fail("write_parquet_frame requires Std.Io.Parquet (not in current runtime)")
+-- Parquet file I/O is deferred: spec/scope.md Deferrals (D10).
+def read_parquet_frame[n](path: string) -> Frame[n] = fail("read_parquet_frame requires implemented Std.Io.Parquet support")
+def write_parquet_frame[n](df: Frame[n], path: string) -> string = fail("write_parquet_frame requires implemented Std.Io.Parquet support")

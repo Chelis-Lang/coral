@@ -117,3 +117,5 @@ when the outcome matches this file and 1 when it changes:
   alone does not establish working Parquet I/O.
 
 ## Archived
+
+No entries.

@@ -16,7 +16,7 @@ to this file so Claude-style and Codex-style entry points do not drift.
 <!-- ## Pointers -->
 <!-- shell-local:exclude:end -->
 
-<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.18.13 (sha256:63dc71e671d4158b) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.19.0 (sha256:63dc71e671d4158b) -->
 # Chelis Agent Contract
 
 Keep this file concise and relevant to every agent working in this repository.
@@ -163,11 +163,9 @@ owns its release validation.
   Chelis-Lang/nautilus@v<version>`, the same path CI uses, and run the full
   Pin Bump Checklist.
 - Do not vendor or build the Chelis compiler from source inside this
-  repo. Consume the released tarball from the private
-  `Chelis-Lang/chelis` releases. CI authenticates via the repo secret
-  `CHELIS_RELEASE_TOKEN`, which must hold a PAT with `contents: read`
-  on `Chelis-Lang/chelis`. Rotate with
-  `gh secret set CHELIS_RELEASE_TOKEN --repo Chelis-Lang/coral`.
+  repo. Consume the published `Chelis-Lang/chelis` release. Reef authenticates
+  GitHub asset requests even for public repositories, using `GITHUB_TOKEN`
+  or `gh auth token`. CI can use `CHELIS_RELEASE_TOKEN` for that request.
 - Native test CI uses the released compiler's node-local concurrency:
   `chelis test tests/ --jobs auto`. Keep `--jobs 1` as the local serial
   debugging fallback; do not reintroduce per-file matrix sharding unless
@@ -224,12 +222,10 @@ and history lives in `CHANGELOG.md`, pull requests, and git.
 
 ## Scope and Acceptance
 
-[`spec/scope.md`](spec/scope.md) owns Coral's intent, architecture as built,
-acceptance rules, known limitations, and dated deferrals. `SKILL.md` §5 is the
-public API inventory. The [maintainer guide](docs/maintainer_guide.md) lists the local gate
-commands. The original Phase 3k design plan lives in the Chelis monorepo
-(`spec/design/chelis_phase3_plan.md` §3k); `spec/scope.md` records where Coral
-as built departs from it.
+[`spec/scope.md`](spec/scope.md) owns Coral's intent, architecture,
+acceptance rules, and known limitations. `SKILL.md` §5 is the public API
+inventory. The [maintainer guide](docs/maintainer_guide.md) lists the local
+gate commands.
 
 ## Upstream Chelis Bugs
 

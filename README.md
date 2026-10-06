@@ -15,24 +15,24 @@ explains packages and imports.
 
 ## Install
 
-Coral 0.7.45 uses Chelis 0.18.13 and Nautilus 0.7.48. To build this
+Coral 0.7.46 uses Chelis 0.19.0 and Nautilus 0.7.49. To build this
 checkout, install `chelisup`, then run:
 
 ```sh
-chelisup install 0.18.13
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.48
+chelisup install 0.19.0
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.49
 chelis reef build
 ```
 
-`chelisup install` provides the compiler pinned by `reef.toml`.
-`chelis reef install` populates the local package registry; `reef build`
-checks and builds Coral from the installed dependency.
+`chelisup install` provides the compiler pinned by `reef.toml`. Reef uses the
+installed Nautilus package; it does not fetch it during build.
 
 To use a published Coral 0.7.45 release in a Reef project, install its
 toolchain and package:
 
 ```sh
 chelisup install 0.18.13
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.48
 chelis reef install --from-github Chelis-Lang/coral@v0.7.45
 ```
 
@@ -43,7 +43,7 @@ In that project's `reef.toml`, pin `compiler = "=0.18.13"` and declare:
 coral = { version = "0.7.45" }
 ```
 
-The GitHub release assets require repository access; authenticate with
+Reef authenticates GitHub release requests even for public repositories. Use
 `gh auth login` or set `GITHUB_TOKEN` before installing. Run
 `chelis reef build` in your project to resolve imports. The
 [first dataframe](docs/src/getting-started/first_dataframe.md) shows a

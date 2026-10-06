@@ -1,16 +1,18 @@
 # Limitations
 
-These boundaries apply to Coral 0.7.45 with Chelis 0.18.13:
+These boundaries apply to the Coral package and compiler versions in
+[`reef.toml`](../../../reef.toml):
 
-- **Execution.** Dataframe examples run through `chelis eval` and
-  `chelis test`. Native construction, `nrows`, and a direct match on a
-  retrieved column build, link, run, and agree with the evaluator.
-  Native package probes also cover `drop_nan`, `filter`, `head`, `slice`,
-  `sort_by`, and `with_column`. `describe` and `drop_column` reject under
-  native build; full native Frame support is not claimed.
-  GPU execution and differentiation through
-  Coral's dataframe operations are not validated. Bare tensor Window
-  operations have a narrower generated-C comparison described in
+- **Execution.** Dataframe examples use `chelis eval` and `chelis test`.
+  Generated-C package probes cover construction, `nrows`, column matching,
+  `drop_nan`, `filter`, `head`, `slice`, `sort_by`, and `with_column`; they do
+  not establish generated-C support for the full Frame API. Native
+  `describe` and `drop_column` have open compiler issues
+  ([chelis#3169](https://github.com/Chelis-Lang/chelis/issues/3169),
+  [chelis#879](https://github.com/Chelis-Lang/chelis/issues/879)). GPU
+  execution and differentiation through Coral's dataframe operations are
+  not validated. Bare tensor Window operations have a narrower generated-C
+  comparison described in
   [Pandas comparison](pandas_comparison.md).
 - **Parquet.** `read_parquet_frame` and `write_parquet_frame` are exported
   but fail when called.
@@ -18,26 +20,33 @@ These boundaries apply to Coral 0.7.45 with Chelis 0.18.13:
   count. `concat` uses the first frame's columns without checking every
   later schema; extra columns in a later frame are omitted. See
   [Concatenation](../frame/concatenation.md).
-- **File output.** CSV and JSON writers do not encode integer
-  missing-value masks. The JSON writer does not escape column names or
-  string cells. It writes a non-finite float as `null`, so `NaN`, `inf`
-  and `-inf` are not distinguishable in the output; they read back as
-  missing floats unless every cell in the column is non-finite, in which
-  case the column reads back as a string column. Because float cells are
-  `f32`, a JSON number outside the `f32` range becomes an infinity when
-  read and is written back as `null`. The
+- **File output.** CSV and JSON writers emit an integer column's stored
+  numbers without its missing-value mask. A masked zero writes as `0`, and
+  reading it back does not restore the mask. CSV column names are joined
+  without quoting. The JSON writer inserts column names and string cells
+  without escaping them: quotes or control characters can make invalid JSON,
+  while a backslash can produce valid JSON that parses to a different value
+  ([coral#55](https://github.com/Chelis-Lang/coral/issues/55)). It writes
+  `NaN`, `inf`, and `-inf` as `null`, losing the distinction. Reading those
+  cells back produces missing `f32` values when a column also has finite
+  numbers; an all-null column instead becomes a string column of empty cells.
+  JSON numeric text is converted to `f32` on ingestion, so `1e39` becomes
+  infinity and writes back as `null`
+  ([coral#40](https://github.com/Chelis-Lang/coral/issues/40)). The
   [I/O chapter](../io.md) gives supported inputs.
-- **Column types.** Bool columns cannot be group keys. Bool non-key
+- **Column types.** GroupBy cannot return bool group keys. Bool non-key
   columns cannot pass through joins; inner and left joins also reject
   bool keys. `pivot` and `melt` take float value columns and string
   id/index columns. String and bool columns have no missing marker.
 - **Output conventions.** `outer_join` returns its key as a string column,
   whatever the input key type. `from_columns` and `empty` use dictionary
   entry order for columns; use `from_pairs` for explicit order. In a
-  multi-aggregation, each value column can appear only once, and an
-  `AggCount` spec needs a numeric value column.
-- **Wide frames.** Frames with 100 or more columns can be slow in the
-  evaluator.
+  multi-aggregation, each value column can appear only once
+  ([coral#37](https://github.com/Chelis-Lang/coral/issues/37)), and an
+  `AggCount` spec needs a numeric value column
+  ([coral#38](https://github.com/Chelis-Lang/coral/issues/38)).
+- **Wide frames.** Evaluating a frame with 100 or more columns may require a
+  longer test timeout ([coral#16](https://github.com/Chelis-Lang/coral/issues/16)).
 
 The public API is treated as alpha. [Coral's scope](https://github.com/Chelis-Lang/coral/blob/main/spec/scope.md)
 records the longer-term boundaries.

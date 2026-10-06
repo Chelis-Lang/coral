@@ -4,7 +4,11 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.7.47] - 2026-10-06
+
+- Pin published Chelis 0.19.1 and Nautilus 0.7.50. Chelis 0.19.1 fixes Reef,
+  checker, and MCP behavior and makes no intended language or standard-library
+  change; the full local gate passes unchanged.
 
 ### Fixed
 

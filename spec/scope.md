@@ -6,10 +6,8 @@ function-level API inventory lives in [`SKILL.md`](../SKILL.md) §5 and in the
 [book](../docs/src/SUMMARY.md); this document covers architecture and
 acceptance and does not repeat that list.
 
-Coral began as Phase 3k of the Chelis roadmap. The original design plan is
-§3k of `spec/design/chelis_phase3_plan.md` in the
-[Chelis monorepo](https://github.com/Chelis-Lang/chelis). This file describes
-Coral as built and records where it departs from that plan.
+This file describes Coral's supported behavior and the checks required for
+new public functions.
 
 ## Intent
 
@@ -42,25 +40,13 @@ converted out of a separate dataframe runtime.
   plus an explicit column order. `drop_column` and `rename` update the trie
   in place (`hamt_remove` / `hamt_put`), so the result shares unchanged
   columns with the input frame; `with_column` currently rebuilds the trie
-  from all entries. The persistent store was a requirement of the original
-  plan, which anticipated gradients through multi-step frame pipelines.
+  from all entries.
 - **Host-list algorithms, tensor payloads.** Column payloads are stored as
   tensors, but the relational algorithms run on host lists: grouping and
   joins match keys by equality and preserve first-seen key order, and string
   sorting is an insertion sort. `filter`, `head`, `tail`, `slice`, and
   `sort_by` apply the resulting row indices to tensor columns with `gather`;
   joins, grouping, and string columns select rows through host lists.
-
-### Departures from the Phase 3k plan
-
-| Plan | As built | Reason |
-|---|---|---|
-| GroupBy by `argsort` plus segmented `scatter` | Host-list key equality, first-seen order | Simpler and correct for all supported key types; matches pandas `sort=False` ordering |
-| Sort-merge joins | Host-list key equality joins | Same |
-| Parquet through a runtime `parquet2` FFI | `read_parquet_frame` / `write_parquet_frame` fail at runtime | `Std.Io.Parquet` has an explicit unsupported stub rather than file support (chelis#850) |
-| Gradients through filter and aggregate pipelines | Not claimed or tested | Deferral D5 below |
-| GPU execution of numeric column operations | Not validated | Deferral D6 below |
-| Acceptance oracle `phase3k_coral_oracle` in the monorepo | Coral-owned test suites below | The monorepo oracle was never wired |
 
 ## Acceptance
 
@@ -114,8 +100,7 @@ user is most likely to notice:
 ## Deferrals
 
 Each deliberate narrowing of Coral's own surface has an entry here. Sites
-that fail at runtime cite it as `spec/scope.md` § Deferrals (Dn). D1-D9 were
-recorded on 2026-09-25; D10 is dated below. Revisit them when a user needs
+that fail at runtime cite it as `spec/scope.md` § Deferrals (Dn). Revisit them when a user needs
 the capability or the cited upstream limitation changes.
 
 - **D1: Bool group keys.** `group_by` and `value_counts` accept int, float,
@@ -137,13 +122,12 @@ the capability or the cited upstream limitation changes.
 - **D7: Executed parity beyond Window.** Frame, GroupBy, Join, IO, and
   Reshape have pandas goldens but no automated Coral-versus-golden
   execution.
-- **D8: Stability labels.** The Phase 3k plan asks for a `stable` or `alpha`
-  label on every export. Coral has not assigned them; treat the whole public
-  API as `alpha` until it does.
+- **D8: Stability.** The public API is alpha. Function-level stability
+  labels are not assigned.
 - **D9: `outer_join` key type.** `outer_join` returns the key column as a
   string column whatever the key type (an int key `2` becomes `"2"`), where
   pandas keeps the key's type. `inner_join` and `left_join` keep it.
-- **D10 (2026-10-05): Parquet file I/O.** `read_parquet_frame` and
+- **D10: Parquet file I/O.** `read_parquet_frame` and
   `write_parquet_frame` are exported but fail explicitly. `Std.Io.Parquet`
   provides no working file I/O implementation (chelis#850); the upstream
   reproduction and re-probe trigger are in `docs/UPSTREAM_BUGS.md`.

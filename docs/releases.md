@@ -43,20 +43,12 @@ the IR is the contract; the consumer compiles to their platform.**
 No platform-specific Coral artifact is needed:
 
 1. Install the Chelis toolchain for the consumer's platform with `chelisup`,
-   at the compiler version the Coral release pins (`compiler` in that
-   release's `reef.toml`; Coral 0.7.43 pins 0.18.11):
-   ```sh
-   chelisup install 0.18.11
-   ```
-2. Install the Coral release into the local Reef registry:
-   ```sh
-   chelis reef install --from-github Chelis-Lang/coral@v0.7.43
-   ```
-3. Declare the dependency in the consumer project's `reef.toml`:
-   ```toml
-   [dependencies]
-   coral = { version = "0.7.43" }
-   ```
+   at the compiler version in that release's `reef.toml`.
+2. Install the Coral release into the local Reef registry with
+   `chelis reef install --from-github Chelis-Lang/coral@vX.Y.Z`, substituting
+   the published tag.
+3. Declare `coral = { version = "X.Y.Z" }` under `[dependencies]` in the
+   consumer project's `reef.toml`, using the same published version.
 4. `chelis reef build` fetches Coral's own dependency (Nautilus) if it is
    missing, resolves the platform-agnostic `.chb` and sources, and the
    consumer's compiler produces whatever native code that platform needs

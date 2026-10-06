@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.46] - 2026-10-06
+
+- Target Chelis 0.19.0 and its shell format 7. The 21 pipe-grouping sites in
+  `Coral.AsOf` and `Coral.Internal.Hamt` use explicit parentheses; the pinned
+  pipe migrator proved unchanged expanded Deep for all 29 source and test files.
+
 ## [Unreleased]
 
 ### Fixed

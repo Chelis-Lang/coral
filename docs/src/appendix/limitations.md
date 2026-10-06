@@ -20,7 +20,12 @@ These boundaries apply to Coral 0.7.45 with Chelis 0.18.13:
   [Concatenation](../frame/concatenation.md).
 - **File output.** CSV and JSON writers do not encode integer
   missing-value masks. The JSON writer does not escape column names or
-  string cells and cannot produce valid JSON for non-finite floats. The
+  string cells. It writes a non-finite float as `null`, so `NaN`, `inf`
+  and `-inf` are not distinguishable in the output; they read back as
+  missing floats unless every cell in the column is non-finite, in which
+  case the column reads back as a string column. Because float cells are
+  `f32`, a JSON number outside the `f32` range becomes an infinity when
+  read and is written back as `null`. The
   [I/O chapter](../io.md) gives supported inputs.
 - **Column types.** Bool columns cannot be group keys. Bool non-key
   columns cannot pass through joins; inner and left joins also reject

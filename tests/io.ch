@@ -2,7 +2,7 @@ module Coral.Tests.Io
 import Std.Test (assert_true, assert_eq, assert_close)
 import Coral.Frame (Frame, Column, FloatCol, StringCol, BoolCol, ColumnType, from_pairs, nrows, ncols, columns, get_float_col, get_string_col, get_int_col, get_bool_col, int_col_of_list)
 import Coral.Io (write_csv_frame, read_csv_frame, write_json_frame, read_json_frame)
-import Std.Io (write_text)
+import Std.Io (write_text, read_text)
 def zero_i64() -> i64 = cast(0, i64)
 def one_i64() -> i64 = cast(1, i64)
 def test_csv_write_then_read_roundtrip() -> unit ! { Test, IO } = {
@@ -94,4 +94,41 @@ def test_json_float_preserves_exact_token_text() -> unit ! { Test, IO } = {
   _ = assert_eq(nrows(back), cast(2, i64), "float-token JSON nrows == 2")
   _ = assert_eq(index(values, zero_i64()), "1.2500e+02", "JsonFloat keeps the original exponent token")
   assert_eq(index(values, one_i64()), "n/a", "mixed string sibling stays unchanged")
+}
+def nan_f32() -> f32 = div(cast(0.0, f32), cast(0.0, f32))
+def pinf_f32() -> f32 = div(cast(1.0, f32), cast(0.0, f32))
+def ninf_f32() -> f32 = div(cast(-1.0, f32), cast(0.0, f32))
+def test_json_non_finite_floats_render_as_null() -> unit ! { Test, IO } = {
+  df = from_pairs([("v", FloatCol(to_tensor([nan_f32(), pinf_f32(), ninf_f32(), cast(1.5, f32)]))), ("k", StringCol(["a", "b", "c", "d"]))])
+  _ = write_json_frame(df, "test_io_non_finite.json")
+  text = read_text("test_io_non_finite.json")
+  assert_eq(text, "[{\"v\":null,\"k\":\"a\"},{\"v\":null,\"k\":\"b\"},{\"v\":null,\"k\":\"c\"},{\"v\":1.5,\"k\":\"d\"}]", "NaN, +inf and -inf each render as the JSON null literal, and a finite sibling is untouched")
+}
+def test_json_finite_floats_never_render_as_null() -> unit ! { Test, IO } = {
+  df = from_pairs([("v", FloatCol(to_tensor([cast(1.5, f32), cast(-2.25, f32), cast(0.0, f32), cast(-0.0, f32), cast(3.4028234e38, f32), cast(-3.4028234e38, f32), cast(1e-44, f32)])))])
+  _ = write_json_frame(df, "test_io_finite_floats.json")
+  text = read_text("test_io_finite_floats.json")
+  assert_eq(text, "[{\"v\":1.5},{\"v\":-2.25},{\"v\":0.0},{\"v\":-0.0},{\"v\":3.4028235e38},{\"v\":-3.4028235e38},{\"v\":1e-44}]", "every finite float keeps its numeric spelling: signed zero, both ends of the f32 range, and a subnormal")
+}
+def test_csv_non_finite_floats_keep_their_own_spelling() -> unit ! { Test, IO } = {
+  df = from_pairs([("v", FloatCol(to_tensor([nan_f32(), pinf_f32(), ninf_f32(), cast(1.5, f32)])))])
+  _ = write_csv_frame(df, "test_io_non_finite.csv")
+  text = read_text("test_io_non_finite.csv")
+  assert_eq(text, "v\nNaN\ninf\n-inf\n1.5\n", "the CSV writer is unaffected: a non-finite float keeps to_string's spelling and does not become JSON null")
+}
+def test_json_null_float_cell_reads_back_as_missing() -> unit ! { Test, IO } = {
+  df = from_pairs([("v", FloatCol(to_tensor([nan_f32(), cast(1.5, f32)])))])
+  _ = write_json_frame(df, "test_io_non_finite_roundtrip.json")
+  back = read_json_frame("test_io_non_finite_roundtrip.json")
+  vs = to_list(get_float_col(back, "v"))
+  _ = assert_eq(nrows(back), cast(2, i64), "non-finite json roundtrip nrows == 2")
+  _ = assert_true(neq(index(vs, zero_i64()), index(vs, zero_i64())), "the null cell reads back as a missing float, not as a number")
+  assert_close(index(vs, one_i64()), cast(1.5, f32), cast(0.001, f32), "the finite sibling survives the roundtrip")
+}
+def test_json_csv_missing_numeric_cell_writes_valid_null() -> unit ! { Test, IO } = {
+  _ = write_text("test_io_missing_cell.csv", "v,k\n1.5,a\n,b\n2.5,c\n")
+  df = read_csv_frame("test_io_missing_cell.csv")
+  _ = write_json_frame(df, "test_io_missing_cell.json")
+  text = read_text("test_io_missing_cell.json")
+  assert_eq(text, "[{\"v\":1.5,\"k\":\"a\"},{\"v\":null,\"k\":\"b\"},{\"v\":2.5,\"k\":\"c\"}]", "a blank numeric CSV cell reaches JSON as null, not as a bare NaN token")
 }

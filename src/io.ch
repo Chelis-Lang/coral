@@ -127,10 +127,23 @@ def json_row[n](df: Frame[n], names: List[string], idx: i64, acc: List[string]) 
 def json_cell[n](col: Column[n], idx: i64) -> string =
   match col with {
     | IntCol(xs, imask) => to_string(index(to_list(xs), idx))
-    | FloatCol(xs) => to_string(index(to_list(xs), idx))
+    | FloatCol(xs) => json_float_cell(index(to_list(xs), idx))
     | StringCol(xs) => string_concat("\"", string_concat(index(xs, idx), "\""))
     | BoolCol(xs) => to_string(index(to_list(xs), idx))
   }
+-- RFC 8259 has no NaN or Infinity literal, so a non-finite float cell renders
+-- as `null`, the encoding pandas `to_json` uses for the same values. Reading
+-- the document back turns that null into a missing float cell, unless no cell in
+-- the column is finite, in which case inference sees only empty cells and gives a
+-- string column. CSV output keeps its own spelling and is unaffected.
+def json_float_cell(x: f32) -> string = if is_finite_f32(x) then to_string(x) else "null"
+-- `sub(x, x)` is zero for every finite float and NaN for NaN and both
+-- infinities, so this rejects exactly the three values JSON cannot spell. No
+-- ordering bound does: a finite bound wrongly rejects the f32 extremes, and
+-- negating it wrongly accepts NaN, because every ordering comparison against
+-- NaN is false whichever way it is written. Equality is not ordering --
+-- `neq(x, x)` is true for NaN, and alone it would still emit the infinities.
+def is_finite_f32(x: f32) -> bool = eq(sub(x, x), cast(0.0, f32))
 def column_value_string[n](col: Column[n], idx: i64) -> string =
   match col with {
     | IntCol(xs, imask) => to_string(index(to_list(xs), idx))

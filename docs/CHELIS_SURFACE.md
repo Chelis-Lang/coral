@@ -812,17 +812,17 @@ round-trip witness. `chelis deep`/`surf` are the CLI views; `spec/02`
 
 ## Version scope
 
-Coral pins Chelis **0.18.13** (`compiler = "=0.18.13"` in `reef.toml`)
-and requires the published Nautilus **0.7.48** package.
+Coral pins Chelis **0.19.0** (`compiler = "=0.19.0"` in `reef.toml`)
+and requires the published Nautilus **0.7.49** package.
 
 | Artifact | Identity |
 |---|---|
-| Chelis `v0.18.13` | tag commit `d753138f5e0059eab35e2babe86b17d6cfcfed37` |
-| `chelis-v0.18.13-linux-x86_64-glibc2.31.tar.gz` (CI) | SHA-256 `4329ae29979b0ee73b3d0215a33422494f639511aa0d4dcbd61dba574c470e40` |
-| `chelis-v0.18.13-darwin-arm64.tar.gz` | SHA-256 `2f7bb08780fdf9b10a8a7a2d4dbce98e993e01e621ac9e85202648bf4c812235` |
-| Nautilus `v0.7.48` | tag commit `01b4b8960a9da10f3a81b04974bc1a72ef8b13c4` |
-| `nautilus-0.7.48.chb` | SHA-256 `f148456398b210b272386830b252deae3e22763463873e2779574b4cfa53f5d5` |
-| `nautilus-0.7.48.tar.zst` | SHA-256 `4461cfcc98ac44bda43e0addf864f5aa4065682b1f92f281df97b64f984ef41a` |
+| Chelis `v0.19.0` | tag commit `05f52ce690407ece8494791c05b274c3309d42d4` |
+| `chelis-v0.19.0-linux-x86_64-glibc2.31.tar.gz` (CI) | SHA-256 `0bdfed7730e2d131e0ebc11aed72b04a295d7811275c1a5329d08331648000f9` |
+| `chelis-v0.19.0-darwin-arm64.tar.gz` | SHA-256 `82d330972ea446e78450ba99a8a8643da85ee00ed912f46823c9249262633d86` |
+| Nautilus `v0.7.49` | tag commit `499a14e6fc51417eb6f3beb91c886a2f8396be3f` |
+| `nautilus-0.7.49.chb` | SHA-256 `ea9b9187eae9e231eb01109808ed9e720c11fee168a97cc4ef19ba3d3e737816` |
+| `nautilus-0.7.49.tar.zst` | SHA-256 `e093c513053f5282d6807a5ec21eb451eeff0b2f424afbb32f9168d67f94e44e` |
 
 The archive hashes match the publisher's `.sha256` sidecars on each release.
 
@@ -830,8 +830,8 @@ The archive hashes match the publisher's `.sha256` sidecars on each release.
 runs; they do not claim gradient or GPU support (see
 [`spec/scope.md`](../spec/scope.md#deferrals)). `@upstream` capabilities need
 a fresh probe before use. The
-[canonical inventory](https://github.com/Chelis-Lang/chelis/blob/v0.18.13/docs/CHELIS_SURFACE.md)
-owns the compiler-wide surface. Last refreshed: 2026-10-05.
+[canonical inventory](https://github.com/Chelis-Lang/chelis/blob/v0.19.0/docs/CHELIS_SURFACE.md)
+owns the compiler-wide surface.
 
 ## Capability inventory
 
@@ -840,9 +840,9 @@ owns the compiler-wide surface. Last refreshed: 2026-10-05.
 | Capability | Coral consequence | Status |
 |---|---|---|
 | Active scalar precisions | Chelis admits `f32`, `f64`, `bf16`, `f16`, signed integers, `bool`, and `string`. Coral's column payloads are deliberately `f32` (`FloatCol`), `i64` (`IntCol` values + mask), `bool` (`BoolCol`), and `string` (`StringCol`); counts and row indices are `i64`. | `@pin` |
-| Literals, casts, and promotion | Unsuffixed floats default to `f32` and integers to `i32`; there is no implicit promotion — `cast` is explicit everywhere Coral crosses widths (`cast(0, i32)` axis args, `cast(x, i64)` counts, `cast(v, f32)` payloads). | `@pin` |
+| Literals, casts, and promotion | An unsuffixed numeric literal takes its dtype from a directly enclosing dtype-stating declaration, eligible literal cast, or `to_tensor` dtype argument; otherwise floats default to `f32` and integers to `i32`. Bare unsuffixed numeric elements in `to_tensor([...])` require its explicit dtype argument. There is no implicit promotion; Coral uses casts or suffixed literals where it crosses widths. | `@pin` |
 | Algebraic data types and match | `Column` / `Frame` / `KeyValue` / `Json` are ADTs consumed by exhaustive `match`. This is the backbone of every per-column-type dispatch in `frame.ch`, `groupby.ch`, `join.ch`, `reshape.ch`, and `io.ch`. | `@pin` |
-| Symbolic dimensions | `Column[n]` / `Frame[n]` / `tensor[n, f32]` carry a symbolic row count through the whole public API; call sites instantiate `n` by unification, and shape changes (`head`, `tail`, `slice`, joins, reshape) introduce fresh dims (`Column[k]`). | `@pin` |
+| Symbolic dimensions | `Column[n]` / `Frame[n]` / `tensor[n, f32]` carry a symbolic row count through the public API; `StringCol(List[string])` has no static extent, so `from_pairs` checks payload lengths at runtime. Shape changes (`head`, `tail`, `slice`, joins, reshape) introduce fresh dimensions (`Column[k]`). | `@pin` |
 | Borrowing and linearity | Consuming reads must precede list traversal that consumes the same value. Coral binds those reads explicitly; the positive package suite validates the migrated paths. | `@pin` |
 
 ### Primitive and builtin families used by Coral
@@ -861,9 +861,9 @@ owns the compiler-wide surface. Last refreshed: 2026-10-05.
 
 | Surface | Used by Coral | Status |
 |---|---|---|
-| `Std.Io` (`write_text`, `read_text`) + `Std.Io.Csv` (`read_csv`) | CSV read path and all file writes (CSV/JSON emit via `write_text`). `read_text` is used by `tests/io.ch` only, to assert exact written document bytes. Round-trips are golden-tested against pandas in `parity/`. | `@pin` |
+| `Std.Io` (`write_text`, `read_text`) + `Std.Io.Csv` (`read_csv`) | CSV read path and all file writes (CSV/JSON emit via `write_text`). `read_text` is used by `tests/io.ch` to assert written bytes. The I/O tests cover round trips; `parity/` checks pandas-derived goldens without executing Coral for I/O. | `@pin` |
 | `Std.Test` (`assert_true`, `assert_false`, `assert_eq`, `assert_close`) | The whole `tests/` suite. `assert_eq` is generic over the compared type; `assert_close` is restricted to the active float types, which Coral's `f32` tolerances satisfy. Coral uses neither `assert_close_tensor` nor `assert_eq_tensor`. | `@pin` |
-| `Std.Io.Json` (`Json` ADT, `load_json`, `json_array`, `json_object`) | JSON read/write for `Coral.Io`. An integer token outside `i64` range ingests as `JsonBigInt(string)` carrying its exact decimal spelling. `JsonFloat(f64, string)` carries the original decimal or exponent token beside the numeric value; Coral uses that text when reading cells. `Coral.Io.render_json_value` matches all eight `Json` variants explicitly rather than through a wildcard; `tests/io.ch` pins the exact-token passthrough and resulting column inference. | `@pin` |
+| `Std.Io.Json` (`Json` ADT, `load_json`, `json_array`, `json_object`) | JSON reading for `Coral.Io`. An integer token outside `i64` range ingests as `JsonBigInt(string)` carrying its exact decimal spelling. `JsonFloat(f64, string)` carries the original decimal or exponent token beside the numeric value; Coral uses that text when reading cells. `Coral.Io.render_json_value` matches all eight `Json` variants explicitly rather than through a wildcard; `tests/io.ch` pins the exact-token passthrough and resulting column inference. Coral's writer assembles text directly and does not use `Std.Io.Json.to_json` ([coral#55](https://github.com/Chelis-Lang/coral/issues/55)). | `@pin` |
 | `Std.Io.Parquet` | The calls check and build, then fail at runtime with an explicit unsupported message (chelis#850). Coral ships matching `fail(...)` stubs for its Frame API (`UPSTREAM_BUGS` §Tracking). | `@pin` |
 | `Nautilus.Stats` (`mean_vec`, `min_vec`, `max_vec`, `quantile_vec`, `std_vec`) | `describe` delegates its summary statistics to Nautilus; the GroupBy aggregations are Coral's own. Reef requires the dependency to declare the same compiler pin as Coral, so Nautilus is bumped first. | `@pin` |
 
@@ -873,5 +873,5 @@ owns the compiler-wide surface. Last refreshed: 2026-10-05.
 |---|---|---|
 | Evaluator (`chelis test`) | The positive suite (`tests/*.ch`) and negative suite (`tests_neg/`), which includes the static gather-axis rejection. | `@pin` |
 | Package build (`chelis reef build`) | Release artifact (`dist/coral-<ver>.chb` + `.tar.zst`). | `@pin` |
-| Native C build (`chelis build` + native link) | Not a shipping lane. Package probes build, run, and agree with eval on selected shapes, values, and ordering for construction, `nrows`, column matching, `drop_nan`, `filter`, `head`, `slice`, `sort_by`, and `with_column` against published Nautilus 0.7.48. `describe` rejects at chelis#3169 and `drop_column` at chelis#879. Stripped Frame/GroupBy/Join builds reject at chelis#2097. Native float-NaN and Window parity probes cover bare tensors only. | `@pin` |
+| Native C build (`chelis build` + native link) | Not a shipping lane. Package probes build, run, and agree with eval on selected shapes, values, and ordering for construction, `nrows`, column matching, `drop_nan`, `filter`, `head`, `slice`, `sort_by`, and `with_column` against published Nautilus 0.7.49. `describe` rejects at chelis#3169 and `drop_column` at chelis#879. Stripped Frame/GroupBy/Join builds reject at chelis#2097. Native float-NaN and Window parity probes cover bare tensors only. | `@pin` |
 | `grad` / AD | Not part of Coral's surface. Scalar `grad` builds natively at this pin (chelis#405 is archived), but Coral makes no claim that `grad` differentiates through its host-list algorithms (`spec/scope.md` deferral D5). | `@pin` |

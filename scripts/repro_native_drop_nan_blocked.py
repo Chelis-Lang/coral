@@ -1,45 +1,12 @@
 #!/usr/bin/env python3
-"""Mechanical probe for an invoked native `drop_nan` path.
+"""Probe the stripped-source native `drop_nan` boundary.
 
-Unlike the trivial-entry stripped-module smoke probe, this program constructs
-a real Frame and invokes Coral.Frame.drop_nan. The pinned compiler must still
-reject it. A successful build is FIX-DETECTED and requires de-narrowing this
-limitation.
-
-History of the boundary this probe measures:
-
-- through chelis 0.18.4 the rejection was the branded chelis#941 / [05-UNS-1]
-  recursive generic host call on `hamt__from_pairs_rec`;
-- chelis 0.18.5 lands bounded memoized monomorphization (chelis#1158), the
-  non-recursive inlining fix (chelis#1201), and recursive dimension-generic
-  monomorphization (chelis#1216). `from_pairs_rec` no longer rejects, so the
-  0.18.4 diagnostic is gone and the probe reported DRIFTED at that pin bump.
-  The path now stops one layer later, at a match on the dim-generic `Column`
-  whose applied dimension did not survive the `Option[Column[n]]` round trip
-  out of the HAMT.
-
-The 0.18.5 diagnostic carries no issue number of its own, unlike its sibling
-`generic host call ... (chelis#1226; [05-UNS-1])` residue that
-`repro_package_frame_build.py --target nrows` pins. chelis#1226 is the live
-standing [05-UNS-5] authority for the class and is what `UPSTREAM_BUGS` cites;
-chelis#1260 asks for this diagnostic to be branded the same way.
-
-- chelis 0.18.9 drifts this diagnostic again. The invoked generic `drop_nan`
-  Frame read is still build-lane-blocked, but the compiler now stops one step
-  earlier, in host inference: the host type does not resolve before the
-  code-generation boundary, reported as an unresolved host inference variable
-  ([05-UNS-1]; now cited as chelis#730). Same boundary class, new wording; the
-  `.expect` substring is re-cited to the stable phrase below (the volatile
-  inference-variable id is excluded from the pin).
-
-- chelis 0.18.13 reaches the chelis#2097 ownership-signature rejection in the
-  stripped lane. The package lane builds and runs this `drop_nan` call against
-  the Nautilus 0.7.48 candidate; this probe keeps the stripped-lane boundary
-  visible without claiming that the wider chelis#730 class is fixed.
-
-This probe drives the bare concatenated-module lane. The package lane -- the
-one downstream projects actually use, and the one coral#26 reports against --
-is measured separately by `repro_package_frame_build.py`.
+The probe constructs a Frame and invokes Coral.Frame.drop_nan. Stripping and
+concatenating the modules reaches the chelis#2097 ownership-signature
+rejection. A successful build is FIX-DETECTED and calls for de-narrowing this
+limitation. The Reef package lane is measured separately by
+`repro_package_frame_build.py`; its `drop_nan` case builds, runs, and agrees
+with evaluation against the published dependency.
 """
 from __future__ import annotations
 

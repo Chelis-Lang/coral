@@ -6,11 +6,12 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [0.7.46] - 2026-10-06
 
-- Target Chelis 0.19.0 and its shell format 7. The 21 pipe-grouping sites in
-  `Coral.AsOf` and `Coral.Internal.Hamt` use explicit parentheses; the pinned
-  pipe migrator proved unchanged expanded Deep for all 29 source and test files.
-
-## [Unreleased]
+- Pin published Chelis 0.19.0, Nautilus 0.7.49, and shell format 7. The 21
+  pipe-grouping sites in `Coral.AsOf` and `Coral.Internal.Hamt` use explicit
+  parentheses; the pinned pipe migrator proved unchanged expanded Deep for all
+  29 source and test files.
+- Refresh the public scope, limitations, and compiler surface inventory. Remove
+  inactive issue drafts and the resolved upstream-bug archive.
 
 ### Fixed
 

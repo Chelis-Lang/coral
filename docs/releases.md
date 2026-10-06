@@ -40,19 +40,26 @@ the IR is the contract; the consumer compiles to their platform.**
 
 ## How a Mac (or any) user consumes Coral
 
-No platform-specific Coral artifact is needed:
+No platform-specific Coral artifact is needed. For the published Coral 0.7.45
+release, run these commands from a Reef project:
 
-1. Install the Chelis toolchain for the consumer's platform with `chelisup`,
-   at the compiler version in that release's `reef.toml`.
-2. Install the Coral release into the local Reef registry with
-   `chelis reef install --from-github Chelis-Lang/coral@vX.Y.Z`, substituting
-   the published tag.
-3. Declare `coral = { version = "X.Y.Z" }` under `[dependencies]` in the
-   consumer project's `reef.toml`, using the same published version.
-4. Install Coral's Nautilus dependency at the version in the release
-   manifest. `chelis reef build` then reads the installed `.chb` and source
-   packages, and the consumer's compiler produces native code for its
-   platform (Mach-O on Darwin, ELF on Linux).
+```sh
+chelisup install 0.18.13
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.48
+chelis reef install --from-github Chelis-Lang/coral@v0.7.45
+```
+
+In that project's `reef.toml`, pin `compiler = "=0.18.13"` and declare:
+
+```toml
+[dependencies]
+coral = { version = "0.7.45" }
+```
+
+Run `chelis reef build` from that project. Reef reads the installed `.chb`
+and source packages, and the consumer's compiler produces native code for its
+platform (Mach-O on Darwin, ELF on Linux). Other Coral releases use the
+compiler and Nautilus versions in their release manifests.
 
 ## Verification
 

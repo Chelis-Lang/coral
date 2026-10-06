@@ -810,15 +810,16 @@ round-trip witness. `chelis deep`/`surf` are the CLI views; `spec/02`
 ## Version scope
 
 Coral pins Chelis **0.18.13** (`compiler = "=0.18.13"` in `reef.toml`)
-and requires Nautilus **0.7.48**. Package-dependent release validation
-requires that published Nautilus artifact.
+and requires the published Nautilus **0.7.48** package.
 
 | Artifact | Identity |
 |---|---|
 | Chelis `v0.18.13` | tag commit `d753138f5e0059eab35e2babe86b17d6cfcfed37` |
 | `chelis-v0.18.13-linux-x86_64-glibc2.31.tar.gz` (CI) | SHA-256 `4329ae29979b0ee73b3d0215a33422494f639511aa0d4dcbd61dba574c470e40` |
 | `chelis-v0.18.13-darwin-arm64.tar.gz` | SHA-256 `2f7bb08780fdf9b10a8a7a2d4dbce98e993e01e621ac9e85202648bf4c812235` |
-| Nautilus `v0.7.48` | release and hashes pending |
+| Nautilus `v0.7.48` | tag commit `01b4b8960a9da10f3a81b04974bc1a72ef8b13c4` |
+| `nautilus-0.7.48.chb` | SHA-256 `f148456398b210b272386830b252deae3e22763463873e2779574b4cfa53f5d5` |
+| `nautilus-0.7.48.tar.zst` | SHA-256 `4461cfcc98ac44bda43e0addf864f5aa4065682b1f92f281df97b64f984ef41a` |
 
 The archive hashes match the publisher's `.sha256` sidecars on each release.
 

@@ -9,11 +9,7 @@ Extract a numeric column with an accessor such as `get_float_col` to use its
 tensor in a Chelis calculation. Coral's dataframe operations also use host
 lists for grouping, joining, and other row work. Run the value-returning
 examples with `chelis eval`; the file I/O example uses `chelis test`.
-Native package probes cover construction, `nrows`, column matching,
-`drop_nan`, `filter`, `head`, `slice`, `sort_by`, and `with_column`.
-The Reef package is the supported installation path; the full native Frame
-API and GPU execution are not supported.
 
-The [first dataframe](getting-started/first_dataframe.md) builds a frame
-and reads its row count. The [limitations](appendix/limitations.md) page
-collects the input and execution boundaries.
+The [first dataframe](getting-started/first-dataframe.md) builds a frame
+and reads its row count. The [limitations](appendix/limitations.md)
+page collects input and output constraints.

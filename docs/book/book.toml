@@ -1,5 +1,5 @@
 [book]
-title = "Coral — Typed Dataframes for Chelis"
+title = "Coral: typed dataframes for Chelis"
 authors = ["Chelis contributors"]
 language = "en"
 src = "src"
@@ -11,4 +11,4 @@ build-dir = "book"
 default-theme = "light"
 preferred-dark-theme = "navy"
 git-repository-url = "https://github.com/Chelis-Lang/coral"
-edit-url-template = "https://github.com/Chelis-Lang/coral/edit/main/docs/src/{path}"
+edit-url-template = "https://github.com/Chelis-Lang/coral/edit/main/docs/book/src/{path}"

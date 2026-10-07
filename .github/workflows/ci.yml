@@ -102,6 +102,26 @@ jobs:
           fi
           echo "OK: tests/ contains $count .ch files"
 
+  # The book in docs/book/ mirrors https://chelis.ch/docs/coral/. Its examples
+  # compile in the pandas-parity job (scripts/validate_book_examples.py),
+  # which reuses that job's toolchain install.
+  book:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install mdBook
+        uses: taiki-e/install-action@v2
+        with:
+          tool: mdbook@0.5.2
+
+      - name: Build mdBook
+        run: mdbook build docs/book
+
+      - name: Lint book and README against the writing standard
+        run: python3 scripts/check_book.py docs/book/src README.md
+
   chelis-tests:
     needs: lint
     runs-on: ubuntu-latest

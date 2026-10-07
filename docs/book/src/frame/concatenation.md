@@ -1,13 +1,20 @@
 # Concatenation
 
 `Coral.Frame.concat` stacks frames vertically. Pass frames with the same
-column names and types, in the same order, and a shared static row count.
-The result has the rows of each input in list order.
+column names and types and a shared static row count. The result has the
+rows of each input in list order.
 
-`concat` takes its output columns and order from the first frame. It does
-not validate the complete schema of every later frame: an additional column
-in a later frame is omitted. Check the schemas yourself before combining
-frames from different sources.
+`concat` takes its output columns and their order from the first frame,
+then looks up each of those columns by name in every later frame:
+
+| Later frame | Result |
+|---|---|
+| Same columns in a different order | Accepted; values are matched by name, and the first frame's order is kept |
+| An extra column | The column is omitted, without an error |
+| Missing a first-frame column | Fails with `missing column: NAME` |
+| A first-frame column with a different type | Fails with the accessor error for the first frame's type, such as `column is not int: NAME` |
+
+An empty list returns a frame with no columns and zero rows.
 
 ```chelis
 module Coral.BookConcat

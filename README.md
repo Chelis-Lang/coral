@@ -3,52 +3,40 @@
 Coral is a [Chelis](https://github.com/Chelis-Lang/chelis) Reef package for
 typed dataframes. A `Frame` holds float, integer, boolean, or string columns.
 Float and integer columns store Chelis tensors, so a column retrieved from a
-frame can be passed to ordinary tensor operations. Filtering, grouping, and
-joining use host values around those tensor columns.
+frame can be passed to ordinary tensor operations. Filtering, grouping,
+joining, reshaping, windowing, and CSV and JSON I/O work on frames.
 
-Start with the [Coral guide](docs/src/SUMMARY.md), especially
-[installation](docs/src/getting-started/installation.md) and
-[your first dataframe](docs/src/getting-started/first_dataframe.md).
-The [Chelis installation guide](https://github.com/Chelis-Lang/chelis/blob/main/docs/book/src/install.md)
-explains `chelisup`; the [Reef guide](https://github.com/Chelis-Lang/chelis/blob/main/docs/book/src/reef.md)
-explains packages and imports.
+The [Coral guide](https://chelis.ch/docs/coral/) teaches the API with
+runnable examples; its source is the mdBook in [`docs/book/`](docs/book/).
 
 ## Install
 
-Coral 0.7.47 uses Chelis 0.19.1 and Nautilus 0.7.50. To build this
-checkout, install `chelisup`, then run:
+Coral 0.7.47 uses Chelis 0.19.1 and Nautilus 0.7.50. Install Chelis with
+`chelisup` ([installation guide](https://chelis.ch/docs/chelis/install/)),
+then install the Coral release and its Nautilus dependency into your local
+Reef registry. Both releases are public, so no token is needed:
 
 ```sh
-chelisup install 0.19.1
 chelis reef install --from-github Chelis-Lang/nautilus@v0.7.50
-chelis reef build
+chelis reef install --from-github Chelis-Lang/coral@v0.7.47
+chelis reef init demo --module-prefix Demo --output demo
+cd demo
 ```
 
-`chelisup install` provides the compiler pinned by `reef.toml`. Reef uses the
-installed Nautilus package; it does not fetch it during build.
-
-To use a published Coral 0.7.46 release in a Reef project, install its
-toolchain and package:
-
-```sh
-chelisup install 0.19.0
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.49
-chelis reef install --from-github Chelis-Lang/coral@v0.7.46
-```
-
-In that project's `reef.toml`, pin `compiler = "=0.19.0"` and declare:
+In the project's `reef.toml`, check that `compiler` is `"=0.19.1"` and add Coral:
 
 ```toml
 [dependencies]
-coral = { version = "0.7.46" }
+coral = { version = "0.7.47" }
 ```
 
-Reef authenticates GitHub release requests even for public repositories. Use
-`gh auth login` or set `GITHUB_TOKEN` before installing. Run
-`chelis reef build` in your project to resolve imports. The
-[first dataframe](docs/src/getting-started/first_dataframe.md) shows a
-complete program. See [installation](docs/src/getting-started/installation.md)
-for the source and release workflows.
+Run `chelis reef build`; it resolves Coral and Nautilus from the local
+registry and writes `reef.lock`. On another machine,
+`chelis reef install --from-lockfile` reinstalls the locked dependencies.
+With `GITHUB_TOKEN` set or `gh` signed in, `chelis reef build` fetches
+missing packages itself. The [installation page](https://chelis.ch/docs/coral/getting-started/installation/)
+and [first dataframe](https://chelis.ch/docs/coral/getting-started/first-dataframe/)
+continue from there.
 
 ## Modules
 
@@ -61,29 +49,10 @@ for the source and release workflows.
 | `Coral.Window` | Rolling statistics and exponentially weighted values on `f32` tensors |
 | `Coral.Io` | CSV and JSON frame readers and writers |
 | `Coral.AsOf` | Prior-or-equal lookup and alignment on sorted `i64` key tensors or lists |
+| `Coral.Core` | `version()`, a package smoke check that returns `1` (not the release version) |
 
-`Coral.Core.version()` returns `1` as a package smoke check. The [API overview](docs/src/appendix/api.md)
-links the user-facing modules to their chapters.
-
-## Availability
-
-Coral's dataframe operations run through `chelis eval` and `chelis test`.
-Native package probes cover construction, `nrows`, column matching,
-`drop_nan`, `filter`, `head`, `slice`, `sort_by`, and `with_column`.
-`describe` and `drop_column` reject under native build; the full native API
-is not a supported release path. Tensor payloads do not establish GPU
-support. Parquet
-frame functions are exported but fail when called. CSV and JSON writers do
-not preserve integer missing-value masks, and the JSON writer requires
-simple text without characters needing JSON escaping. See the
-[I/O chapter](docs/src/io.md) and [limitations](docs/src/appendix/limitations.md)
-before exchanging data.
-
-## Contributing
-
-The [maintainer guide](docs/maintainer_guide.md) describes setup and checks for library
-changes. The public behavior and planned boundaries are recorded in
-[spec/scope.md](spec/scope.md).
+Read the [limitations](https://chelis.ch/docs/coral/appendix/limitations/)
+before exchanging data through files.
 
 ## License
 

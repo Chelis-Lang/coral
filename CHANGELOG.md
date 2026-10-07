@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Documentation
+
+- The book moves to `docs/book/` and is now rendered from the chelis.ch
+  Coral docs, which are canonical. Pages use hyphenated names (`first-dataframe.md`,
+  `nan-handling.md`, `pandas-comparison.md`) and `index.md` replaces
+  `introduction.md`. `scripts/check_book.py` lints the book and README, and a
+  `book` CI job builds the book with mdBook 0.5.2. The README is reduced to
+  the package summary, install, and module table.
+
 ## [0.7.47] - 2026-10-06
 
 - Pin published Chelis 0.19.1 and Nautilus 0.7.50. Chelis 0.19.1 fixes Reef,

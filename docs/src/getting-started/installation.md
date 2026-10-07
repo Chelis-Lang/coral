@@ -5,16 +5,25 @@ Chelis. Coral 0.7.47 uses Chelis 0.19.1 and Nautilus 0.7.50.
 
 ## Use Coral in a project
 
-Add Coral to a Reef project's `[dependencies]` table in `reef.toml`:
+Create a project with
+`chelis reef init demo --module-prefix Demo --output demo`, then edit its
+`reef.toml`: set
+the `compiler` field in the `[package]` table to `"=0.19.1"` and add Coral
+to the `[dependencies]` table. The edited parts of the manifest:
 
 ```toml
+[package]
+name = "demo"
+version = "0.1.0"
+compiler = "=0.19.1"
+module_prefix = "Demo"
+
 [dependencies]
 coral = { version = "0.7.47" }
 ```
 
-Set the project's `compiler` pin to `"=0.19.1"`, then run
-`chelis reef setup` and `chelis reef build`. Reef downloads Coral and its
+Then run `chelis reef setup` and `chelis reef build`. Reef downloads Coral and its
 Nautilus dependency from their releases, so a source checkout of either
 library is not required. See [Reef and packages](https://chelis.ch/docs/chelis/reef/) for
-details. To build or modify Coral itself, clone its source repository.
+details.
 Continue with [your first dataframe](first-dataframe.md).

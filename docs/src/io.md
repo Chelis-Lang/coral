@@ -1,14 +1,62 @@
 # CSV and JSON
 
-`Coral.Io` reads and writes frames with CSV or JSON files. Its readers infer
-integer (`i64`), float (`f32`), bool, or string columns from the values in
-each column. A CSV file uses a header row. A JSON file must contain an array
-of objects with scalar values. File operations use Chelis's `IO` effect.
+`Coral.Io` reads and writes frames with CSV or JSON files. File
+operations use Chelis's `IO` effect, so call them from a function declared
+with `! { IO }`, such as a `chelis test` case.
 
 | Format | Read | Write |
 |---|---|---|
-| CSV | `read_csv_frame(path)` | `write_csv_frame(frame, path)` |
-| JSON | `read_json_frame(path)` | `write_json_frame(frame, path)` |
+| CSV | `read_csv_frame(path: string) -> Frame[n]` | `write_csv_frame(df: Frame[n], path: string) -> unit` |
+| JSON | `read_json_frame(path: string) -> Frame[n]` | `write_json_frame(df: Frame[n], path: string) -> unit` |
+
+`path` is a file path; a relative path resolves against the working
+directory. Writers create or overwrite the file.
+
+## Input format and failures
+
+A CSV file has a header row; its names, in header order, become the
+columns. A JSON file is an array of objects. The first object's keys, in
+document order, become the columns: a key missing from a later object
+reads as an empty cell, and a key that only later objects have is
+dropped. A JSON `null`, array, or object value reads as an empty cell.
+
+| Input | Result |
+|---|---|
+| File not found | Fails: `read_csv failed for PATH` or `load_json failed for PATH` |
+| CSV row with fewer or more fields than the header | Fails: `read_csv failed for PATH` |
+| JSON that does not parse | Fails: `load_json failed for PATH` |
+| JSON whose top level is not an array | Fails: `read_json_frame: expected top-level array` |
+| JSON array element that is not an object | Fails: `read_json_frame: expected object entries` |
+| Header only, or an empty array | A frame with no columns and no rows; the header names are not kept |
+
+## Column type inference
+
+Each column's type comes from its cell text, tested in this order. The
+first rule that matches wins:
+
+1. Every cell is an integer: `IntCol` (`i64`) with no missing entries.
+2. At least one cell is an integer and the rest are empty: `IntCol`, with
+   the empty cells masked as missing.
+3. Every cell is a number: `FloatCol` (`f32`). A column mixing `1` and
+   `2.5` is float. `NaN` and `inf` parse as floats.
+4. At least one cell is a number and the rest are empty: `FloatCol`, with
+   NaN in the empty cells.
+5. Every cell is exactly `true` or `false`: `BoolCol`. `True` and `FALSE`
+   do not count.
+6. Anything else: `StringCol`, with each cell's text unchanged. A column
+   whose cells are all empty is a string column.
+
+A cell is an integer when it is an optional `+` or `-` followed by
+decimal digits; surrounding spaces are ignored. A number is an integer or
+a decimal such as `.5`, `5.`, `1e3`, or `1E3`; `NaN`, `nan`, `-NaN`,
+`inf`, and `Infinity` also count. Hexadecimal (`0x10`), digit separators
+(`1_000`), and decimal commas (`1,5`) do not, so those cells are strings.
+
+One non-matching cell turns a whole column into strings: a bool column
+with one empty cell, or a numeric column with one `n/a`, reads as
+`StringCol`.
+
+## Round trip
 
 The following test uses simple column names, plain text, finite floats,
 and no missing integers. In your Reef project, replace `Coral` in the
@@ -47,6 +95,8 @@ The JSON file contains:
 [{"id":1,"price":10.0,"flag":true,"city":"london"},{"id":2,"price":20.5,"flag":false,"city":"paris"}]
 ```
 
+## Writer behavior
+
 Before writing data, check these constraints:
 
 - The CSV writer quotes commas and double quotes in cell values, but does
@@ -76,3 +126,7 @@ Before writing data, check these constraints:
 
 `read_parquet_frame` and `write_parquet_frame` are exported names but fail
 when called. Parquet frame I/O is unavailable.
+
+`chelis build` rejects programs that call `read_csv_frame` or
+`read_json_frame`; run readers under `chelis test` or `chelis eval`. See
+[limitations](appendix/limitations.md).

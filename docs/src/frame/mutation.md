@@ -1,9 +1,14 @@
 # Changing columns
 
-`with_column(frame, name, column)` adds a column or replaces one with the
-same name. `mutate` does the same thing. The new column must have the frame's
-row count. `rename` changes a column name and rejects a name already in use;
-`drop_column` removes a named column.
+Each operation returns a new frame; use the returned frame for the next
+step.
+
+| Function | Signature | Behavior | Failure |
+|---|---|---|---|
+| `with_column` | `(df: Frame[n], name: string, col: Column[n]) -> Frame[n]` | Replaces the column `name` in place, or appends it as the last column | None |
+| `mutate` | same as `with_column` | Same as `with_column` | None |
+| `rename` | `(df: Frame[n], old_name: string, new_name: string) -> Frame[n]` | Renames in place; the column keeps its position | `rename: target column already exists`; `missing column: OLD` |
+| `drop_column` | `(df: Frame[n], name: string) -> Frame[n]` | Removes the column | `drop_column: missing column NAME` |
 
 ```chelis
 module Coral.BookMutation
@@ -18,5 +23,18 @@ def main() -> i64 = {
 }
 ```
 
-`main` returns `1`: only `qty` remains. The operations return new frame
-values; use the returned frame for subsequent steps.
+`main` returns `1`: only `qty` remains.
+
+## Pitfalls
+
+- **Column length.** Give `with_column` a column with the frame's row
+  count. It does not check the length when it runs, so a column of a
+  different length produces a frame whose columns disagree.
+- **Replacing changes the type.** `with_column` replaces a column of any
+  type with the new one; replacing a `FloatCol` `a` with an `IntCol` keeps
+  `a` at its position as an integer column.
+- **Renaming to the same name.** `rename(df, "a", "a")` fails with
+  `rename: target column already exists`, because the target check runs
+  first.
+- **Native builds.** `chelis build` rejects programs that call
+  `drop_column`; see [limitations](../appendix/limitations.md).

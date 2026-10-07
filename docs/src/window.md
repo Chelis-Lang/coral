@@ -20,8 +20,4 @@ def main() -> f32 = {
 }
 ```
 
-`main` returns `4.0`, the mean of `3.0`, `4.0`, and `5.0`. The rolling
-functions and `ewm` also have Chelis tests. Executed comparisons against
-pandas through generated C cover `rolling_mean` and `ewm` on bare tensors;
-they do not establish compiled `Frame` support or GPU behavior. See
-[Pandas comparison](appendix/pandas_comparison.md) for the coverage boundary.
+`main` returns `4.0`, the mean of `3.0`, `4.0`, and `5.0`.

@@ -6,7 +6,7 @@ names available to your program.
 
 | Module | Main operations | Guide |
 |---|---|---|
-| `Coral.Frame` | `from_pairs`, `from_columns`, `empty`, `int_col_of_list`; typed accessors; `filter`, `head`, `tail`, `slice`, `sort_by`; `with_column`, `mutate`, `rename`, `drop_column`; missing-value helpers; `concat`, `describe` | [Construction](../frame/construction.md), [Filtering](../frame/filtering.md), [Changing columns](../frame/mutation.md), [Missing values](../frame/nan_handling.md), [Concatenation](../frame/concatenation.md), [Describe](../frame/describe.md) |
+| `Coral.Frame` | `from_pairs`, `from_columns`, `empty`, `int_col_of_list`; typed accessors; `filter`, `head`, `tail`, `slice`, `sort_by`; `with_column`, `mutate`, `rename`, `drop_column`; missing-value helpers; `concat`, `describe` | [Construction](../frame/construction.md), [Filtering](../frame/filtering.md), [Changing columns](../frame/mutation.md), [Missing values](../frame/nan-handling.md), [Concatenation](../frame/concatenation.md), [Describe](../frame/describe.md) |
 | `Coral.GroupBy` | `group_by`, `agg_sum`, `agg_mean`, `agg_count`, `agg_min`, `agg_max`, `agg`, `value_counts` | [GroupBy](../groupby.md) |
 | `Coral.Join` | `inner_join`, `left_join`, `outer_join` | [Joins](../joins.md) |
 | `Coral.Io` | CSV and JSON frame readers and writers; unavailable Parquet frame names | [CSV and JSON](../io.md) |
@@ -14,7 +14,5 @@ names available to your program.
 | `Coral.Reshape` | `pivot`, `melt`, `stack`, `unstack` | [Reshape](../reshape.md) |
 | `Coral.AsOf` | `asof_lookup`, `asof_join` and their `_list` forms | [Sorted-key lookup](../asof.md) |
 
-`Coral.Core.version()` returns `1` as a package smoke check; it is not
-the Coral release version. The
-[limitations](limitations.md) page states which exported operations cannot
-run and which inputs need extra care.
+See [limitations](limitations.md) for the input and output
+constraints documented for supported operations.

@@ -47,25 +47,24 @@ The JSON file contains:
 [{"id":1,"price":10.0,"flag":true,"city":"london"},{"id":2,"price":20.5,"flag":false,"city":"paris"}]
 ```
 
-The writer boundaries matter when exchanging data:
+Before writing data, check these constraints:
 
 - The CSV writer quotes commas and double quotes in cell values, but does
   not quote headers. Use simple column names. Its line-based reader cannot
   round-trip embedded CR or LF in a field.
 - The JSON writer serializes every column name and every cell with
-  `Std.Io.Json.to_json`, so quotes, backslashes and control characters are
-  escaped and read back as themselves. Object keys follow the frame's column
-  order, which `read_json_frame` preserves. JSON has no `NaN` or `Infinity`
-  literal, so the writer renders
-  a non-finite float as `null`, the same encoding pandas `to_json` uses.
-  That keeps a non-finite float inside the grammar, but it does not
-  distinguish `NaN` from `inf` or `-inf`. Reading the document back gives
-  a missing float cell as long as the column holds at least one finite
-  value; a column whose every cell is non-finite reads back as a string
-  column, because inference then sees only empty cells. This also applies
-  to a number the reader could not represent: float cells are `f32`, so a
-  JSON value outside the `f32` range, such as `1e39`, becomes an infinity
-  on the way in and is therefore written back as `null`.
+  `Std.Io.Json.to_json`. Quotes, backslashes, and control characters are
+  escaped and read back unchanged. Object keys follow the frame's column
+  order, which `read_json_frame` keeps. JSON has no `NaN` or `Infinity`
+  literal, so the writer writes a non-finite float as `null`, as pandas
+  `to_json` does. The output is valid JSON, but `NaN`, `inf`, and `-inf`
+  all become `null`.
+- When you read the document back, a `null` cell becomes a missing float
+  cell if the column has at least one finite value. A column with only
+  non-finite cells reads back as a string column, because inference sees
+  only empty cells. Float cells are `f32`, so a JSON number outside the
+  `f32` range, such as `1e39`, becomes an infinity on input. The writer then
+  writes it back as `null`.
 - Both writers output the underlying number for an `IntCol` and ignore its
   missing-value mask. A missing integer stored as `0` is written as `0`,
   and reading the file back does not restore the mask.

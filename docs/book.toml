@@ -1,5 +1,5 @@
 [book]
-title = "Coral — Typed Dataframes for Chelis"
+title = "Coral: typed dataframes for Chelis"
 authors = ["Chelis contributors"]
 language = "en"
 src = "src"

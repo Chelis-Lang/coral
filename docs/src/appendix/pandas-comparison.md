@@ -15,10 +15,3 @@ conventions matter when comparing results:
 See [I/O](../io.md) for file formats and output limits, including integer
 masks that are not preserved by the writers. See [limitations](limitations.md)
 for column-type and execution boundaries.
-
-The test coverage has a precise scope. Pandas reference results are stored as
-goldens for Frame, GroupBy, Join, I/O, Window, and Reshape cases, and the
-Chelis tests check hand-computed behavior. Only `rolling_mean` and `ewm`
-on bare tensors are built to C, run, and automatically compared with their
-pandas goldens. The other Coral operations are not automatically executed
-against pandas in that check.

@@ -65,6 +65,7 @@ the book against the pinned compiler:
 ```sh
 uv run --python 3.11 --no-project python scripts/run_skill_checks.py
 uv run --python 3.11 --no-project python scripts/validate_book_examples.py
+uv run --python 3.11 --no-project python scripts/check_book.py docs/src README.md
 ```
 
 A compiler upgrade additionally runs the native-lane probes listed in
@@ -95,7 +96,9 @@ above on every compiler upgrade, including one without prose edits.
 ## Adding or changing public functions
 
 - Export the function from its module and add it to [`SKILL.md`](../SKILL.md)
-  §5 and the matching book chapter under [`docs/src/`](src/SUMMARY.md).
+  §5 and the matching book chapter under [`docs/src/`](src/SUMMARY.md). The
+  book is rendered from https://chelis.ch/docs/coral/: change the site page
+  and re-render, or make the same edit in both places (see `AGENTS.md` §Book).
 - Test every new public function on at least two distinct shapes or
   configurations. Where pandas defines the behavior, add a golden to
   `parity/gen_goldens.py`, regenerate, and review the new JSON.

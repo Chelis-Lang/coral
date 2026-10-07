@@ -23,3 +23,6 @@ skill-io.json
 .reef-write.lock
 .*.reef-tmp-*
 .*.reef-backup-*
+
+# mdBook output (mdbook build docs)
+docs/book/

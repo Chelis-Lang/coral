@@ -1,4 +1,4 @@
-# First Dataframe
+# First dataframe
 
 `from_pairs` creates a frame in the order you list its columns. Each column
 must have the same number of rows. This example has two rows, so `main`

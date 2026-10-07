@@ -1,50 +1,29 @@
 # Summary
 
-[Introduction](introduction.md)
+[Coral](index.md)
 
-# Getting Started
+# Getting started
 
 - [Installation](getting-started/installation.md)
-- [First Dataframe](getting-started/first_dataframe.md)
+- [First dataframe](getting-started/first-dataframe.md)
 
 # Frame
 
 - [Construction](frame/construction.md)
 - [Filtering](frame/filtering.md)
-- [Mutation](frame/mutation.md)
-- [NaN Handling](frame/nan_handling.md)
+- [Changing columns](frame/mutation.md)
+- [Missing values](frame/nan-handling.md)
 - [Concatenation](frame/concatenation.md)
 - [Describe](frame/describe.md)
-
-# GroupBy
-
 - [GroupBy](groupby.md)
-
-# Join
-
 - [Joins](joins.md)
-
-# IO
-
-- [CSV And JSON](io.md)
-
-# Window
-
-- [Rolling And EWM](window.md)
-
-# Reshape
-
+- [CSV and JSON](io.md)
+- [Rolling and exponentially weighted values](window.md)
 - [Reshape](reshape.md)
-
-# AsOf
-
 - [Sorted-key lookup](asof.md)
-
-# Reference
-
-- [Pandas Comparison](appendix/pandas_comparison.md)
 
 # Appendix
 
-- [API](appendix/api.md)
+- [Pandas comparison](appendix/pandas-comparison.md)
+- [API overview](appendix/api.md)
 - [Limitations](appendix/limitations.md)

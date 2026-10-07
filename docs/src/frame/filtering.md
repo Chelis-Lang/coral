@@ -21,5 +21,5 @@ def main() -> i64 = {
 ```
 
 `main` returns `2`. To compare two tensor columns directly, their shapes
-and dtypes must match; see the Chelis Guide's
-[standard-library operations](https://github.com/Chelis-Lang/chelis/blob/main/docs/book/src/stdlib.md).
+and dtypes must match; see the
+[Chelis operation reference](https://chelis.ch/docs/chelis/stdlib/).

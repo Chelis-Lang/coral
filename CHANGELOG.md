@@ -8,8 +8,8 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Documentation
 
-- The book in `docs/` is now rendered from the chelis.ch Coral docs, which are
-  canonical. Pages use hyphenated names (`first-dataframe.md`,
+- The book moves to `docs/book/` and is now rendered from the chelis.ch
+  Coral docs, which are canonical. Pages use hyphenated names (`first-dataframe.md`,
   `nan-handling.md`, `pandas-comparison.md`) and `index.md` replaces
   `introduction.md`. `scripts/check_book.py` lints the book and README, and a
   `book` CI job builds the book with mdBook 0.5.2. The README is reduced to

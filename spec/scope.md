@@ -2,7 +2,7 @@
 
 This document defines Coral's supported behavior, architecture, and checks
 for new public functions. The function-level API inventory lives in
-[`SKILL.md`](../SKILL.md) §5 and the [book](../docs/src/SUMMARY.md).
+[`SKILL.md`](../SKILL.md) §5 and the [book](../docs/book/src/SUMMARY.md).
 
 ## Intent
 

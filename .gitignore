@@ -24,5 +24,5 @@ skill-io.json
 .*.reef-tmp-*
 .*.reef-backup-*
 
-# mdBook output (mdbook build docs)
-docs/book/
+# mdBook output (mdbook build docs/book)
+docs/book/book/

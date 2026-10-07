@@ -7,7 +7,7 @@ frame can be passed to ordinary tensor operations. Filtering, grouping,
 joining, reshaping, windowing, and CSV and JSON I/O work on frames.
 
 The [Coral guide](https://chelis.ch/docs/coral/) teaches the API with
-runnable examples; its source is the mdBook in [`docs/`](docs/).
+runnable examples; its source is the mdBook in [`docs/book/`](docs/book/).
 
 ## Install
 

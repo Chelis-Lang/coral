@@ -229,7 +229,7 @@ gate commands.
 
 ## Book
 
-`docs/` is the user-facing book for this shell. chelis.ch mirrors it
+`docs/book/` is the user-facing book for this shell. chelis.ch mirrors it
 page for page (https://chelis.ch/docs/coral/), and the chelis.ch text is
 canonical: book pages are rendered from the site by the website's
 `scripts/sync_books.py`, so edit prose on the site and re-render, or make the

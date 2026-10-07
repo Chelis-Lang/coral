@@ -13,16 +13,28 @@ runnable examples; its source is the mdBook in [`docs/book/`](docs/book/).
 
 Coral 0.7.47 uses Chelis 0.19.1 and Nautilus 0.7.50. Install Chelis with
 `chelisup` ([installation guide](https://chelis.ch/docs/chelis/install/)),
-then add Coral to your Reef project's `reef.toml`:
+then install the Coral release and its Nautilus dependency into your local
+Reef registry. Both releases are public, so no token is needed:
+
+```sh
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.50
+chelis reef install --from-github Chelis-Lang/coral@v0.7.47
+chelis reef init demo --module-prefix Demo --output demo
+cd demo
+```
+
+In the project's `reef.toml`, check that `compiler` is `"=0.19.1"` and add Coral:
 
 ```toml
 [dependencies]
 coral = { version = "0.7.47" }
 ```
 
-Set the project's `compiler` pin to `"=0.19.1"` and run
-`chelis reef build`. Reef downloads Coral and its Nautilus dependency from
-their releases. The [installation page](https://chelis.ch/docs/coral/getting-started/installation/)
+Run `chelis reef build`; it resolves Coral and Nautilus from the local
+registry and writes `reef.lock`. On another machine,
+`chelis reef install --from-lockfile` reinstalls the locked dependencies.
+With `GITHUB_TOKEN` set or `gh` signed in, `chelis reef build` fetches
+missing packages itself. The [installation page](https://chelis.ch/docs/coral/getting-started/installation/)
 and [first dataframe](https://chelis.ch/docs/coral/getting-started/first-dataframe/)
 continue from there.
 

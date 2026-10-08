@@ -42,27 +42,44 @@ when the outcome matches this file and 1 when it changes:
 
 ## Actively blocking
 
-- **`read_json_frame` reads documents of roughly 950 rows
+- **`read_json_frame` is bounded by document size, at roughly 950 rows under
+  `chelis test` and 236 under `chelis eval`
   ([chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307)).**
-  `Std.Io.Json` parses with depth proportional to the input's size, so
-  `load_json` exhausts the evaluator stack before Coral sees the document.
+  `Std.Io.Json` parses with depth proportional to the input's size, so the
+  parser exhausts the stack before Coral sees the document.
 
   *Reproducer:* `tests_blocked/io/read_json_frame_row_depth_blocked.ch`
   (`chelis test tests_blocked/ --expect blocked`), a 2,000-row document.
 
-  *Measured at this pin,* on the `chelis test` worker, macOS arm64:
+  *Measured at this pin,* macOS arm64. **No figure here is meaningful without
+  its lane:** `chelis eval` runs on the process main thread and `chelis test`
+  on a larger worker stack, and the two differ by roughly 4x. Quoting one at a
+  reader on the other is wrong by that factor in whichever direction.
 
-  | varied axis | passes | overflows |
-  |---|---|---|
-  | array elements, one short int cell each | 960 | 975 |
-  | characters in one string cell, one element | 2,440 | 2,537 |
-  | `read_json_frame` end to end, one `IntCol` | 954 | 993 |
+  | lane | varied axis | passes | overflows |
+  |---|---|---|---|
+  | `chelis test` | array elements, one short int cell each | 960 | 975 |
+  | `chelis test` | characters in one string cell, one element | 2,440 | 2,537 |
+  | `chelis test` | `read_json_frame` end to end, one `IntCol` | 954 | 993 |
+  | `chelis eval` | array elements, one short int cell each | 236 | 243 |
+  | `chelis eval` | characters in one string cell, one element | 595 | 614 |
+  | `chelis eval` | `read_json_frame` end to end, one `IntCol` | 236 | 243 |
 
-  The first two rows call `load_json` and `json_array` only, with **no Coral
-  symbol on the path**, which is what establishes that the bound is not
-  Coral's. The element row is identical for an array of bare scalars and an
-  array of objects, so Coral's own per-entry walk was never implicated: that
-  walk is now a `map` and the end-to-end figure is unchanged by it.
+  The per-axis rows call `load_json` and `json_array` only, with **no Coral
+  symbol on the path**. That is what establishes the bound is not Coral's, and
+  the `chelis eval` rows establish it more strongly than the worker rows do:
+  on the tighter budget the bare-parser and end-to-end brackets are not merely
+  overlapping but *identical*, so Coral contributes no measurable depth even
+  where roughly a quarter as much is available. The element rows are identical
+  for an array of bare scalars and an array of objects, so Coral's own
+  per-entry walk was never implicated either: that walk is now a `map`, and
+  both end-to-end figures are unchanged by the change that made it one.
+
+  Note that chelis#2307's own headline figure, 1,209 bytes, is a `chelis eval`
+  measurement of a long string, and its table brackets the worker lane loosely
+  at 4,000/8,000 characters. The rows above are this repository's own
+  measurements through `load_json` and `read_json_frame`, not that issue's
+  figures restated.
 
   *Not established:* whether the two depth bounds share one budget. Mixed
   documents large enough to test it (500 elements of 1,000 characters,

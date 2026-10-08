@@ -35,11 +35,16 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   would otherwise have truncated every row to the shortest column and written a
   short file silently. `tests_neg/io/` pins the refusal for both writers.
 
-  `read_json_frame`'s own ceiling of roughly 950 rows is **not** this defect
-  and is unchanged by the fix. It belongs to `Std.Io.Json`, whose parse depth
-  is proportional to the document's size: `load_json` alone, with no Coral
-  symbol on the path, passes at 960 elements and overflows at 975, identically
-  for an array of scalars and an array of objects. That is
+  `read_json_frame`'s own document-size ceiling is **not** this defect and is
+  unchanged by the fix. It belongs to `Std.Io.Json`, whose parse depth is
+  proportional to the document's size: with no Coral symbol on the path the
+  parser passes at 960 elements and overflows at 975 on the `chelis test`
+  worker, and at 236 and 243 on `chelis eval`'s main thread, identically for an
+  array of scalars and an array of objects. On the `chelis eval` lane those
+  bare-parser brackets are *identical* to `read_json_frame`'s own, so Coral
+  contributes no measurable depth even on the tighter budget. Every published
+  figure now names its lane, because the two differ by roughly 4x and a bound
+  quoted without its lane is wrong by that factor for half its readers. That is
   [chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307), fixed
   upstream after v0.19.1 and so not in the pinned toolchain. It is now recorded
   in `docs/UPSTREAM_BUGS.md` under Actively blocking, probed by

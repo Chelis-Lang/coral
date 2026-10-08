@@ -28,15 +28,19 @@ These constraints apply to Coral 0.7.47 with Chelis 0.19.1:
   `-inf` as `null`. A JSON value such as `1e39` reads as an `f32` infinity,
   so it writes back as `null`. The [I/O chapter](../io.md) gives
   supported inputs.
-- **JSON document size.** `read_json_frame` reads documents of roughly 950
-  rows or fewer. A longer document, or one holding a single string cell longer
-  than about 2,400 characters, stops the interpreter by exhausting its stack
-  instead of returning an error, and a document of a few hundred kilobytes can
-  exceed a test's time limit first. The bound belongs to the JSON parser Coral
-  calls, not to Coral, and it is a property of the document as written rather
-  than of the frame. `read_csv_frame`, `write_csv_frame`, and
-  `write_json_frame` have no comparable bound: each handles 20,000 rows. Read
-  large tabular data as CSV.
+- **JSON document size.** `read_json_frame` is bounded by the size of the
+  document, and the bound depends on which lane runs it, because the two are
+  given different stack budgets. Under `chelis test` it reads about 950 rows, or
+  a single string cell of about 2,400 characters. Under `chelis eval` the same
+  two limits are about 236 rows and about 595 characters. Past either one the
+  interpreter stops by exhausting its stack instead of returning an error, and a
+  document of a few hundred kilobytes can run out of time before it reaches the
+  stack limit at all. The bound is a property of the document as written rather
+  than of the frame, and it belongs to the JSON parser Coral calls rather than
+  to Coral: a program that parses the same document and never builds a frame
+  stops at the same two figures on each lane. `read_csv_frame`,
+  `write_csv_frame`, and `write_json_frame` have no comparable bound: each
+  handles 20,000 rows. Read large tabular data as CSV.
 - **Column types.** GroupBy cannot return bool group keys. Bool non-key
   columns cannot pass through joins; inner and left joins also reject
   bool keys. `pivot` and `melt` take float value columns and string

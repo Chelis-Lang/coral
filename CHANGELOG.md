@@ -8,14 +8,21 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- `Coral.Io`'s CSV and JSON writers walk rows with `map` over `range` instead
-  of one call frame per row, and the JSON reader walks the parsed document with
-  `map` instead of recursing per element
-  ([coral#58](https://github.com/Chelis-Lang/coral/issues/58)). Rows are now
-  assembled column-major: a column is converted to its cell list once and a row
-  is one `index` per column. `write_csv_frame` and `write_json_frame` passed at
-  2,276 rows and aborted the test worker with a stack overflow at 2,353; both
-  now handle 20,000. `read_csv_frame` was already fold-based and unchanged.
+- `Coral.Io`'s CSV and JSON writers no longer spend a call frame per row or per
+  column, and the JSON reader walks the parsed document with `map` instead of
+  recursing per element
+  ([coral#58](https://github.com/Chelis-Lang/coral/issues/58)). Rows are
+  assembled column-major: each column becomes its full cell list once, and the
+  columns are folded together, column 0's cells acting as the partial rows and
+  each further column zipped onto them. The row walk is therefore a `fold` over
+  columns whose every step is one `map` over rows; it is deliberately **not** a
+  `map` over a row index, because capturing the cell table in a closure the row
+  walk re-enters lowers to `inconsistent live owners` on the C host lane.
+  `write_csv_frame` and `write_json_frame` both passed at 2,276 rows and
+  aborted the test worker with a stack overflow at 2,353; both now write 20,000
+  rows at one column. Many columns cost time rather than stack: a wide frame can
+  exceed a test's own time limit long before any stack limit.
+  `read_csv_frame` was already fold-based and unchanged.
   `tests/io.ch` gains a 3,000-row round-trip for CSV and a 3,000-row document
   check for JSON, both of which abort on the previous implementation, and the
   first coverage of CSV cell quoting, whose output is byte-identical across the
@@ -30,21 +37,30 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 - `write_csv_frame` and `write_json_frame` refuse a frame whose columns have
   different lengths, with `Coral.Io: cannot write a frame whose columns have
   different lengths`. Such a frame is reachable because `with_column` does not
-  check its column's length. The previous row walk indexed every column at the
-  first column's length and so trapped out of bounds; the column-fold rewrite
-  would otherwise have truncated every row to the shortest column and written a
-  short file silently. `tests_neg/io/` pins the refusal for both writers.
+  check its column's length.
+
+  This closes a pre-existing silent-data-loss bug rather than only guarding the
+  rewrite. The previous row walk indexed every column at the **first** column's
+  length, so it trapped out of bounds only when column 0 was the longest. When
+  column 0 was the shortest, it wrote a file truncated to column 0's length
+  with no diagnostic at all: on the previous code a two-row first column beside
+  a three-row second column wrote `a,long` plus two rows and exited cleanly.
+  Of six ragged shapes, three trapped and three wrote silently. Both writers
+  now refuse all six, and a well-formed frame is unaffected. `tests_neg/io/`
+  pins the refusal for both writers.
 
   `read_json_frame`'s own document-size ceiling is **not** this defect and is
   unchanged by the fix. It belongs to `Std.Io.Json`, whose parse depth is
-  proportional to the document's size: with no Coral symbol on the path the
-  parser passes at 960 elements and overflows at 975 on the `chelis test`
-  worker, and at 236 and 243 on `chelis eval`'s main thread, identically for an
-  array of scalars and an array of objects. On the `chelis eval` lane those
-  bare-parser brackets are *identical* to `read_json_frame`'s own, so Coral
-  contributes no measurable depth even on the tighter budget. Every published
-  figure now names its lane, because the two differ by roughly 4x and a bound
-  quoted without its lane is wrong by that factor for half its readers. That is
+  proportional to the document's size. With no Coral symbol on the path the
+  parser passes at 972 elements and fails at 973 on the `chelis test` worker,
+  and at 236 and 237 on `chelis eval`'s main thread; an array of bare scalars
+  and an array of objects agree to within one element. `read_json_frame` itself
+  passes at 971 and 236 on those two lanes, so Coral costs a constant amount of
+  headroom, about one element's worth of frames, rather than nothing or a
+  per-element amount: the attribution is the parser's, the absolute figure is
+  one element lower through Coral. Every published figure now names its lane,
+  because the two differ by roughly 4x and a bound quoted without its lane is
+  wrong by that factor for half its readers. That is
   [chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307), fixed
   upstream after v0.19.1 and so not in the pinned toolchain. It is now recorded
   in `docs/UPSTREAM_BUGS.md` under Actively blocking, probed by

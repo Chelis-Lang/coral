@@ -113,10 +113,13 @@ def csv_column_table[n](df: Frame[n], names: List[string]) -> List[List[string]]
 --
 -- The equal-length check is not redundant with `from_pairs`, which does reject
 -- mismatched columns: `with_column` does not check its column's length, so a
--- frame whose columns disagree is reachable. Indexing every column at the first
--- column's length used to make that a loud out-of-bounds trap, and `zip` alone
--- would silently truncate every row to the shortest column instead. The check
--- keeps the failure loud and says which property failed.
+-- frame whose columns disagree is reachable. The check is not merely a guard
+-- for this rewrite either. Indexing every column at the first column's length
+-- trapped out of bounds only when column 0 was the longest; when column 0 was
+-- the shortest it wrote a file truncated to that length with no diagnostic, so
+-- half the ragged shapes were already silent data loss. A bare `zip` fold would
+-- make all of them silent. This refuses every one of them and names the
+-- property that failed.
 def join_columns_by_row(column_cells: List[List[string]], sep: string) -> List[string] =
   if eq(len(column_cells), zero_i64()) then [] else {
     width = len(index(column_cells, zero_i64()))

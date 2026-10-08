@@ -1,0 +1,8 @@
+cannot write a frame whose columns have different lengths
+
+Assumption: `with_column` does not check that its column has the frame's row
+count, so a frame whose columns disagree is reachable. The CSV writer must
+refuse it loudly. It assembles rows by zipping the per-column cell lists
+together, and a zip alone would truncate every row to the shortest column and
+write a short file with no diagnostic, so this case guards a silent-data-loss
+path rather than a type rule. A pass here means the writer started truncating.

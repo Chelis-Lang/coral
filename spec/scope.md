@@ -130,3 +130,20 @@ rejection sites cite `spec/scope.md` § Deferrals (Dn).
   `write_parquet_frame` are exported but fail explicitly. `Std.Io.Parquet`
   provides no working file I/O implementation (chelis#850); the upstream
   reproduction and re-probe trigger are in `docs/UPSTREAM_BUGS.md`.
+- **D11: CSV cell length.** `write_csv_frame` walks a cell one character per
+  call frame, in `csv_needs_quoting`'s `string_contains_char` scans and in
+  `csv_escape_quotes`, so a long cell exhausts the evaluator stack. On the
+  `chelis test` worker a cell needing quotes writes at 2286 characters and
+  fails at 2287; one needing none writes at 3817 and fails at 3818. The two
+  recursions are sequential rather than nested, so the peak is the larger of
+  them and the trigger character's position does not matter. This is Coral's
+  own code with no upstream blocker, which is why it is recorded here rather
+  than in `docs/UPSTREAM_BUGS.md`.
+
+  Whoever lifts this should know that the cheap half moves the wrong number.
+  `string_contains_char` can be deleted in favour of the `string_contains`
+  builtin, which removes a recursion and moves only the 3817 bound; the
+  binding bound is 2286, set by `csv_escape_quotes`, and that one needs a
+  fold over `range(0, string_len(s))`. `Std.Io.Csv.double_quotes` on chelis
+  `main` is exactly that shape and is worth copying. Verify by re-bisecting
+  the quoted-cell case, not by the advisory count or the unquoted figure.

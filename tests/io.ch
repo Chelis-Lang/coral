@@ -212,3 +212,42 @@ def test_json_preserves_frame_column_order() -> unit ! { Test, IO } = {
   _ = assert_eq(index(names, one_i64()), "k", "read-back column 1 is still k")
   assert_eq(index(names, cast(2, i64)), "aa", "read-back column 2 is still aa")
 }
+-- CSV quoting had no coverage, and the rewrite below moved `csv_quote_field`
+-- from the row walk into the per-column materialization. This pins both
+-- directions at once: the three cells that must be quoted, and the one that
+-- must not be. An over-quoting regression fails on the `plain` row alone.
+def test_csv_quotes_only_the_cells_that_need_it() -> unit ! { Test, IO } = {
+  df = from_pairs([("note", StringCol(["a,b", "say \"hi\"", "l1\nl2", "plain"])), ("qty", int_col_of_list([cast(1, i64), cast(2, i64), cast(3, i64), cast(4, i64)]))])
+  _ = write_csv_frame(df, "test_io_quoting.csv")
+  text = read_text("test_io_quoting.csv")
+  assert_eq(text, "note,qty\n\"a,b\",1\n\"say \"\"hi\"\"\",2\n\"l1\nl2\",3\nplain,4\n", "a comma, a quote and a newline each quote their cell and a quote doubles; a cell needing none is written bare")
+}
+-- 3,000 rows is past the point where both writers used to exhaust the
+-- evaluator stack (they passed at 2,276 rows and aborted at 2,353), so these two
+-- tests fail as a `SIGABRT` worker kill rather than an assertion if the row walk
+-- ever returns to one call frame per row. They assert the content, not just the
+-- absence of a crash: a walk that silently dropped or duplicated rows would pass
+-- a bare row-count check.
+def ceiling_probe_rows() -> i64 = cast(3000, i64)
+def test_csv_roundtrip_past_the_old_recursion_ceiling() -> unit ! { Test, IO } = {
+  df = from_pairs([("a", int_col_of_list(range(zero_i64(), ceiling_probe_rows())))])
+  _ = write_csv_frame(df, "test_io_ceiling.csv")
+  back = read_csv_frame("test_io_ceiling.csv")
+  values = to_list(get_int_col(back, "a"))
+  total = fold(fn (acc: i64, v: i64) -> add(acc, v), zero_i64(), values)
+  _ = assert_eq(nrows(back), ceiling_probe_rows(), "3000 rows survive a CSV round-trip")
+  assert_eq(total, cast(4498500, i64), "every value survives: sum of 0..2999 is 4498500")
+}
+-- The JSON document is checked as text rather than read back, because
+-- `read_json_frame` cannot reach 3,000 rows at this pin for a reason that is not
+-- Coral's: see `tests_blocked/io/read_json_frame_row_depth_blocked.ch`. Length
+-- plus both ends pins every row: 3,000 objects spelled `{"a":<i>}` are 18,000
+-- punctuation bytes plus 10,890 digits plus 2,999 commas plus 2 brackets.
+def test_json_write_past_the_old_recursion_ceiling() -> unit ! { Test, IO } = {
+  df = from_pairs([("a", int_col_of_list(range(zero_i64(), ceiling_probe_rows())))])
+  _ = write_json_frame(df, "test_io_ceiling.json")
+  text = read_text("test_io_ceiling.json")
+  _ = assert_eq(string_len(text), cast(31891, i64), "3000 rows write a 31891-byte document: no row dropped or duplicated")
+  _ = assert_true(string_starts_with(text, "[{\"a\":0},{\"a\":1},"), "the document opens on rows 0 and 1 in order")
+  assert_true(string_ends_with(text, "{\"a\":2998},{\"a\":2999}]"), "and closes on rows 2998 and 2999 in order")
+}

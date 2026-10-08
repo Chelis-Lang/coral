@@ -129,14 +129,22 @@ when the outcome matches this file and 1 when it changes:
 
   | verb | varied axis | passes | fails | owner |
   |---|---|---|---|---|
-  | `write_csv_frame` | characters, cell needing quotes | 2286 | 2287 | Coral's own `csv_escape_quotes` / `string_contains_char`, which recurse per character |
-  | `write_csv_frame` | characters, cell needing none | 3817 | 3818 | same |
-  | `read_csv_frame` | characters in one field | 2628 | 2629 | `Std.Io.Csv`, untracked upstream |
+  | `write_csv_frame` | characters, cell needing quotes | 2286 | 2287 | Coral's own, per-character recursion in `csv_escape_quotes` / `string_contains_char`; recorded as [`spec/scope.md`](../spec/scope.md#deferrals) D11, not here |
+  | `write_csv_frame` | characters, cell needing none | 3817 | 3818 | same, D11 |
+  | `read_csv_frame` | characters in one field | 2628 | 2629 | `Std.Io.Csv`'s own per-character scan, [chelis#1225](https://github.com/Chelis-Lang/chelis/issues/1225) |
   | `write_json_frame` | characters in one cell | none to 20000 | | |
 
   A CSV cell needing quotes therefore has a *lower* character bound than
-  `read_json_frame`'s. The figures are head measurements, bisected on both
-  sides: `read_csv_frame`'s 2628/2629 is **identical** on `origin/main`, while
+  `read_json_frame`'s. `read_csv_frame`'s row is a second upstream limitation
+  with its own history: chelis#1225 is closed, repaired by
+  [chelis#3335](https://github.com/Chelis-Lang/chelis/pull/3335) at merge
+  commit `957ec396f649c8a3e9658808f4bc071d43e8e534`, which like chelis#3336 is
+  an ancestor of chelis `main` and carried by no release tag, so it is absent
+  from this pin. Its re-probe trigger is the first tag reported by
+  `git tag --contains 957ec396f649c8a3e9658808f4bc071d43e8e534`. The two
+  `write_csv_frame` rows are Coral's own and are owned by D11.
+
+  The figures are head measurements, bisected on both sides: `read_csv_frame`'s 2628/2629 is **identical** on `origin/main`, while
   the two `write_csv_frame` rows are **one and two characters lower than on
   `origin/main`** (2287/2288 and 3819/3820 there). The column fold adds frames
   above the per-character quoting recursion, so this change costs about 0.04%

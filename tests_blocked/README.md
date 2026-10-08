@@ -1,8 +1,12 @@
 # Upstream blocker probes
 
-There are no checker or evaluator blockers that `chelis test --expect blocked`
-can probe at this pin. The gather-axis rejection is a language rule covered by
+One evaluator blocker is probed here:
+`io/read_json_frame_row_depth_blocked.ch` reads a 2,000-row JSON document,
+which `Std.Io.Json` cannot parse at this pin. The gather-axis rejection is not
+a blocker but a language rule, covered by
 `tests_neg/frame/gather_axis_helper_neg.ch`.
+
+The remaining upstream limitations cannot be expressed in this harness:
 
 | Upstream issue | Re-probe | Why this harness cannot express it |
 |---|---|---|

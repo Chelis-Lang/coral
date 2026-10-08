@@ -1,6 +1,7 @@
 module Coral.Io
 import Coral.Frame (Column, IntCol, FloatCol, StringCol, BoolCol, Frame, from_pairs, columns, get_column)
 import Std.Io (write_text)
+import Std.Text (join)
 import Std.Io.Csv (read_csv)
 import Std.Io.Json (Json, JsonString, JsonInt, JsonBigInt, JsonFloat, JsonBool, JsonNull, JsonArray, JsonObject, json_array, json_object, load_json, to_json)
 export (read_csv_frame, write_csv_frame, read_json_frame, write_json_frame, read_parquet_frame, write_parquet_frame)
@@ -18,7 +19,7 @@ def read_json_frame[n](path: string) -> Frame[n] = {
   root = load_json(path)
   match json_array(Some(root)) with {
     | Some(items) => {
-    rows = json_rows(items, [])
+    rows = json_rows(items)
     if eq(len(rows), zero_i64()) then from_pairs([]) else {
       headers = map(fn (pair: (string, string)) -> pair.0, dict_entries(index(rows, zero_i64())))
       from_pairs(map(fn (name: string) -> (name, infer_csv_column(column_values(rows, name))), headers))
@@ -88,16 +89,41 @@ def unwrap_float(value: string) -> f32 =
   }
 def render_csv[n](df: Frame[n]) -> string = {
   names = columns(df)
-  header = join_strings(names, ",")
-  body = csv_rows(df, cast(0, i64), [])
-  if eq(len(body), zero_i64()) then string_concat(header, "\n") else string_concat(string_concat(header, "\n"), string_concat(join_strings(body, "\n"), "\n"))
+  header = join(names, ",")
+  body = csv_rows(df)
+  if eq(len(body), zero_i64()) then string_concat(header, "\n") else string_concat(string_concat(header, "\n"), string_concat(join(body, "\n"), "\n"))
 }
-def csv_rows[n](df: Frame[n], idx: i64, acc: List[string]) -> List[string] = if gte(idx, row_count(df)) then acc else csv_rows(df, add(idx, one_i64()), append(acc, csv_row(df, columns(df), idx, [])))
-def csv_row[n](df: Frame[n], names: List[string], idx: i64, acc: List[string]) -> string =
-  if eq(len(names), zero_i64()) then join_strings(acc, ",") else {
-    hd = index(names, zero_i64())
-    csv_row(df, skip(names, one_i64()), idx, append(acc, csv_quote_field(column_value_string(get_column(df, hd), idx))))
+-- Rows are assembled column-major: each column is converted to its full list of
+-- cell strings once, and the columns are then folded together one row at a
+-- time. Nothing walks rows by recursion, and nothing captures a per-column list
+-- in a closure the row walk re-enters. The per-row and per-column recursions
+-- this replaced exhausted the evaluator stack at roughly 2,300 rows, which is
+-- inside the frame sizes this API is for, so the bound is a correctness
+-- property of the writer and not a tuning choice.
+def csv_rows[n](df: Frame[n]) -> List[string] = join_columns_by_row(csv_column_table(df, columns(df)), ",")
+-- `df` is moved into this closure capture, so the capture has to be its last
+-- use; taking `names` as an argument keeps `columns` on the caller's side of
+-- that move.
+def csv_column_table[n](df: Frame[n], names: List[string]) -> List[List[string]] = map(fn (name: string) -> csv_column_cells(get_column(df, name)), names)
+-- Column 0's cells are the partial rows, and each further column is zipped onto
+-- them, so the fold is over columns and each step is one `map` over rows. The
+-- shape matters on the build lane too, not only in the evaluator: a cell table
+-- captured once and indexed per row lowers to `inconsistent live owners` on the
+-- C host lane, which is why the row index is never a closure capture here.
+--
+-- The equal-length check is not redundant with `from_pairs`, which does reject
+-- mismatched columns: `with_column` does not check its column's length, so a
+-- frame whose columns disagree is reachable. Indexing every column at the first
+-- column's length used to make that a loud out-of-bounds trap, and `zip` alone
+-- would silently truncate every row to the shortest column instead. The check
+-- keeps the failure loud and says which property failed.
+def join_columns_by_row(column_cells: List[List[string]], sep: string) -> List[string] =
+  if eq(len(column_cells), zero_i64()) then [] else {
+    width = len(index(column_cells, zero_i64()))
+    even = fold(fn (acc: bool, column: List[string]) -> and(acc, eq(len(column), width)), true, column_cells)
+    if not(even) then fail("Coral.Io: cannot write a frame whose columns have different lengths") else fold(fn (acc: List[string], column: List[string]) -> zip_with_separator(acc, column, sep), index(column_cells, zero_i64()), skip(column_cells, one_i64()))
   }
+def zip_with_separator(left: List[string], right: List[string], sep: string) -> List[string] = map(fn (pair: (string, string)) -> string_concat(pair.0, string_concat(sep, pair.1)), zip(left, right))
 def csv_quote_field(value: string) -> string =
   if csv_needs_quoting(value) then {
     escaped = csv_escape_quotes(value, zero_i64(), "")
@@ -116,8 +142,18 @@ def csv_escape_quotes(s: string, idx: i64, acc: string) -> string =
     next = if eq(ch, "\"") then string_concat(acc, "\"\"") else string_concat(acc, ch)
     csv_escape_quotes(s, add(idx, one_i64()), next)
   }
-def render_json[n](df: Frame[n]) -> string = string_concat("[", string_concat(join_strings(json_rows_out(df, cast(0, i64), []), ","), "]"))
-def json_rows_out[n](df: Frame[n], idx: i64, acc: List[string]) -> List[string] = if gte(idx, row_count(df)) then acc else json_rows_out(df, add(idx, one_i64()), append(acc, json_row(df, columns(df), idx, [])))
+def render_json[n](df: Frame[n]) -> string = string_concat("[", string_concat(join(json_rows_out(df), ","), "]"))
+-- Column-major and column-folded for the same reasons as `csv_rows`. Each
+-- column is labelled with its own key first, so the shared fold joins strings
+-- that already carry their `"key":value` spelling.
+def json_rows_out[n](df: Frame[n]) -> List[string] = {
+  names = columns(df)
+  keys = map(fn (name: string) -> to_json(JsonString(name)), names)
+  labelled = map(fn (field: (string, List[Json])) -> json_column_fields(field.0, field.1), zip(keys, json_column_table(df, names)))
+  map(fn (row: string) -> string_concat("{", string_concat(row, "}")), join_columns_by_row(labelled, ","))
+}
+def json_column_table[n](df: Frame[n], names: List[string]) -> List[List[Json]] = map(fn (name: string) -> json_column_cells(get_column(df, name)), names)
+def json_column_fields(key: string, cells: List[Json]) -> List[string] = map(fn (cell: Json) -> string_concat(key, string_concat(":", to_json(cell))), cells)
 -- Every key and every value is serialized by `Std.Io.Json.to_json`, so quoting,
 -- escaping and number spelling are the stdlib's rules and not Coral's.
 -- Only the object and array framing is assembled here, because
@@ -126,23 +162,17 @@ def json_rows_out[n](df: Frame[n], idx: i64, acc: List[string]) -> List[string] 
 -- would make write-then-read permute a frame's columns, which CSV does not do.
 -- The framing carries no value-dependent behaviour, so no cell content can
 -- change meaning in it.
-def json_row[n](df: Frame[n], names: List[string], idx: i64, acc: List[string]) -> string =
-  if eq(len(names), zero_i64()) then string_concat("{", string_concat(join_strings(acc, ","), "}")) else {
-    name = index(names, zero_i64())
-    cell = string_concat(to_json(JsonString(name)), string_concat(":", to_json(json_cell(get_column(df, name), idx))))
-    json_row(df, skip(names, one_i64()), idx, append(acc, cell))
-  }
--- Returning `Json` rather than rendered text is the structural half of that
--- separation: the CSV writer's `column_value_string` returns `string`, so
--- neither helper can be reached from the other format's writer by accident. A
+-- Returning `List[Json]` rather than rendered text is the structural half of
+-- that separation: the CSV writer's `csv_column_cells` returns `List[string]`,
+-- so neither helper can be reached from the other format's writer by accident. A
 -- one-line substitution between the two is a type error instead of a silent
 -- change of output.
-def json_cell[n](col: Column[n], idx: i64) -> Json =
+def json_column_cells[n](col: Column[n]) -> List[Json] =
   match col with {
-    | IntCol(xs, imask) => JsonInt(index(to_list(xs), idx))
-    | FloatCol(xs) => json_float_value(index(to_list(xs), idx))
-    | StringCol(xs) => JsonString(index(xs, idx))
-    | BoolCol(xs) => JsonBool(index(to_list(xs), idx))
+    | IntCol(xs, imask) => map(fn (value: i64) -> JsonInt(value), to_list(xs))
+    | FloatCol(xs) => map(fn (value: f32) -> json_float_value(value), to_list(xs))
+    | StringCol(xs) => map(fn (value: string) -> JsonString(value), xs)
+    | BoolCol(xs) => map(fn (value: bool) -> JsonBool(value), to_list(xs))
   }
 -- RFC 8259 has no NaN or Infinity literal, so a non-finite float cell becomes
 -- `JsonNull`, the encoding pandas `to_json` uses for the same values. Reading
@@ -180,43 +210,24 @@ def json_float_value(x: f32) -> Json =
 -- NaN is false whichever way it is written. Equality is not ordering --
 -- `neq(x, x)` is true for NaN, and alone it would still emit the infinities.
 def is_finite_f32(x: f32) -> bool = eq(sub(x, x), cast(0.0, f32))
-def column_value_string[n](col: Column[n], idx: i64) -> string =
+def csv_column_cells[n](col: Column[n]) -> List[string] =
   match col with {
-    | IntCol(xs, imask) => to_string(index(to_list(xs), idx))
-    | FloatCol(xs) => to_string(index(to_list(xs), idx))
-    | StringCol(xs) => index(xs, idx)
-    | BoolCol(xs) => to_string(index(to_list(xs), idx))
+    | IntCol(xs, imask) => map(fn (value: i64) -> csv_quote_field(to_string(value)), to_list(xs))
+    | FloatCol(xs) => map(fn (value: f32) -> csv_quote_field(to_string(value)), to_list(xs))
+    | StringCol(xs) => map(fn (value: string) -> csv_quote_field(value), xs)
+    | BoolCol(xs) => map(fn (value: bool) -> csv_quote_field(to_string(value)), to_list(xs))
   }
-def row_count[n](df: Frame[n]) -> i64 = {
-  names = columns(df)
-  if eq(len(names), zero_i64()) then zero_i64() else match get_column(df, index(names, zero_i64())) with {
-    | IntCol(xs, imask) => numel(xs)
-    | FloatCol(xs) => numel(xs)
-    | StringCol(xs) => len(xs)
-    | BoolCol(xs) => numel(xs)
-  }
-}
-def join_strings(values: List[string], sep: string) -> string = join_from(values, sep, true, "")
-def join_from(values: List[string], sep: string, first: bool, acc: string) -> string =
-  if eq(len(values), zero_i64()) then acc else {
-    head = index(values, zero_i64())
-    next = if first then string_concat(acc, head) else string_concat(acc, string_concat(sep, head))
-    join_from(skip(values, one_i64()), sep, false, next)
-  }
-def json_rows(items: List[Json], acc: List[Dict[string, string]]) -> List[Dict[string, string]] =
-  if eq(len(items), zero_i64()) then acc else {
-    row = index(items, zero_i64())
-    next = match json_object(Some(row)) with {
-      | Some(entries) => append(acc, dict_of(map_json_entries(dict_entries(entries), [])))
-      | None => fail("read_json_frame: expected object entries")
-    }
-    json_rows(skip(items, one_i64()), next)
-  }
-def map_json_entries(entries: List[(string, Json)], acc: List[(string, string)]) -> List[(string, string)] =
-  if eq(len(entries), zero_i64()) then acc else {
-    entry = index(entries, zero_i64())
-    next = append(acc, (entry.0, render_json_value(entry.1)))
-    map_json_entries(skip(entries, one_i64()), next)
+-- A `map` over the document's items, not a recursion over them, for the same
+-- reason as the writers. This path has a second and lower row ceiling that is
+-- not Coral's: `Std.Io.Json.load_json` is itself depth-proportional to the
+-- element count at the pinned toolchain, so the document is already parsed --
+-- or already over budget -- before this `map` runs. See
+-- `docs/UPSTREAM_BUGS.md`.
+def json_rows(items: List[Json]) -> List[Dict[string, string]] = map(fn (item: Json) -> json_row_dict(item), items)
+def json_row_dict(item: Json) -> Dict[string, string] =
+  match json_object(Some(item)) with {
+    | Some(entries) => dict_of(map(fn (entry: (string, Json)) -> (entry.0, render_json_value(entry.1)), dict_entries(entries)))
+    | None => fail("read_json_frame: expected object entries")
   }
 def render_json_value(value: Json) -> string =
   match value with {

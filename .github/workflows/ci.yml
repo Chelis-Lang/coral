@@ -153,6 +153,12 @@ jobs:
       - name: chelis test (negative contracts)
         run: chelis test tests_neg/ --expect neg
 
+      # Shell contract §5: each probe must still FAIL with the diagnostic on
+      # line 1 of its sidecar. A probe that passes is FIX-detected and fails
+      # this step loudly, which is how a pin bump learns the blocker is gone.
+      - name: chelis test (upstream blocker probes)
+        run: chelis test tests_blocked/ --expect blocked
+
       - name: native float NaN regression
         run: python scripts/repro_native_nan.py
 

@@ -28,6 +28,15 @@ These constraints apply to Coral 0.7.47 with Chelis 0.19.1:
   `-inf` as `null`. A JSON value such as `1e39` reads as an `f32` infinity,
   so it writes back as `null`. The [I/O chapter](../io.md) gives
   supported inputs.
+- **JSON document size.** `read_json_frame` reads documents of roughly 950
+  rows or fewer. A longer document, or one holding a single string cell longer
+  than about 2,400 characters, stops the interpreter by exhausting its stack
+  instead of returning an error, and a document of a few hundred kilobytes can
+  exceed a test's time limit first. The bound belongs to the JSON parser Coral
+  calls, not to Coral, and it is a property of the document as written rather
+  than of the frame. `read_csv_frame`, `write_csv_frame`, and
+  `write_json_frame` have no comparable bound: each handles 20,000 rows. Read
+  large tabular data as CSV.
 - **Column types.** GroupBy cannot return bool group keys. Bool non-key
   columns cannot pass through joins; inner and left joins also reject
   bool keys. `pivot` and `melt` take float value columns and string
@@ -40,7 +49,9 @@ These constraints apply to Coral 0.7.47 with Chelis 0.19.1:
 - **Unchecked inputs.** Coral does not check that `Coral.AsOf` right-hand
   keys are sorted, that an `ewm` `alpha` lies in `(0, 1]`, or that a
   `with_column` column has the frame's row count. A wrong input gives a
-  wrong result, not an error.
+  wrong result, not an error. The file writers are the exception:
+  `write_csv_frame` and `write_json_frame` refuse a frame whose columns have
+  different lengths instead of writing a file truncated to the shortest one.
 - **Output conventions.** `outer_join` returns its key as a string column,
   whatever the input key type. `from_columns` and `empty` use dictionary
   entry order for columns; use `from_pairs` for explicit order. In a

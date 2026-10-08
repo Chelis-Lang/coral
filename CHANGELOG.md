@@ -6,6 +6,46 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `Coral.Io`'s CSV and JSON writers walk rows with `map` over `range` instead
+  of one call frame per row, and the JSON reader walks the parsed document with
+  `map` instead of recursing per element
+  ([coral#58](https://github.com/Chelis-Lang/coral/issues/58)). Rows are now
+  assembled column-major: a column is converted to its cell list once and a row
+  is one `index` per column. `write_csv_frame` and `write_json_frame` passed at
+  2,276 rows and aborted the test worker with a stack overflow at 2,353; both
+  now handle 20,000. `read_csv_frame` was already fold-based and unchanged.
+  `tests/io.ch` gains a 3,000-row round-trip for CSV and a 3,000-row document
+  check for JSON, both of which abort on the previous implementation, and the
+  first coverage of CSV cell quoting, whose output is byte-identical across the
+  change. For a well-formed frame the written bytes are unchanged: a 2,500-row
+  two-column CSV and JSON document are byte-identical across the evaluator on
+  this change, the compiled C lane on this change, and the compiled C lane
+  before it, which is the only one of the four the previous evaluator code could
+  reach at that size.
+
+### Added
+
+- `write_csv_frame` and `write_json_frame` refuse a frame whose columns have
+  different lengths, with `Coral.Io: cannot write a frame whose columns have
+  different lengths`. Such a frame is reachable because `with_column` does not
+  check its column's length. The previous row walk indexed every column at the
+  first column's length and so trapped out of bounds; the column-fold rewrite
+  would otherwise have truncated every row to the shortest column and written a
+  short file silently. `tests_neg/io/` pins the refusal for both writers.
+
+  `read_json_frame`'s own ceiling of roughly 950 rows is **not** this defect
+  and is unchanged by the fix. It belongs to `Std.Io.Json`, whose parse depth
+  is proportional to the document's size: `load_json` alone, with no Coral
+  symbol on the path, passes at 960 elements and overflows at 975, identically
+  for an array of scalars and an array of objects. That is
+  [chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307), fixed
+  upstream after v0.19.1 and so not in the pinned toolchain. It is now recorded
+  in `docs/UPSTREAM_BUGS.md` under Actively blocking, probed by
+  `tests_blocked/io/read_json_frame_row_depth_blocked.ch`, and stated for users
+  on the book's limitations page.
+
 ### Documentation
 
 - The book moves to `docs/book/` and is now rendered from the chelis.ch

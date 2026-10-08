@@ -20,11 +20,15 @@ local candidate builds do not replace that release check.
 
 ### Re-probing
 
-There are no checker-level upstream blockers to put in `tests_blocked/`.
-The gather-axis test checks an intentional rejection under [05-AXIS-2] in
+One evaluator-level blocker has a probe in `tests_blocked/`:
+`tests_blocked/io/read_json_frame_row_depth_blocked.ch`, run with
+`chelis test tests_blocked/ --expect blocked`. It reports FIX-detected, and
+fails loudly, once the pinned toolchain carries the upstream fix.
+
+There are no checker-level upstream blockers. The gather-axis test checks an
+intentional rejection under [05-AXIS-2] in
 `tests_neg/frame/gather_axis_helper_neg.ch`. A future checker-level blocker
-gets a source and diagnostic sidecar in `tests_blocked/` and runs with
-`chelis test tests_blocked/ --expect blocked` until the upstream fix lands.
+gets a source and diagnostic sidecar in `tests_blocked/` the same way.
 
 Native build limitations use Python probes under `scripts/`. Each exits 0
 when the outcome matches this file and 1 when it changes:
@@ -37,6 +41,51 @@ when the outcome matches this file and 1 when it changes:
 | `scripts/repro_native_nan.py`, `scripts/repro_native_neq.py` | Native NaN behavior |
 
 ## Actively blocking
+
+- **`read_json_frame` reads documents of roughly 950 rows
+  ([chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307)).**
+  `Std.Io.Json` parses with depth proportional to the input's size, so
+  `load_json` exhausts the evaluator stack before Coral sees the document.
+
+  *Reproducer:* `tests_blocked/io/read_json_frame_row_depth_blocked.ch`
+  (`chelis test tests_blocked/ --expect blocked`), a 2,000-row document.
+
+  *Measured at this pin,* on the `chelis test` worker, macOS arm64:
+
+  | varied axis | passes | overflows |
+  |---|---|---|
+  | array elements, one short int cell each | 960 | 975 |
+  | characters in one string cell, one element | 2,440 | 2,537 |
+  | `read_json_frame` end to end, one `IntCol` | 954 | 993 |
+
+  The first two rows call `load_json` and `json_array` only, with **no Coral
+  symbol on the path**, which is what establishes that the bound is not
+  Coral's. The element row is identical for an array of bare scalars and an
+  array of objects, so Coral's own per-entry walk was never implicated: that
+  walk is now a `map` and the end-to-end figure is unchanged by it.
+
+  *Not established:* whether the two depth bounds share one budget. Mixed
+  documents large enough to test it (500 elements of 1,000 characters,
+  roughly 500 KB) exceed the 150-second test timeout before they overflow,
+  because the same parser accumulates strings quadratically
+  ([chelis#943](https://github.com/Chelis-Lang/chelis/issues/943), open).
+  Smaller mixed documents pass: 500 elements of 100 characters, and 800 of
+  50, both read.
+
+  *Affected surface:* `read_json_frame` only. `read_csv_frame`,
+  `write_csv_frame`, and `write_json_frame` each handle 20,000 rows.
+
+  *Workaround:* none in Coral. Read large tabular data as CSV, which has no
+  comparable bound.
+
+  *Re-probe trigger:* chelis#2307 is closed upstream, fixed by
+  [chelis#3336](https://github.com/Chelis-Lang/chelis/pull/3336) at merge
+  commit `24b1f8e0b6d815eff12f868999813023915da05d`, which is an ancestor of
+  chelis `main` and carried by no release tag yet. The first release
+  containing the fix is the first tag reported by
+  `git tag --contains 24b1f8e0b6d815eff12f868999813023915da05d` in a chelis
+  checkout. Re-run the blocked probe at that pin bump; a changelog claim is
+  not verification, and chelis `CHANGELOG.md` records neither issue.
 
 ## Tracking
 

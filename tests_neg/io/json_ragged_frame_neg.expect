@@ -1,0 +1,6 @@
+cannot write a frame whose columns have different lengths
+
+Assumption: the JSON writer shares the row assembly with the CSV writer, so it
+must refuse a ragged frame for the same reason and with the same diagnostic.
+The pair exists because the shared helper is the only thing making that true: a
+future format-specific row walk could regress one writer and not the other.

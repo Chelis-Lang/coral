@@ -1,0 +1,13 @@
+overflowed its stack
+
+Blocker: chelis#2307 -- Std.Io.Json parses with depth proportional to the
+element count, so load_json exhausts the evaluator stack before Coral sees the
+document. Measured at the 0.19.1 pin: load_json alone, with no Coral symbol on
+the path, passes at 960 elements and overflows at 975, for both an array of
+objects and an array of bare scalars. read_json_frame's own ceiling (954 pass /
+993 fail) is that bound and nothing of Coral's.
+
+Fixed upstream by chelis#3336, merged after v0.19.1 and therefore not in the
+pinned toolchain. De-narrowing: when this probe reports FIX-detected at a pin
+bump, promote it to tests/io.ch, raise the row count to match the CSV paths,
+and archive the docs/UPSTREAM_BUGS.md entry.

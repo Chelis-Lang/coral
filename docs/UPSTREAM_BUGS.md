@@ -45,8 +45,11 @@ when the outcome matches this file and 1 when it changes:
 - **`read_json_frame` is bounded by document size, at 971 rows under
   `chelis test` and 236 under `chelis eval`
   ([chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307)).**
-  `Std.Io.Json` parses with depth proportional to the input's size, so the
-  parser exhausts the stack before Coral sees the document.
+  `Std.Io.Json` parses with depth proportional to the document's element count
+  and to its total string content, so the parser exhausts the stack before
+  Coral sees the document. Not proportional to the document's *size*: an
+  18,450-byte document overflows while a 504,501-byte one reads, because the
+  two differ in element count and not in bytes.
 
   *Reproducer:* `tests_blocked/io/read_json_frame_row_depth_blocked.ch`
   (`chelis test tests_blocked/ --expect blocked`), a 2,000-row document.
@@ -72,11 +75,12 @@ when the outcome matches this file and 1 when it changes:
   symbol on the path**, which is what establishes that the bound is not
   Coral's. Two qualifications, both measured rather than reasoned:
 
-    - Coral costs a *constant* amount of headroom, not nothing and not a
-      per-element amount. At exactly 972 elements the bare parser passes while
-      `read_json_frame` overflows, reproducibly, so the Coral-side cost is about
-      one element's worth of frames. The attribution is the parser's; the
-      absolute figure is one element lower through Coral.
+    - Coral's own cost is constant, not per-element, and it is at most one
+      element's worth of frames. On the worker lane the gap is exactly one: at
+      972 elements the bare parser passes while `read_json_frame` overflows,
+      reproducibly. On the `chelis eval` lane the gap is **zero** -- both are
+      236/237 -- so "Coral costs something" is true of one lane and not the
+      other. The attribution is the parser's on both.
     - An array of bare scalars and an array of objects differ by one element
       (973 against 972 on the worker lane), so the two shapes agree to within
       the measurement's own resolution rather than exactly. Coral's own
@@ -88,14 +92,35 @@ when the outcome matches this file and 1 when it changes:
   at 4,000/8,000 characters. The rows above are this repository's own
   measurements, not that issue's figures restated.
 
-  *On whether the two bounds share one budget:* they do not simply add. A
-  document of 500 elements each holding a 1,000-character cell, 504,501
-  bytes, **reads successfully** in 330 seconds, although 500 elements and
-  1,000 characters are both well inside their single-axis bounds and their sum
-  is not. 500 elements of 100 characters and 800 of 50 also read. What is
-  still unestablished is the shape of the joint bound; no experiment here
-  separates the two budgets. The cost of probing it is time, not depth: the
-  same parser accumulates strings quadratically
+  *The two bounds share one budget, and approximately add.* **Neither
+  single-axis figure is safe in the presence of the other.** Measured on the
+  worker lane, where `E` is the element count and `C` the characters per string
+  cell:
+
+  | `E` | `C` | bytes | result |
+  |---|---|---|---|
+  | 971 | 1 | 9,711 | reads |
+  | 971 | 10 | 18,450 | **overflows** |
+  | 971 | 50 | 57,290 | **overflows** |
+  | 500 | 100 | 54,501 | reads |
+  | 500 | 1,000 | 504,501 | reads |
+
+  The second row is the one to read: 971 elements is inside the published
+  971-element bound and 10 characters is 0.4% of the published 2,489-character
+  bound, and the document still overflows. `E/973 + C/2630 < 1` predicts every
+  row above, so treat the two bounds as one budget consumed by both axes
+  together rather than as independent limits.
+
+  Two consequences worth stating separately. First, **document size is not the
+  predictor**: the 18,450-byte row overflows while the 504,501-byte row reads.
+  Second, a **single** long cell is nearly free -- 971 elements beside one
+  2,489-character cell, both at their published bounds, reads -- because the
+  second term tracks the document's *total* string content, so one long cell
+  barely moves the average. The surface of the joint bound beyond these points
+  is unestablished; five points on one axis family are not a surface.
+
+  Probing further costs time rather than depth, because the same parser
+  accumulates strings quadratically
   ([chelis#943](https://github.com/Chelis-Lang/chelis/issues/943), open), so a
   half-megabyte document needs minutes and a raised `--timeout`.
 
@@ -110,9 +135,15 @@ when the outcome matches this file and 1 when it changes:
   | `write_json_frame` | characters in one cell | none to 20000 | | |
 
   A CSV cell needing quotes therefore has a *lower* character bound than
-  `read_json_frame`'s. Those three rows are pre-existing and byte-for-byte
-  identical on `origin/main`; they are recorded here because this file
-  previously claimed the CSV verbs had no comparable bound, which was false.
+  `read_json_frame`'s. The figures are head measurements, bisected on both
+  sides: `read_csv_frame`'s 2628/2629 is **identical** on `origin/main`, while
+  the two `write_csv_frame` rows are **one and two characters lower than on
+  `origin/main`** (2287/2288 and 3819/3820 there). The column fold adds frames
+  above the per-character quoting recursion, so this change costs about 0.04%
+  of that headroom. It is disclosed rather than claimed away: the underlying
+  per-character recursion is pre-existing and out of this change's scope, but
+  the bound is marginally worse than before and the earlier wording here, which
+  said all three rows were identical on `origin/main`, was wrong.
 
   *Workaround:* none in Coral. CSV handles many more rows than
   `read_json_frame` does, so prefer it for a tall frame, but not for one with

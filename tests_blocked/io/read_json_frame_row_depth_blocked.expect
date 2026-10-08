@@ -4,11 +4,18 @@ Blocker: chelis#2307 -- Std.Io.Json parses with depth proportional to the
 element count, so the parser exhausts the stack before Coral sees the document.
 Bisected to adjacent integers at the 0.19.1 pin, macOS arm64: the bare parser,
 with no Coral symbol on the path, passes 972 array elements and fails at 973 on
-this worker lane, and read_json_frame itself passes 971 and fails at 972. The
-one-element gap is a constant: Coral costs a handful of frames, not a
-per-element cost, so the bound is the parser's while the absolute figure is one
-element lower through Coral. On the chelis eval lane both pass 236 and fail at
-237. An array of bare scalars and one of objects agree to within one element.
+this worker lane, and read_json_frame itself passes 971 and fails at 972. That
+one-element gap is a constant, not a per-element cost; on the chelis eval lane
+it is zero, both passing 236 and failing at 237. The bound is the parser's on
+both lanes. An array of bare scalars and one of objects agree to within one
+element.
+
+The element and character bounds share one budget and approximately add, so
+neither is safe in the presence of the other: 971 elements of 10-character
+string cells overflows although 971 is inside the element bound and 10 is 0.4%
+of the character bound. This probe uses short integer cells, so its 2,000 rows
+is roughly twice the element bound for that shape and a smaller margin for a
+document with longer cells.
 
 Fixed upstream by chelis#3336, merged after v0.19.1 and therefore not in the
 pinned toolchain.

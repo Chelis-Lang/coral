@@ -28,11 +28,12 @@ These constraints apply to Coral 0.7.47 with Chelis 0.19.1:
   `-inf` as `null`. A JSON value such as `1e39` reads as an `f32` infinity,
   so it writes back as `null`. The [I/O chapter](../io.md) gives
   supported inputs.
-- **Document size.** Every file verb is bounded by the size of the document,
+- **Document size.** Most file verbs are bounded by the size of the document,
   and each bound depends on which lane runs it, because the two lanes get
   different stack budgets. Past a bound the interpreter stops by exhausting its
   stack instead of returning an error. Each figure below is the largest size
-  that succeeded; one unit more failed.
+  that succeeded; one unit more failed. `write_json_frame` has no character
+  bound that has been found, so its row is blank rather than large.
 
   | verb | varied axis | `chelis test` | `chelis eval` |
   |---|---|---|---|
@@ -54,11 +55,21 @@ These constraints apply to Coral 0.7.47 with Chelis 0.19.1:
   stack: 20,000 rows across 10 columns takes over a minute to write, which can
   exceed a test's own time limit before any stack limit is reached.
 
-  The row and character bounds on `read_json_frame` are a property of the
-  document as written rather than of the frame, and they belong to the JSON
-  parser Coral calls rather than to Coral: a program that parses the same
-  document and never builds a frame stops within one element of the same
-  figures on each lane.
+  **The two `read_json_frame` figures are one budget, not two independent
+  limits, so neither is safe in the presence of the other.** The 971-row figure
+  was measured with short integer cells. With 10-character string cells the row
+  bound is 970, and with 50-character cells it is 954, so a document can
+  overflow with its row count inside the row figure and its cells at a fraction
+  of the character figure. Document size is not the predictor either: an
+  18,450-byte document of 971 ten-character cells overflows, while a
+  504,501-byte one of 500 thousand-character cells reads. A single long cell is
+  nearly free, because the character term tracks the document's total text
+  rather than its longest cell.
+
+  These bounds are a property of the document as written rather than of the
+  frame, and they belong to the JSON parser Coral calls rather than to Coral: a
+  program that parses the same document and never builds a frame stops within
+  one element of the same figures on each lane.
 - **Column types.** GroupBy cannot return bool group keys. Bool non-key
   columns cannot pass through joins; inner and left joins also reject
   bool keys. `pivot` and `melt` take float value columns and string

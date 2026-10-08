@@ -97,7 +97,9 @@ def render_csv[n](df: Frame[n]) -> string = {
 -- cell strings once, and the columns are then folded together one row at a
 -- time. Nothing walks rows by recursion, and nothing captures a per-column list
 -- in a closure the row walk re-enters. The per-row and per-column recursions
--- this replaced exhausted the evaluator stack at roughly 2,300 rows, which is
+-- this replaced exhausted the evaluator stack by 2,353 rows on the `chelis
+-- test` worker, and about four times sooner on `chelis eval`'s smaller stack,
+-- which is
 -- inside the frame sizes this API is for, so the bound is a correctness
 -- property of the writer and not a tuning choice.
 def csv_rows[n](df: Frame[n]) -> List[string] = join_columns_by_row(csv_column_table(df, columns(df)), ",")

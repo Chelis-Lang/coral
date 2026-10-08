@@ -19,8 +19,9 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   `map` over a row index, because capturing the cell table in a closure the row
   walk re-enters lowers to `inconsistent live owners` on the C host lane.
   `write_csv_frame` and `write_json_frame` both passed at 2,276 rows and
-  aborted the test worker with a stack overflow at 2,353; both now write 20,000
-  rows at one column. Many columns cost time rather than stack: a wide frame can
+  aborted the test worker with a stack overflow by 2,353 (a bracket: this one
+  pair was not bisected to adjacent integers, unlike every figure below); both
+  now write 20,000 rows at one column. Many columns cost time rather than stack: a wide frame can
   exceed a test's own time limit long before any stack limit.
   `read_csv_frame` was already fold-based and unchanged.
   `tests/io.ch` gains a 3,000-row round-trip for CSV and a 3,000-row document
@@ -45,9 +46,11 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   column 0 was the shortest, it wrote a file truncated to column 0's length
   with no diagnostic at all: on the previous code a two-row first column beside
   a three-row second column wrote `a,long` plus two rows and exited cleanly.
-  Of six ragged shapes, three trapped and three wrote silently. Both writers
-  now refuse all six, and a well-formed frame is unaffected. `tests_neg/io/`
-  pins the refusal for both writers.
+  Of six ragged shapes, three trapped and three wrote silently: column lengths
+  `(3,2)`, `(3,2,2)` and `(3,3,2)` trapped, while `(2,3)`, `(2,3,3)` and
+  `(2,2,3)` wrote a truncated file and exited cleanly. Both writers now refuse
+  all six, and a well-formed frame is unaffected. `tests_neg/io/` pins the
+  refusal for both writers.
 
   `read_json_frame`'s own document-size ceiling is **not** this defect and is
   unchanged by the fix. It belongs to `Std.Io.Json`, whose parse depth is
@@ -56,9 +59,18 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   and at 236 and 237 on `chelis eval`'s main thread; an array of bare scalars
   and an array of objects agree to within one element. `read_json_frame` itself
   passes at 971 and 236 on those two lanes, so Coral costs a constant amount of
-  headroom, about one element's worth of frames, rather than nothing or a
-  per-element amount: the attribution is the parser's, the absolute figure is
-  one element lower through Coral. Every published figure now names its lane,
+  headroom of at most one element's worth of frames rather than a per-element
+  amount: on the worker lane the gap is exactly one, and on `chelis eval` it is
+  zero, both lanes being 236/237. The attribution is the parser's either way.
+
+  This change also costs about 0.04% of `write_csv_frame`'s per-character
+  headroom, which is disclosed rather than claimed away: a cell needing quotes
+  breaks at 2,287 characters on `origin/main` and at 2,286 here, and one
+  needing none at 3,820 against 3,818, because the column fold adds frames
+  above the pre-existing per-character quoting recursion. `read_csv_frame`'s
+  2,628 is unchanged. Character figures move by a character with the calling
+  frame's own size, so treat them as exact for the probe shape stated in
+  `docs/UPSTREAM_BUGS.md` rather than as universal. Every published figure now names its lane,
   because the two differ by roughly 4x and a bound quoted without its lane is
   wrong by that factor for half its readers. That is
   [chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307), fixed

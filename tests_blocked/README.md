@@ -2,9 +2,8 @@
 
 No evaluator blocker probes remain in this directory. The 2,000-row JSON
 reader witness is ordinary coverage in `tests/io.ch`; Chelis 0.19.2 passes it
-with a locally published Nautilus candidate. That package smoke is exploratory
-until the compatible Nautilus release is published and the Coral package gates
-run against its authenticated artifact.
+against the published Chelis 0.19.2 and Nautilus 0.7.51 package graph. Coral
+0.7.48 builds from those published artifacts.
 
 The gather-axis rejection is not an upstream blocker but a language rule,
 covered by `tests_neg/frame/gather_axis_helper_neg.ch`.

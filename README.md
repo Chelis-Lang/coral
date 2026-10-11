@@ -11,30 +11,46 @@ runnable examples; its source is the mdBook in [`docs/book/`](docs/book/).
 
 ## Install
 
-Coral 0.7.47 uses Chelis 0.19.1 and Nautilus 0.7.50. Install Chelis with
-`chelisup` ([installation guide](https://chelis.ch/docs/chelis/install/)),
-then install the Coral release and its Nautilus dependency into your local
-Reef registry. Both releases are public, so no token is needed:
+Coral 0.7.48 uses Chelis 0.19.2 and Nautilus 0.7.51. Initialize a Reef
+project and add Coral to its `reef.toml`:
 
 ```sh
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.50
-chelis reef install --from-github Chelis-Lang/coral@v0.7.47
 chelis reef init demo --module-prefix Demo --output demo
 cd demo
 ```
 
-In the project's `reef.toml`, check that `compiler` is `"=0.19.1"` and add Coral:
+Set the project's compiler pin and dependency:
 
 ```toml
+[package]
+name = "demo"
+version = "0.1.0"
+compiler = "=0.19.2"
+module_prefix = "Demo"
+
 [dependencies]
-coral = { version = "0.7.47" }
+coral = { version = "0.7.48" }
 ```
 
-Run `chelis reef build`; it resolves Coral and Nautilus from the local
-registry and writes `reef.lock`. On another machine,
-`chelis reef install --from-lockfile` reinstalls the locked dependencies.
-With `GITHUB_TOKEN` set or `gh` signed in, `chelis reef build` fetches
-missing packages itself. The [installation page](https://chelis.ch/docs/coral/getting-started/installation/)
+Install the compiler, then let Reef retrieve the dependencies by name. This
+route requires `GITHUB_TOKEN` or an authenticated `gh` token:
+
+```sh
+chelisup install 0.19.2
+chelis reef build
+```
+
+For anonymous access to the public release assets, install the known tags
+directly before building:
+
+```sh
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.51
+chelis reef install --from-github Chelis-Lang/coral@v0.7.48
+chelis reef build
+```
+
+Reef records the versions and hashes in `reef.lock`. The
+[installation page](https://chelis.ch/docs/coral/getting-started/installation/)
 and [first dataframe](https://chelis.ch/docs/coral/getting-started/first-dataframe/)
 continue from there.
 

@@ -15,15 +15,13 @@ upstream limitation identifies the issue recorded here. Coral-owned choices
 without an upstream blocker also live in that deferral list.
 
 Re-run each listed probe at every compiler pin bump and before a Coral
-release. The native package probes use the published Nautilus dependency;
-local candidate builds do not replace that release check.
+release. The native package probes use the published Nautilus dependency.
 
 ### Re-probing
 
-One evaluator-level blocker has a probe in `tests_blocked/`:
-`tests_blocked/io/read_json_frame_row_depth_blocked.ch`, run with
-`chelis test tests_blocked/ --expect blocked`. It reports FIX-detected, and
-fails loudly, once the pinned toolchain carries the upstream fix.
+No evaluator-level upstream blocker probes remain in `tests_blocked/`. The
+2,000-row `read_json_frame` witness is normal coverage in `tests/io.ch`; it
+passes against the published Chelis 0.19.2 and Nautilus 0.7.51 packages.
 
 There are no checker-level upstream blockers. The gather-axis test checks an
 intentional rejection under [05-AXIS-2] in
@@ -42,129 +40,7 @@ when the outcome matches this file and 1 when it changes:
 
 ## Actively blocking
 
-- **`read_json_frame` is bounded by document size, at 971 rows under
-  `chelis test` and 236 under `chelis eval`
-  ([chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307)).**
-  `Std.Io.Json` parses with depth proportional to the document's element count
-  and to its total string content, so the parser exhausts the stack before
-  Coral sees the document. Not proportional to the document's *size*: an
-  18,450-byte document overflows while a 504,501-byte one reads, because the
-  two differ in element count and not in bytes.
-
-  *Reproducer:* `tests_blocked/io/read_json_frame_row_depth_blocked.ch`
-  (`chelis test tests_blocked/ --expect blocked`), a 2,000-row document.
-
-  *Measured at this pin,* macOS arm64. **No figure here is meaningful without
-  its lane:** `chelis eval` runs on the process main thread and `chelis test`
-  on a larger worker stack, and the two differ by roughly 4x. Quoting one at a
-  reader on the other is wrong by that factor in whichever direction.
-
-  Every figure is bisected to adjacent integers: the pass column is the
-  largest size that succeeded and the fail column is one unit more.
-
-  | lane | subject | varied axis | passes | fails |
-  |---|---|---|---|---|
-  | `chelis test` | `read_json_frame` | array elements | 971 | 972 |
-  | `chelis test` | `read_json_frame` | characters in one string cell | 2489 | 2490 |
-  | `chelis test` | bare parser | array elements, objects | 972 | 973 |
-  | `chelis eval` | `read_json_frame` | array elements | 236 | 237 |
-  | `chelis eval` | `read_json_frame` | characters in one string cell | 608 | 609 |
-  | `chelis eval` | bare parser | array elements | 236 | 237 |
-
-  The bare-parser rows call `load_json` and `json_array` only, with **no Coral
-  symbol on the path**, which is what establishes that the bound is not
-  Coral's. Two qualifications, both measured rather than reasoned:
-
-    - Coral's own cost is constant, not per-element, and it is at most one
-      element's worth of frames. On the worker lane the gap is exactly one: at
-      972 elements the bare parser passes while `read_json_frame` overflows,
-      reproducibly. On the `chelis eval` lane the gap is **zero** -- both are
-      236/237 -- so "Coral costs something" is true of one lane and not the
-      other. The attribution is the parser's on both.
-    - An array of bare scalars and an array of objects differ by one element
-      (973 against 972 on the worker lane), so the two shapes agree to within
-      the measurement's own resolution rather than exactly. Coral's own
-      per-entry walk is therefore not implicated: it is now a `map`, and
-      `read_json_frame`'s figures are unchanged by the change that made it one.
-
-  Note that chelis#2307's own headline figure, 1,209 bytes, is a `chelis eval`
-  measurement of a long string, and its table brackets the worker lane loosely
-  at 4,000/8,000 characters. The rows above are this repository's own
-  measurements, not that issue's figures restated.
-
-  *The two bounds share one budget, and approximately add.* **Neither
-  single-axis figure is safe in the presence of the other.** Measured on the
-  worker lane, where `E` is the element count and `C` the characters per string
-  cell:
-
-  | `E` | `C` | bytes | result |
-  |---|---|---|---|
-  | 971 | 1 | 9,711 | reads |
-  | 971 | 10 | 18,450 | **overflows** |
-  | 971 | 50 | 57,290 | **overflows** |
-  | 500 | 100 | 54,501 | reads |
-  | 500 | 1,000 | 504,501 | reads |
-
-  The second row is the one to read: 971 elements is inside the published
-  971-element bound and 10 characters is 0.4% of the published 2,489-character
-  bound, and the document still overflows. `E/973 + C/2630 < 1` predicts every
-  row above, so treat the two bounds as one budget consumed by both axes
-  together rather than as independent limits.
-
-  Two consequences worth stating separately. First, **document size is not the
-  predictor**: the 18,450-byte row overflows while the 504,501-byte row reads.
-  Second, a **single** long cell is nearly free -- 971 elements beside one
-  2,489-character cell, both at their published bounds, reads -- because the
-  second term tracks the document's *total* string content, so one long cell
-  barely moves the average. The surface of the joint bound beyond these points
-  is unestablished; five points on one axis family are not a surface.
-
-  Probing further costs time rather than depth, because the same parser
-  accumulates strings quadratically
-  ([chelis#943](https://github.com/Chelis-Lang/chelis/issues/943), open), so a
-  half-megabyte document needs minutes and a raised `--timeout`.
-
-  *Affected surface:* `read_json_frame`'s row bound. The character bound is
-  **not** confined to it, and CSV is not a general escape:
-
-  | verb | varied axis | passes | fails | owner |
-  |---|---|---|---|---|
-  | `write_csv_frame` | characters, cell needing quotes | 2286 | 2287 | Coral's own, per-character recursion in `csv_escape_quotes` / `string_contains_char`; recorded as [`spec/scope.md`](../spec/scope.md#deferrals) D11, not here |
-  | `write_csv_frame` | characters, cell needing none | 3817 | 3818 | same, D11 |
-  | `read_csv_frame` | characters in one field | 2628 | 2629 | `Std.Io.Csv`'s own per-character scan, [chelis#1225](https://github.com/Chelis-Lang/chelis/issues/1225) |
-  | `write_json_frame` | characters in one cell | none to 20000 | | |
-
-  A CSV cell needing quotes therefore has a *lower* character bound than
-  `read_json_frame`'s. `read_csv_frame`'s row is a second upstream limitation
-  with its own history: chelis#1225 is closed, repaired by
-  [chelis#3335](https://github.com/Chelis-Lang/chelis/pull/3335) at merge
-  commit `957ec396f649c8a3e9658808f4bc071d43e8e534`, which like chelis#3336 is
-  an ancestor of chelis `main` and carried by no release tag, so it is absent
-  from this pin. Its re-probe trigger is the first tag reported by
-  `git tag --contains 957ec396f649c8a3e9658808f4bc071d43e8e534`. The two
-  `write_csv_frame` rows are Coral's own and are owned by D11.
-
-  The figures are head measurements, bisected on both sides: `read_csv_frame`'s 2628/2629 is **identical** on `origin/main`, while
-  the two `write_csv_frame` rows are **one and two characters lower than on
-  `origin/main`** (2287/2288 and 3819/3820 there). The column fold adds frames
-  above the per-character quoting recursion, so this change costs about 0.04%
-  of that headroom. It is disclosed rather than claimed away: the underlying
-  per-character recursion is pre-existing and out of this change's scope, but
-  the bound is marginally worse than before and the earlier wording here, which
-  said all three rows were identical on `origin/main`, was wrong.
-
-  *Workaround:* none in Coral. CSV handles many more rows than
-  `read_json_frame` does, so prefer it for a tall frame, but not for one with
-  a long cell.
-
-  *Re-probe trigger:* chelis#2307 is closed upstream, fixed by
-  [chelis#3336](https://github.com/Chelis-Lang/chelis/pull/3336) at merge
-  commit `24b1f8e0b6d815eff12f868999813023915da05d`, which is an ancestor of
-  chelis `main` and carried by no release tag yet. The first release
-  containing the fix is the first tag reported by
-  `git tag --contains 24b1f8e0b6d815eff12f868999813023915da05d` in a chelis
-  checkout. Re-run the blocked probe at that pin bump; a changelog claim is
-  not verification, and chelis `CHANGELOG.md` records neither issue.
+(none yet)
 
 ## Tracking
 
@@ -190,6 +66,9 @@ when the outcome matches this file and 1 when it changes:
   full Frame module chain in `scripts/repro_native_nan.py`; if they reach a
   different rejection, classify that boundary before changing the probe.
 
+  *Chelis 0.19.2 re-probe:* the `drop_nan` probe and all three stripped module
+  targets still stop at the expected ownership-signature diagnostic.
+
 - **`describe` and `drop_column` reject in native package builds
   ([chelis#3169](https://github.com/Chelis-Lang/chelis/issues/3169),
   [chelis#879](https://github.com/Chelis-Lang/chelis/issues/879);
@@ -204,6 +83,13 @@ when the outcome matches this file and 1 when it changes:
   package checking and evaluation work.
 
   *Re-probe trigger:* each compiler pin bump. Test each verb separately.
+
+  *Chelis 0.19.2 re-probe:* separate native entries built with the published
+  Nautilus 0.7.51 package reproduce both boundaries.
+  `describe` still rejects at `build_describe_pairs` with the chelis#1226
+  non-concrete type-application diagnostic; `drop_column` still rejects the
+  anonymous function value with `unimplemented chelis#879`. Both entries check
+  at score 1.0 and evaluate successfully at this pin.
 
 - **Evaluator cost of the HAMT column store
   ([chelis#828](https://github.com/Chelis-Lang/chelis/issues/828); Coral-side
@@ -244,6 +130,145 @@ when the outcome matches this file and 1 when it changes:
   release. Re-run check, build, and the executable; a successful build
   alone does not establish working Parquet I/O.
 
+  *Chelis 0.19.2 re-probe:* the `read_parquet` entry checks at score 1.0 and
+  builds. Its executable exits 1 with
+  `Std.Io.Parquet.read_parquet is not implemented: missing.parquet`.
+
 ## Archived
 
-No entries.
+### Chelis 0.19.2 re-probes
+
+- **Historical `read_json_frame` parser bound at Chelis 0.19.1: 971 rows under
+  `chelis test` and 236 under `chelis eval`**
+  ([chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307)).
+  `Std.Io.Json` parses with depth proportional to the document's element count
+  and to its total string content, so the parser exhausts the stack before
+  Coral sees the document. Not proportional to the document's *size*: an
+  18,450-byte document overflows while a 504,501-byte one reads, because the
+  two differ in element count and not in bytes.
+
+  *Historical reproducer:* a 2,000-row document, formerly kept in
+  `tests_blocked/`. Chelis 0.19.2 reads it; the witness is now
+  `Coral.Tests.Io.test_read_json_frame_survives_two_thousand_rows` in
+  `tests/io.ch`.
+
+  *Historical measurements at Chelis 0.19.1,* macOS arm64. They are not
+  measurements of the 0.19.2 release. **No figure here is meaningful without
+  its lane:** `chelis eval` runs on the process main thread and `chelis test`
+  on a larger worker stack, and the two differ by roughly 4x. Quoting one at a
+  reader on the other is wrong by that factor in whichever direction.
+
+  Every figure is bisected to adjacent integers: the pass column is the
+  largest size that succeeded and the fail column is one unit more.
+
+  | lane | subject | varied axis | passes | fails |
+  |---|---|---|---|---|
+  | `chelis test` | `read_json_frame` | array elements | 971 | 972 |
+  | `chelis test` | `read_json_frame` | characters in one string cell | 2489 | 2490 |
+  | `chelis test` | bare parser | array elements, objects | 972 | 973 |
+  | `chelis eval` | `read_json_frame` | array elements | 236 | 237 |
+  | `chelis eval` | `read_json_frame` | characters in one string cell | 608 | 609 |
+  | `chelis eval` | bare parser | array elements | 236 | 237 |
+
+  The bare-parser rows call `load_json` and `json_array` only, with **no Coral
+  symbol on the path**, which is what establishes that the bound is not
+  Coral's. Two qualifications, both measured rather than reasoned:
+
+    - Coral's own cost is constant, not per-element, and it is at most one
+      element's worth of frames. On the worker lane the gap is exactly one: at
+      972 elements the bare parser passes while `read_json_frame` overflows,
+      reproducibly. On the `chelis eval` lane the gap is **zero** -- both are
+      236/237 -- so "Coral costs something" is true of one lane and not the
+      other. The attribution is the parser's on both.
+    - An array of bare scalars and an array of objects differ by one element
+      (973 against 972 on the worker lane), so the two shapes agree to within
+      the measurement's own resolution rather than exactly. Coral's own
+      per-entry walk is therefore not implicated: it is now a `map`, and
+      `read_json_frame`'s figures are unchanged by the change that made it one.
+
+  Note that chelis#2307's own headline figure, 1,209 bytes, is a `chelis eval`
+  measurement of a long string, and its table brackets the worker lane loosely
+  at 4,000/8,000 characters. The rows above are this repository's own
+  measurements, not that issue's figures restated.
+
+  *The two pre-fix bounds share one budget, and approximately add.* **Neither
+  single-axis figure was safe in the presence of the other.** Measured on the
+  worker lane, where `E` is the element count and `C` the characters per string
+  cell:
+
+  | `E` | `C` | bytes | result |
+  |---|---|---|---|
+  | 971 | 1 | 9,711 | reads |
+  | 971 | 10 | 18,450 | **overflows** |
+  | 971 | 50 | 57,290 | **overflows** |
+  | 500 | 100 | 54,501 | reads |
+  | 500 | 1,000 | 504,501 | reads |
+
+  The second row is the one to read: 971 elements is inside the published
+  971-element bound and 10 characters is 0.4% of the published 2,489-character
+  bound, and the document still overflows. `E/973 + C/2630 < 1` predicts every
+  row above, so treat the two bounds as one budget consumed by both axes
+  together rather than as independent limits.
+
+  Two consequences worth stating separately. First, **document size is not the
+  predictor**: the 18,450-byte row overflows while the 504,501-byte row reads.
+  Second, a **single** long cell is nearly free -- 971 elements beside one
+  2,489-character cell, both at their published bounds, reads -- because the
+  second term tracks the document's *total* string content, so one long cell
+  barely moves the average. The surface of the joint bound beyond these points
+  is unestablished; five points on one axis family are not a surface.
+
+  Probing further costs time rather than depth, because the same parser
+  accumulates strings quadratically
+  ([chelis#943](https://github.com/Chelis-Lang/chelis/issues/943), open), so a
+  half-megabyte document needs minutes and a raised `--timeout`.
+
+  These figures describe the old Chelis 0.19.1 parser. The published Chelis
+  0.19.2 and Nautilus 0.7.51 packages read 2,000 JSON rows in Coral's promoted
+  test; this does not establish a general row or string-length maximum. The separate
+  Coral CSV writer character limits remain, and CSV is not a general escape:
+
+  | verb | varied axis | passes | fails | owner |
+  |---|---|---|---|---|
+  | `write_csv_frame` | characters, cell needing quotes | 2286 | 2287 | Coral's own, per-character recursion in `csv_escape_quotes` / `string_contains_char`; recorded as [`spec/scope.md`](../spec/scope.md#deferrals) D11, not here |
+  | `write_csv_frame` | characters, cell needing none | 3817 | 3818 | same, D11 |
+  | `read_csv_frame` | characters in one field | 2628 | 2629 | `Std.Io.Csv`'s own per-character scan, [chelis#1225](https://github.com/Chelis-Lang/chelis/issues/1225) |
+  | `write_json_frame` | characters in one cell | none to 20000 | | |
+
+  The historical CSV figures are from Chelis 0.19.1 and this Coral head. A CSV
+  cell needing quotes therefore had a *lower* character bound than the old
+  `read_json_frame` bound. `read_csv_frame`'s character scan was a second
+  upstream limitation: chelis#1225 is closed, repaired by
+  [chelis#3335](https://github.com/Chelis-Lang/chelis/pull/3335) at merge
+  commit `957ec396f649c8a3e9658808f4bc071d43e8e534`. The positive regression is
+  `Coral.Tests.Io.test_read_csv_field_past_former_scan_limit` in `tests/io.ch`:
+  it preserves the complete 3,890-character field on the published Chelis
+  0.19.2 / Nautilus 0.7.51 dependency graph. This is a passing witness, not a
+  new maximum claim. The two `write_csv_frame` rows are Coral's own and are
+  owned by D11.
+
+  The figures are head measurements, bisected on both sides: `read_csv_frame`'s 2628/2629 is **identical** on `origin/main`, while
+  the two `write_csv_frame` rows are **one and two characters lower than on
+  `origin/main`** (2287/2288 and 3819/3820 there). The column fold adds frames
+  above the per-character quoting recursion, so this change costs about 0.04%
+  of that headroom. It is disclosed rather than claimed away: the underlying
+  per-character recursion is pre-existing and out of this change's scope, but
+  the bound is marginally worse than before and the earlier wording here, which
+  said all three rows were identical on `origin/main`, was wrong.
+
+  *Workaround:* none in Coral. CSV handles many more rows than
+  `read_json_frame` does, so prefer it for a tall frame, but not for one with
+  a long cell.
+
+  *Re-probe status:* chelis#2307 is closed upstream, fixed by
+  [chelis#3336](https://github.com/Chelis-Lang/chelis/pull/3336) at merge
+  commit `24b1f8e0b6d815eff12f868999813023915da05d`; the fix is included in
+  v0.19.2. The former blocked probe reported FIX-DETECTED, and its exact
+  2,000-row witness is now normal coverage in `tests/io.ch`. The package test
+  passes on the published 0.19.2 / 0.7.51 dependency graph.
+
+  Coral's row-walker recursion was fixed separately by Coral PR #61: the CSV
+  round-trip and JSON writer tests in `tests/io.ch` each exercise 3,000 rows,
+  while the writer implementation folds by column. No per-row recursive walker
+  remains in these four paths. Chelis 0.19.2 passes the promoted JSON reader
+  witness; no broader bound is claimed here.

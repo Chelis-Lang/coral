@@ -22,8 +22,11 @@ local candidate builds do not replace that release check.
 
 One evaluator-level blocker has a probe in `tests_blocked/`:
 `tests_blocked/io/read_json_frame_row_depth_blocked.ch`, run with
-`chelis test tests_blocked/ --expect blocked`. It reports FIX-detected, and
-fails loudly, once the pinned toolchain carries the upstream fix.
+`chelis test tests_blocked/ --expect blocked`. Chelis v0.19.2 includes the
+upstream JSON parser fix, but this candidate has not reached the probe: Reef
+rejects its still-published Nautilus dependency before tests execute. Keep the
+probe blocked until a compatible Nautilus artifact lets it run; then promote it
+to normal coverage if it detects the fix.
 
 There are no checker-level upstream blockers. The gather-axis test checks an
 intentional rejection under [05-AXIS-2] in
@@ -42,9 +45,9 @@ when the outcome matches this file and 1 when it changes:
 
 ## Actively blocking
 
-- **`read_json_frame` is bounded by document size, at 971 rows under
-  `chelis test` and 236 under `chelis eval`
-  ([chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307)).**
+- **`read_json_frame` was bounded by document size, at 971 rows under
+  `chelis test` and 236 under `chelis eval` at Chelis 0.19.1**
+  ([chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307)).
   `Std.Io.Json` parses with depth proportional to the document's element count
   and to its total string content, so the parser exhausts the stack before
   Coral sees the document. Not proportional to the document's *size*: an
@@ -54,7 +57,8 @@ when the outcome matches this file and 1 when it changes:
   *Reproducer:* `tests_blocked/io/read_json_frame_row_depth_blocked.ch`
   (`chelis test tests_blocked/ --expect blocked`), a 2,000-row document.
 
-  *Measured at this pin,* macOS arm64. **No figure here is meaningful without
+  *Historical measurements at Chelis 0.19.1,* macOS arm64. They are not
+  measurements of the 0.19.2 candidate. **No figure here is meaningful without
   its lane:** `chelis eval` runs on the process main thread and `chelis test`
   on a larger worker stack, and the two differ by roughly 4x. Quoting one at a
   reader on the other is wrong by that factor in whichever direction.
@@ -92,8 +96,8 @@ when the outcome matches this file and 1 when it changes:
   at 4,000/8,000 characters. The rows above are this repository's own
   measurements, not that issue's figures restated.
 
-  *The two bounds share one budget, and approximately add.* **Neither
-  single-axis figure is safe in the presence of the other.** Measured on the
+  *The two pre-fix bounds share one budget, and approximately add.* **Neither
+  single-axis figure was safe in the presence of the other.** Measured on the
   worker lane, where `E` is the element count and `C` the characters per string
   cell:
 
@@ -139,10 +143,14 @@ when the outcome matches this file and 1 when it changes:
   with its own history: chelis#1225 is closed, repaired by
   [chelis#3335](https://github.com/Chelis-Lang/chelis/pull/3335) at merge
   commit `957ec396f649c8a3e9658808f4bc071d43e8e534`, which like chelis#3336 is
-  an ancestor of chelis `main` and carried by no release tag, so it is absent
-  from this pin. Its re-probe trigger is the first tag reported by
-  `git tag --contains 957ec396f649c8a3e9658808f4bc071d43e8e534`. The two
-  `write_csv_frame` rows are Coral's own and are owned by D11.
+  an ancestor of chelis `main` and included in v0.19.2. Its release trigger has
+  occurred; re-probe the 2,628/2,629 character boundary against that compiler.
+  The positive regression is
+  `Coral.Tests.Io.test_read_csv_field_past_former_scan_limit` in `tests/io.ch`:
+  `chelis test tests/io.ch` should preserve the complete 3,890-character field.
+  Its current status is **blocked before test execution** because the published
+  Nautilus dependency still declares Chelis 0.19.1. The two `write_csv_frame`
+  rows are Coral's own and are owned by D11.
 
   The figures are head measurements, bisected on both sides: `read_csv_frame`'s 2628/2629 is **identical** on `origin/main`, while
   the two `write_csv_frame` rows are **one and two characters lower than on
@@ -157,14 +165,23 @@ when the outcome matches this file and 1 when it changes:
   `read_json_frame` does, so prefer it for a tall frame, but not for one with
   a long cell.
 
-  *Re-probe trigger:* chelis#2307 is closed upstream, fixed by
+  *Re-probe status:* chelis#2307 is closed upstream, fixed by
   [chelis#3336](https://github.com/Chelis-Lang/chelis/pull/3336) at merge
-  commit `24b1f8e0b6d815eff12f868999813023915da05d`, which is an ancestor of
-  chelis `main` and carried by no release tag yet. The first release
-  containing the fix is the first tag reported by
-  `git tag --contains 24b1f8e0b6d815eff12f868999813023915da05d` in a chelis
-  checkout. Re-run the blocked probe at that pin bump; a changelog claim is
-  not verification, and chelis `CHANGELOG.md` records neither issue.
+  commit `24b1f8e0b6d815eff12f868999813023915da05d`; the fix is included in
+  v0.19.2. Its release trigger has occurred, but the blocked probe has not
+  produced a result on this candidate: `chelis test tests_blocked/ --expect
+  blocked` exits during Reef dependency validation because Nautilus v0.7.50
+  requires Chelis 0.19.1. **Expected pass evidence:** the 2,000-row JSON
+  document is read with `nrows == 2000`; the blocked-test command then reports
+  the upstream fix as detected, and this case is promoted to `tests/io.ch`.
+  Re-run after a compatible published Nautilus release. A changelog claim is
+  not verification, and chelis `CHANGELOG.md` records neither upstream issue.
+
+  Coral's row-walker recursion was fixed separately by Coral PR #61: the CSV
+  round-trip and JSON writer tests in `tests/io.ch` each exercise 3,000 rows,
+  while the writer implementation folds by column. No per-row recursive walker
+  remains in these four paths. That fix does not remove the upstream JSON
+  parser limitation described above.
 
 ## Tracking
 

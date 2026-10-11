@@ -223,11 +223,10 @@ def csv_column_cells[n](col: Column[n]) -> List[string] =
     | BoolCol(xs) => map(fn (value: bool) -> csv_quote_field(to_string(value)), to_list(xs))
   }
 -- A `map` over the document's items, not a recursion over them, for the same
--- reason as the writers. This path has a second and lower row ceiling that is
--- not Coral's: `Std.Io.Json.load_json` is itself depth-proportional to the
--- element count at the pinned toolchain, so the document is already parsed --
--- or already over budget -- before this `map` runs. See
--- `docs/UPSTREAM_BUGS.md`.
+-- reason as the writers. The prior Chelis pin's `Std.Io.Json.load_json` had a
+-- depth-proportional row limit (chelis#2307); Chelis 0.19.2 contains its fix.
+-- The Coral probe remains unverified until Reef can resolve a published
+-- Nautilus package built for 0.19.2. See `docs/UPSTREAM_BUGS.md`.
 def json_rows(items: List[Json]) -> List[Dict[string, string]] = map(fn (item: Json) -> json_row_dict(item), items)
 def json_row_dict(item: Json) -> Dict[string, string] =
   match json_object(Some(item)) with {

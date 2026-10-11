@@ -81,10 +81,10 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   because the two differ by roughly 4x and a bound quoted without its lane is
   wrong by that factor for half its readers. That is
   [chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307), fixed
-  upstream after v0.19.1 and so not in the pinned toolchain. It is now recorded
-  in `docs/UPSTREAM_BUGS.md` under Actively blocking, probed by
-  `tests_blocked/io/read_json_frame_row_depth_blocked.ch`, and stated for users
-  on the book's limitations page.
+  upstream and included in Chelis v0.19.2. The blocked probe has not run on this
+  candidate because Reef rejects the published Nautilus dependency, which still
+  requires Chelis 0.19.1. The tracker records the released fix and the pending
+  probe separately; the book continues to describe the last verified behavior.
 
 ### Documentation
 

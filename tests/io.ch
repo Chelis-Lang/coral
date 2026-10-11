@@ -5,6 +5,7 @@ import Coral.Io (write_csv_frame, read_csv_frame, write_json_frame, read_json_fr
 import Std.Io (write_text, read_text)
 def zero_i64() -> i64 = cast(0, i64)
 def one_i64() -> i64 = cast(1, i64)
+def long_csv_field() -> string = fold(fn (acc: string, i: i64) -> string_concat(acc, string_concat("x", to_string(i))), "", range(zero_i64(), cast(1000, i64)))
 def test_csv_write_then_read_roundtrip() -> unit ! { Test, IO } = {
   df = from_pairs([("price", FloatCol(to_tensor([cast(10.5, f32), cast(20.25, f32)]))), ("city", StringCol(["paris", "london"]))])
   _ = write_csv_frame(df, "test_io_roundtrip.csv")
@@ -17,6 +18,17 @@ def test_csv_write_then_read_roundtrip() -> unit ! { Test, IO } = {
   _ = assert_close(index(prices, one_i64()), cast(20.25, f32), cast(0.001, f32), "price[1] == 20.25")
   _ = assert_eq(index(cities, zero_i64()), "paris", "city[0] == paris")
   assert_eq(index(cities, one_i64()), "london", "city[1] == london")
+}
+-- Chelis 0.19.2 includes the fix for the former Std.Io.Csv per-character
+-- recursion limit. This one-field input has 3,890 characters, beyond the
+-- measured 2,628/2,629 boundary; its contents must arrive intact.
+def test_read_csv_field_past_former_scan_limit() -> unit ! { Test, IO } = {
+  field = long_csv_field()
+  _ = assert_eq(string_len(field), cast(3890, i64), "probe field is 3,890 characters")
+  _ = write_text("test_io_long_csv_field.csv", string_concat("value\n", string_concat(field, "\n")))
+  back = read_csv_frame("test_io_long_csv_field.csv")
+  values = get_string_col(back, "value")
+  assert_eq(index(values, zero_i64()), field, "CSV field survives the former parser recursion boundary")
 }
 def test_json_write_then_read_roundtrip() -> unit ! { Test, IO } = {
   df = from_pairs([("price", FloatCol(to_tensor([cast(1.25, f32), cast(2.75, f32)]))), ("city", StringCol(["oslo", "berlin"]))])
@@ -238,9 +250,11 @@ def test_csv_roundtrip_past_the_old_recursion_ceiling() -> unit ! { Test, IO } =
   _ = assert_eq(nrows(back), ceiling_probe_rows(), "3000 rows survive a CSV round-trip")
   assert_eq(total, cast(4498500, i64), "every value survives: sum of 0..2999 is 4498500")
 }
--- The JSON document is checked as text rather than read back, because
--- `read_json_frame` cannot reach 3,000 rows at this pin for a reason that is not
--- Coral's: see `tests_blocked/io/read_json_frame_row_depth_blocked.ch`. Length
+-- The JSON document is checked as text rather than read back until the
+-- `read_json_frame` probe can run with a compatible published Nautilus
+-- dependency. Chelis 0.19.2 includes the upstream parser fix, but Reef currently
+-- rejects the published Nautilus artifact before executing the probe in
+-- `tests_blocked/io/read_json_frame_row_depth_blocked.ch`. Length
 -- plus both ends pins every row: 3,000 objects spelled `{"a":<i>}` are 18,000
 -- punctuation bytes plus 10,890 digits plus 2,999 commas plus 2 brackets.
 def test_json_write_past_the_old_recursion_ceiling() -> unit ! { Test, IO } = {

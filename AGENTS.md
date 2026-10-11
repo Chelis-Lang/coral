@@ -16,7 +16,7 @@ to this file so Claude-style and Codex-style entry points do not drift.
 <!-- ## Pointers -->
 <!-- shell-local:exclude:end -->
 
-<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.19.1 (sha256:63dc71e671d4158b) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.19.2 (sha256:4008940f0419e8ef) -->
 # Chelis Agent Contract
 
 Keep this file concise and relevant to every agent working in this repository.
@@ -108,7 +108,36 @@ AST contract. `spec/02-surf-syntax.md` §0.1 is the authority.
 - `chelis build` invokes the native compiler for C, HIP, or Metal and produces an
   executable or static library, retaining sources and runtime artifacts. `--emit-c`
   stops after source emission. CPU is the acceptance priority; GPU targets remain
-  prerelease. See `docs/book/src/backends.md`.
+  prerelease. In the chelis repository, `docs/book/src/backends.md` covers C
+  builds and `docs/gpu_backends.md` covers HIP and Metal.
+
+## Book
+
+If this shell has a user-facing book (an mdBook under `docs/`): this section
+applies to it. If the shell is also published on chelis.ch
+(https://chelis.ch/docs/), chelis.ch mirrors the book page for page at
+`https://chelis.ch/docs/<package name>/` (chelis: https://chelis.ch/docs/chelis/),
+and the chelis.ch text is canonical: book pages are rendered from the site by
+the website's `scripts/sync_books.py`, so edit prose on the site and re-render,
+or make the same edit in both places in the same change.
+
+The reader is an engineer, or an AI coding agent, writing Chelis code against
+this shell. They know the domain but not this repo's internals or history, and
+they want to call the API correctly the first time. Every page teaches: what the
+API does, a runnable example with its real output, the contract (inputs, domain,
+shapes, precision, errors) and the pitfalls.
+
+Never in the book: issue or PR numbers, repo-internal paths (`spec/`, `src/`
+internals, `scripts/`, `tests/`, maintainer docs), maintainer or CI commands,
+contributor history, process talk (gates, red teams, agent instructions),
+status words (planned, not yet, stub, phase, milestone), "see the source" in
+place of documentation, em-dashes, and the word "load-bearing". In a shell
+published on chelis.ch, `scripts/check_book.py` enforces the mechanical part
+in CI.
+
+A change that alters user-visible behavior says so in its changelog entry.
+The book documents the latest release: the book, and its chelis.ch page when
+published, take the change when that release is documented.
 
 <!-- END CHELIS MANAGED BLOCK: agents-inheritance -->
 

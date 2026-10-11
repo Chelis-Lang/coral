@@ -306,11 +306,11 @@ def replace_named_column[n](pairs: List[(string, Column[n])], name: string, col:
   }
 def mutate[n](df: Frame[n], name: string, col: Column[n]) -> Frame[n] = with_column(df, name, col)
 def rename[n](df: Frame[n], old_name: string, new_name: string) -> Frame[n] =
-  if contains_string(columns(df), new_name) then fail("rename: target column already exists") else match df with {
-    | Frame { cols, col_order: order } => {
+  if contains_string(columns(df), new_name) then fail("rename: target column already exists") else {
     value = get_column(df, old_name)
-    Frame { cols: hamt_put(hamt_remove(cols, old_name), new_name, value), col_order: replace_name(order, old_name, new_name, []) }
-  }
+    match df with {
+      | Frame { cols, col_order: order } => Frame { cols: hamt_put(hamt_remove(cols, old_name), new_name, value), col_order: replace_name(order, old_name, new_name, []) }
+    }
   }
 def drop_column[n](df: Frame[n], name: string) -> Frame[n] =
   if not(contains_string(columns(df), name)) then fail(string_concat("drop_column: missing column ", name)) else match df with {

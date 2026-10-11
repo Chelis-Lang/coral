@@ -6,6 +6,13 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Prepare the Chelis compiler pin for 0.19.2 and order `rename`'s column
+  lookup before its frame match, as required by the compiler's ownership
+  checks. Package build and dependent re-probes await a published Nautilus
+  release built for Chelis 0.19.2.
+
 ### Fixed
 
 - `Coral.Io`'s CSV and JSON writers no longer spend a call frame per row or per

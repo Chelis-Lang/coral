@@ -15,18 +15,13 @@ upstream limitation identifies the issue recorded here. Coral-owned choices
 without an upstream blocker also live in that deferral list.
 
 Re-run each listed probe at every compiler pin bump and before a Coral
-release. The native package probes use the published Nautilus dependency;
-local candidate builds do not replace that release check.
+release. The native package probes use the published Nautilus dependency.
 
 ### Re-probing
 
-One evaluator-level blocker has a probe in `tests_blocked/`:
-`tests_blocked/io/read_json_frame_row_depth_blocked.ch`, run with
-`chelis test tests_blocked/ --expect blocked`. Chelis v0.19.2 includes the
-upstream JSON parser fix, but this candidate has not reached the probe: Reef
-rejects its still-published Nautilus dependency before tests execute. Keep the
-probe blocked until a compatible Nautilus artifact lets it run; then promote it
-to normal coverage if it detects the fix.
+No evaluator-level upstream blocker probes remain in `tests_blocked/`. The
+2,000-row `read_json_frame` witness is normal coverage in `tests/io.ch`; it
+passes against the published Chelis 0.19.2 and Nautilus 0.7.51 packages.
 
 There are no checker-level upstream blockers. The gather-axis test checks an
 intentional rejection under [05-AXIS-2] in
@@ -45,8 +40,106 @@ when the outcome matches this file and 1 when it changes:
 
 ## Actively blocking
 
-- **`read_json_frame` was bounded by document size, at 971 rows under
-  `chelis test` and 236 under `chelis eval` at Chelis 0.19.1**
+(none yet)
+
+## Tracking
+
+- **Stripped Frame, GroupBy, and Join builds stop at an ownership-signature
+  rejection ([chelis#2097](https://github.com/Chelis-Lang/chelis/issues/2097)).**
+
+  *Reproducer:* `scripts/repro_multimodule_bare_build.py`, all three
+  targets. Each concatenates Coral's Frame, GroupBy, or Join modules with
+  their dependencies into one file and builds a trivial entrypoint with
+  `chelis build`. All three reject at `frame__list_filter_string` with
+  `does not match ownership signature`. The same diagnostic stops the
+  stripped `drop_nan` entry in `scripts/repro_native_drop_nan_blocked.py`.
+
+  *Affected surface:* none that ships. Coral is consumed as a Reef package,
+  and its tests run in the evaluator. The limitation affects only these
+  bare-C smoke builds.
+
+  *Workaround:* `scripts/repro_native_nan.py` compiles only Coral's own
+  float-NaN helpers rather than the whole Frame module chain, so it can
+  still guard chelis#630 natively.
+
+  *Re-probe trigger:* each compiler pin bump. If the smokes pass, test the
+  full Frame module chain in `scripts/repro_native_nan.py`; if they reach a
+  different rejection, classify that boundary before changing the probe.
+
+  *Chelis 0.19.2 re-probe:* the `drop_nan` probe and all three stripped module
+  targets still stop at the expected ownership-signature diagnostic.
+
+- **`describe` and `drop_column` reject in native package builds
+  ([chelis#3169](https://github.com/Chelis-Lang/chelis/issues/3169),
+  [chelis#879](https://github.com/Chelis-Lang/chelis/issues/879);
+  Coral-side tracker [coral#26](https://github.com/Chelis-Lang/coral/issues/26)).**
+
+  *Reproducer:* Build an entry that calls each verb through `Coral.Frame`.
+  `describe` rejects at `build_describe_pairs` because its checked type
+  application is not concrete (chelis#1226, tracked as chelis#3169).
+  `drop_column` rejects an anonymous function value with chelis#879.
+
+  *Affected surface:* native `chelis build` of those invoked Frame verbs;
+  package checking and evaluation work.
+
+  *Re-probe trigger:* each compiler pin bump. Test each verb separately.
+
+  *Chelis 0.19.2 re-probe:* separate native entries built with the published
+  Nautilus 0.7.51 package reproduce both boundaries.
+  `describe` still rejects at `build_describe_pairs` with the chelis#1226
+  non-concrete type-application diagnostic; `drop_column` still rejects the
+  anonymous function value with `unimplemented chelis#879`. Both entries check
+  at score 1.0 and evaluate successfully at this pin.
+
+- **Evaluator cost of the HAMT column store
+  ([chelis#828](https://github.com/Chelis-Lang/chelis/issues/828); Coral-side
+  tracker [coral#16](https://github.com/Chelis-Lang/coral/issues/16)).**
+
+  *Reproducer:* a `chelis test` case that builds a 100-column frame with
+  `from_pairs` and applies one `with_column`. The recursive HAMT helpers can
+  exceed the default 30-second per-test evaluator budget; this entry does
+  not claim a timing measurement at the pinned compiler. Native execution
+  has a separate validation boundary.
+
+  *Affected surface:* evaluator workloads with wide frames.
+
+  *Workaround:* none; Coral's tests use narrow frames.
+
+  *Re-probe trigger:* when upstream reports evaluator speedups on
+  chelis#828, or when a Coral user needs 100 or more columns in the
+  evaluator.
+
+- **Parquet file I/O is unavailable
+  ([chelis#850](https://github.com/Chelis-Lang/chelis/issues/850)).**
+
+  *Reproducer:* A standalone entry that imports
+  `Std.Io.Parquet (read_parquet)` and calls
+  `len(read_parquet("missing.parquet"))` checks at score 1.0 and builds an
+  executable. Running it exits 1 with
+  `Std.Io.Parquet.read_parquet is not implemented: missing.parquet`.
+  The `sig`-without-`def` example in chelis#850 rejects at checking, so it
+  does not reproduce the missing-symbol behavior.
+
+  *Affected surface:* `Coral.Io.read_parquet_frame` and
+  `write_parquet_frame`.
+
+  *Workaround:* both functions are exported so the API shape is stable, and
+  both call `fail(...)` at runtime.
+
+  *Re-probe trigger:* upstream movement on chelis#850 or the next Coral
+  release. Re-run check, build, and the executable; a successful build
+  alone does not establish working Parquet I/O.
+
+  *Chelis 0.19.2 re-probe:* the `read_parquet` entry checks at score 1.0 and
+  builds. Its executable exits 1 with
+  `Std.Io.Parquet.read_parquet is not implemented: missing.parquet`.
+
+## Archived
+
+### Chelis 0.19.2 re-probes
+
+- **Historical `read_json_frame` parser bound at Chelis 0.19.1: 971 rows under
+  `chelis test` and 236 under `chelis eval`**
   ([chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307)).
   `Std.Io.Json` parses with depth proportional to the document's element count
   and to its total string content, so the parser exhausts the stack before
@@ -54,11 +147,13 @@ when the outcome matches this file and 1 when it changes:
   18,450-byte document overflows while a 504,501-byte one reads, because the
   two differ in element count and not in bytes.
 
-  *Reproducer:* `tests_blocked/io/read_json_frame_row_depth_blocked.ch`
-  (`chelis test tests_blocked/ --expect blocked`), a 2,000-row document.
+  *Historical reproducer:* a 2,000-row document, formerly kept in
+  `tests_blocked/`. Chelis 0.19.2 reads it; the witness is now
+  `Coral.Tests.Io.test_read_json_frame_survives_two_thousand_rows` in
+  `tests/io.ch`.
 
   *Historical measurements at Chelis 0.19.1,* macOS arm64. They are not
-  measurements of the 0.19.2 candidate. **No figure here is meaningful without
+  measurements of the 0.19.2 release. **No figure here is meaningful without
   its lane:** `chelis eval` runs on the process main thread and `chelis test`
   on a larger worker stack, and the two differ by roughly 4x. Quoting one at a
   reader on the other is wrong by that factor in whichever direction.
@@ -128,8 +223,10 @@ when the outcome matches this file and 1 when it changes:
   ([chelis#943](https://github.com/Chelis-Lang/chelis/issues/943), open), so a
   half-megabyte document needs minutes and a raised `--timeout`.
 
-  *Affected surface:* `read_json_frame`'s row bound. The character bound is
-  **not** confined to it, and CSV is not a general escape:
+  These figures describe the old Chelis 0.19.1 parser. The published Chelis
+  0.19.2 and Nautilus 0.7.51 packages read 2,000 JSON rows in Coral's promoted
+  test; this does not establish a general row or string-length maximum. The separate
+  Coral CSV writer character limits remain, and CSV is not a general escape:
 
   | verb | varied axis | passes | fails | owner |
   |---|---|---|---|---|
@@ -138,19 +235,17 @@ when the outcome matches this file and 1 when it changes:
   | `read_csv_frame` | characters in one field | 2628 | 2629 | `Std.Io.Csv`'s own per-character scan, [chelis#1225](https://github.com/Chelis-Lang/chelis/issues/1225) |
   | `write_json_frame` | characters in one cell | none to 20000 | | |
 
-  A CSV cell needing quotes therefore has a *lower* character bound than
-  `read_json_frame`'s. `read_csv_frame`'s row is a second upstream limitation
-  with its own history: chelis#1225 is closed, repaired by
+  The historical CSV figures are from Chelis 0.19.1 and this Coral head. A CSV
+  cell needing quotes therefore had a *lower* character bound than the old
+  `read_json_frame` bound. `read_csv_frame`'s character scan was a second
+  upstream limitation: chelis#1225 is closed, repaired by
   [chelis#3335](https://github.com/Chelis-Lang/chelis/pull/3335) at merge
-  commit `957ec396f649c8a3e9658808f4bc071d43e8e534`, which like chelis#3336 is
-  an ancestor of chelis `main` and included in v0.19.2. Its release trigger has
-  occurred; re-probe the 2,628/2,629 character boundary against that compiler.
-  The positive regression is
+  commit `957ec396f649c8a3e9658808f4bc071d43e8e534`. The positive regression is
   `Coral.Tests.Io.test_read_csv_field_past_former_scan_limit` in `tests/io.ch`:
-  `chelis test tests/io.ch` should preserve the complete 3,890-character field.
-  Its current status is **blocked before test execution** because the published
-  Nautilus dependency still declares Chelis 0.19.1. The two `write_csv_frame`
-  rows are Coral's own and are owned by D11.
+  it preserves the complete 3,890-character field on the published Chelis
+  0.19.2 / Nautilus 0.7.51 dependency graph. This is a passing witness, not a
+  new maximum claim. The two `write_csv_frame` rows are Coral's own and are
+  owned by D11.
 
   The figures are head measurements, bisected on both sides: `read_csv_frame`'s 2628/2629 is **identical** on `origin/main`, while
   the two `write_csv_frame` rows are **one and two characters lower than on
@@ -168,99 +263,12 @@ when the outcome matches this file and 1 when it changes:
   *Re-probe status:* chelis#2307 is closed upstream, fixed by
   [chelis#3336](https://github.com/Chelis-Lang/chelis/pull/3336) at merge
   commit `24b1f8e0b6d815eff12f868999813023915da05d`; the fix is included in
-  v0.19.2. Its release trigger has occurred, but the blocked probe has not
-  produced a result on this candidate: `chelis test tests_blocked/ --expect
-  blocked` exits during Reef dependency validation because Nautilus v0.7.50
-  requires Chelis 0.19.1. **Expected pass evidence:** the 2,000-row JSON
-  document is read with `nrows == 2000`; the blocked-test command then reports
-  the upstream fix as detected, and this case is promoted to `tests/io.ch`.
-  Re-run after a compatible published Nautilus release. A changelog claim is
-  not verification, and chelis `CHANGELOG.md` records neither upstream issue.
+  v0.19.2. The former blocked probe reported FIX-DETECTED, and its exact
+  2,000-row witness is now normal coverage in `tests/io.ch`. The package test
+  passes on the published 0.19.2 / 0.7.51 dependency graph.
 
   Coral's row-walker recursion was fixed separately by Coral PR #61: the CSV
   round-trip and JSON writer tests in `tests/io.ch` each exercise 3,000 rows,
   while the writer implementation folds by column. No per-row recursive walker
-  remains in these four paths. That fix does not remove the upstream JSON
-  parser limitation described above.
-
-## Tracking
-
-- **Stripped Frame, GroupBy, and Join builds stop at an ownership-signature
-  rejection ([chelis#2097](https://github.com/Chelis-Lang/chelis/issues/2097)).**
-
-  *Reproducer:* `scripts/repro_multimodule_bare_build.py`, all three
-  targets. Each concatenates Coral's Frame, GroupBy, or Join modules with
-  their dependencies into one file and builds a trivial entrypoint with
-  `chelis build`. All three reject at `frame__list_filter_string` with
-  `does not match ownership signature`. The same diagnostic stops the
-  stripped `drop_nan` entry in `scripts/repro_native_drop_nan_blocked.py`.
-
-  *Affected surface:* none that ships. Coral is consumed as a Reef package,
-  and its tests run in the evaluator. The limitation affects only these
-  bare-C smoke builds.
-
-  *Workaround:* `scripts/repro_native_nan.py` compiles only Coral's own
-  float-NaN helpers rather than the whole Frame module chain, so it can
-  still guard chelis#630 natively.
-
-  *Re-probe trigger:* each compiler pin bump. If the smokes pass, test the
-  full Frame module chain in `scripts/repro_native_nan.py`; if they reach a
-  different rejection, classify that boundary before changing the probe.
-
-- **`describe` and `drop_column` reject in native package builds
-  ([chelis#3169](https://github.com/Chelis-Lang/chelis/issues/3169),
-  [chelis#879](https://github.com/Chelis-Lang/chelis/issues/879);
-  Coral-side tracker [coral#26](https://github.com/Chelis-Lang/coral/issues/26)).**
-
-  *Reproducer:* Build an entry that calls each verb through `Coral.Frame`.
-  `describe` rejects at `build_describe_pairs` because its checked type
-  application is not concrete (chelis#1226, tracked as chelis#3169).
-  `drop_column` rejects an anonymous function value with chelis#879.
-
-  *Affected surface:* native `chelis build` of those invoked Frame verbs;
-  package checking and evaluation work.
-
-  *Re-probe trigger:* each compiler pin bump. Test each verb separately.
-
-- **Evaluator cost of the HAMT column store
-  ([chelis#828](https://github.com/Chelis-Lang/chelis/issues/828); Coral-side
-  tracker [coral#16](https://github.com/Chelis-Lang/coral/issues/16)).**
-
-  *Reproducer:* a `chelis test` case that builds a 100-column frame with
-  `from_pairs` and applies one `with_column`. The recursive HAMT helpers can
-  exceed the default 30-second per-test evaluator budget; this entry does
-  not claim a timing measurement at the pinned compiler. Native execution
-  has a separate validation boundary.
-
-  *Affected surface:* evaluator workloads with wide frames.
-
-  *Workaround:* none; Coral's tests use narrow frames.
-
-  *Re-probe trigger:* when upstream reports evaluator speedups on
-  chelis#828, or when a Coral user needs 100 or more columns in the
-  evaluator.
-
-- **Parquet file I/O is unavailable
-  ([chelis#850](https://github.com/Chelis-Lang/chelis/issues/850)).**
-
-  *Reproducer:* A standalone entry that imports
-  `Std.Io.Parquet (read_parquet)` and calls
-  `len(read_parquet("missing.parquet"))` checks at score 1.0 and builds an
-  executable. Running it exits 1 with
-  `Std.Io.Parquet.read_parquet is not implemented: missing.parquet`.
-  The `sig`-without-`def` example in chelis#850 rejects at checking, so it
-  does not reproduce the missing-symbol behavior.
-
-  *Affected surface:* `Coral.Io.read_parquet_frame` and
-  `write_parquet_frame`.
-
-  *Workaround:* both functions are exported so the API shape is stable, and
-  both call `fail(...)` at runtime.
-
-  *Re-probe trigger:* upstream movement on chelis#850 or the next Coral
-  release. Re-run check, build, and the executable; a successful build
-  alone does not establish working Parquet I/O.
-
-## Archived
-
-No entries.
+  remains in these four paths. Chelis 0.19.2 passes the promoted JSON reader
+  witness; no broader bound is claimed here.

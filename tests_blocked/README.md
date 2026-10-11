@@ -1,10 +1,13 @@
 # Upstream blocker probes
 
-One evaluator blocker is probed here:
-`io/read_json_frame_row_depth_blocked.ch` reads a 2,000-row JSON document,
-which `Std.Io.Json` cannot parse at this pin. The gather-axis rejection is not
-a blocker but a language rule, covered by
-`tests_neg/frame/gather_axis_helper_neg.ch`.
+No evaluator blocker probes remain in this directory. The 2,000-row JSON
+reader witness is ordinary coverage in `tests/io.ch`; Chelis 0.19.2 passes it
+with a locally published Nautilus candidate. That package smoke is exploratory
+until the compatible Nautilus release is published and the Coral package gates
+run against its authenticated artifact.
+
+The gather-axis rejection is not an upstream blocker but a language rule,
+covered by `tests_neg/frame/gather_axis_helper_neg.ch`.
 
 The remaining upstream limitations cannot be expressed in this harness:
 

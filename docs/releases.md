@@ -40,26 +40,35 @@ the IR is the contract; the consumer compiles to their platform.**
 
 ## How a Mac (or any) user consumes Coral
 
-No platform-specific Coral artifact is needed. For the published Coral 0.7.46
-release, run these commands from a Reef project:
+No platform-specific Coral artifact is needed. To use the public Coral 0.7.48
+release without GitHub authentication, install the known package tags into
+Reef, then build:
 
 ```sh
-chelisup install 0.19.0
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.49
-chelis reef install --from-github Chelis-Lang/coral@v0.7.46
+chelis reef init demo --module-prefix Demo --output demo
+cd demo
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.51
+chelis reef install --from-github Chelis-Lang/coral@v0.7.48
 ```
 
-In that project's `reef.toml`, pin `compiler = "=0.19.0"` and declare:
+Initialize a project and set its compiler pin and dependency:
 
 ```toml
+[package]
+name = "demo"
+version = "0.1.0"
+compiler = "=0.19.2"
+module_prefix = "Demo"
+
 [dependencies]
-coral = { version = "0.7.46" }
+coral = { version = "0.7.48" }
 ```
 
-Run `chelis reef build` from that project. Reef reads the installed `.chb`
-and source packages, and the consumer's compiler produces native code for its
-platform (Mach-O on Darwin, ELF on Linux). Other Coral releases use the
-compiler and Nautilus versions in their release manifests.
+Install Chelis 0.19.2 with `chelisup install 0.19.2`, then run
+`chelis reef build`. The consumer's compiler produces native code for its
+platform (Mach-O on Darwin, ELF on Linux). To let Reef resolve package names
+automatically from a new project, GitHub remote discovery requires
+`GITHUB_TOKEN` or an authenticated `gh` token.
 
 ## Verification
 

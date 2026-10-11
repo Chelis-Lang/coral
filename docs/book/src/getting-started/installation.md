@@ -1,55 +1,57 @@
 # Installation
 
 Coral is a Reef package, separate from the standard library bundled with
-Chelis. Coral 0.7.47 uses Chelis 0.19.1 and Nautilus 0.7.50.
+Chelis. Coral 0.7.48 uses Chelis 0.19.2 and Nautilus 0.7.51.
 
 ## Use Coral in a project
 
-Install the Coral release and its Nautilus dependency into your local Reef
-registry. Both releases are public, so no token is needed:
-
-```sh
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.50
-chelis reef install --from-github Chelis-Lang/coral@v0.7.47
-```
-
-Each command prints `Installed <name> <version>` and stores the package
-under `~/.chelis/reef/packages/`. Then create a project:
+Create a project and declare Coral in its `reef.toml`:
 
 ```sh
 chelis reef init demo --module-prefix Demo --output demo
 cd demo
 ```
 
-Edit its `reef.toml`: check that the `compiler` field in the `[package]`
-table is `"=0.19.1"`, and add Coral to the `[dependencies]` table. The
-edited parts of the manifest:
+Set the compiler pin and Coral dependency:
 
 ```toml
 [package]
 name = "demo"
 version = "0.1.0"
-compiler = "=0.19.1"
+compiler = "=0.19.2"
 module_prefix = "Demo"
 
 [dependencies]
-coral = { version = "0.7.47" }
+coral = { version = "0.7.48" }
 ```
 
-From the project directory, run:
+Install the pinned compiler before using the project's Reef shim:
+
+```sh
+chelisup install 0.19.2
+```
+
+To have Reef fetch missing dependencies by name, build the project. This route
+needs `GITHUB_TOKEN` or an authenticated `gh` token for GitHub remote
+discovery:
 
 ```sh
 chelis reef build
 ```
 
-The build resolves Coral and Nautilus from the local registry, writes
-`reef.lock` with the pinned versions and hashes, and prints
-`Built demo 0.1.0`. With `GITHUB_TOKEN` set or `gh` signed in,
-`reef build` also fetches a missing package from its GitHub release
-itself; without either, it stops with an error naming `GITHUB_TOKEN`, so
-run the two install commands first. On another machine, run
-`chelis reef install --from-lockfile` in the project to reinstall every
-dependency recorded in `reef.lock`; it needs no token either. See
-[Reef and packages](https://chelis.ch/docs/chelis/reef/) for details.
+To install these public releases without GitHub authentication, install the
+known tags directly, then build:
+
+```sh
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.51
+chelis reef install --from-github Chelis-Lang/coral@v0.7.48
+chelis reef build
+```
+
+Reef records the resolved versions and hashes in `reef.lock`. For a project
+that already has a lockfile, install its compiler, then run `chelis reef
+setup` and `chelis reef build` to restore and build the locked package graph.
+A lockfile that names public GitHub releases can be replayed without GitHub
+authentication.
 
 Continue with [your first dataframe](first-dataframe.md).

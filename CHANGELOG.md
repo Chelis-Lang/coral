@@ -4,14 +4,19 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.7.48] - 2026-10-11
 
 ### Changed
 
-- Prepare the Chelis compiler pin for 0.19.2 and order `rename`'s column
-  lookup before its frame match, as required by the compiler's ownership
-  checks. Package build and dependent re-probes await a published Nautilus
-  release built for Chelis 0.19.2.
+- Pin Coral 0.7.48 to published Chelis 0.19.2 and Nautilus 0.7.51. Resolve
+  `rename`'s column before matching the frame so the compiler's ownership
+  checks preserve the frame for the update.
+
+### Documentation
+
+- Update install instructions for Coral 0.7.48 and Chelis 0.19.2, including
+  Reef's anonymous dependency setup, and refresh the limitations and release
+  examples.
 
 ### Fixed
 
@@ -59,16 +64,11 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   all six, and a well-formed frame is unaffected. `tests_neg/io/` pins the
   refusal for both writers.
 
-  `read_json_frame`'s own document-size ceiling is **not** this defect and is
-  unchanged by the fix. It belongs to `Std.Io.Json`, whose parse depth is
-  proportional to the document's size. With no Coral symbol on the path the
-  parser passes at 972 elements and fails at 973 on the `chelis test` worker,
-  and at 236 and 237 on `chelis eval`'s main thread; an array of bare scalars
-  and an array of objects agree to within one element. `read_json_frame` itself
-  passes at 971 and 236 on those two lanes, so Coral costs a constant amount of
-  headroom of at most one element's worth of frames rather than a per-element
-  amount: on the worker lane the gap is exactly one, and on `chelis eval` it is
-  zero, both lanes being 236/237. The attribution is the parser's either way.
+  The previous Chelis 0.19.1 parser also limited `read_json_frame` by element
+  count and total string content; Coral's walker change did not cause or fix
+  that separate upstream issue. Chelis #2307 fixes the parser in 0.19.2, and
+  the former 2,000-row blocker is now a normal passing test. The old lane
+  measurements and their limits are recorded in `docs/UPSTREAM_BUGS.md`.
 
   This change also costs about 0.04% of `write_csv_frame`'s per-character
   headroom, which is disclosed rather than claimed away: a cell needing quotes
@@ -81,10 +81,9 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   because the two differ by roughly 4x and a bound quoted without its lane is
   wrong by that factor for half its readers. That is
   [chelis#2307](https://github.com/Chelis-Lang/chelis/issues/2307), fixed
-  upstream and included in Chelis v0.19.2. The blocked probe has not run on this
-  candidate because Reef rejects the published Nautilus dependency, which still
-  requires Chelis 0.19.1. The tracker records the released fix and the pending
-  probe separately; the book continues to describe the last verified behavior.
+  upstream and included in Chelis v0.19.2. The 2,000-row JSON witness is now
+  normal coverage in `tests/io.ch`, and the 3,890-character CSV regression
+  passes on the published Chelis 0.19.2 / Nautilus 0.7.51 dependency graph.
 
 ### Documentation
 

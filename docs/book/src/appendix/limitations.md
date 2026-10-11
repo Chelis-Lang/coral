@@ -1,6 +1,6 @@
 # Limitations
 
-These constraints apply to Coral 0.7.47 with Chelis 0.19.1:
+These constraints apply to Coral 0.7.48 with Chelis 0.19.2:
 
 - **Native builds.** `chelis eval` and `chelis test` run the whole API.
   `chelis build` rejects a program that calls any of these functions:
@@ -28,48 +28,12 @@ These constraints apply to Coral 0.7.47 with Chelis 0.19.1:
   `-inf` as `null`. A JSON value such as `1e39` reads as an `f32` infinity,
   so it writes back as `null`. The [I/O chapter](../io.md) gives
   supported inputs.
-- **Document size.** Most file verbs are bounded by the size of the document,
-  and each bound depends on which lane runs it, because the two lanes get
-  different stack budgets. Past a bound the interpreter stops by exhausting its
-  stack instead of returning an error. Each figure below is the largest size
-  that succeeded; one unit more failed. `write_json_frame` has no character
-  bound that has been found, so its row is blank rather than large.
-
-  | verb | varied axis | `chelis test` | `chelis eval` |
-  |---|---|---|---|
-  | `read_json_frame` | rows | 971 | 236 |
-  | `read_json_frame` | characters in one string cell | 2489 | 608 |
-  | `read_csv_frame` | characters in one field | 2628 | |
-  | `write_csv_frame` | characters in a cell needing no quotes | 3817 | |
-  | `write_csv_frame` | characters in a cell needing quotes | 2286 | |
-  | `write_json_frame` | characters in one cell | none to 20000 | |
-
-  The `chelis eval` column is filled in only where it was measured.
-
-  Row counts behave differently from cell lengths. `read_csv_frame`,
-  `write_csv_frame`, and `write_json_frame` each handle 20,000 rows at one
-  column, where `read_json_frame` stops at the row figures above. So CSV is the
-  format to reach for when a frame has many rows, and **not** when a single
-  cell is long: a CSV cell that needs quoting has the lowest character bound of
-  any verb here, below `read_json_frame`'s. Many columns cost time rather than
-  stack: 20,000 rows across 10 columns takes over a minute to write, which can
-  exceed a test's own time limit before any stack limit is reached.
-
-  **The two `read_json_frame` figures are one budget, not two independent
-  limits, so neither is safe in the presence of the other.** The 971-row figure
-  was measured with short integer cells. With 10-character string cells the row
-  bound is 970, and with 50-character cells it is 954, so a document can
-  overflow with its row count inside the row figure and its cells at a fraction
-  of the character figure. Document size is not the predictor either: an
-  18,450-byte document of 971 ten-character cells overflows, while a
-  504,501-byte one of 500 thousand-character cells reads. A single long cell is
-  nearly free, because the character term tracks the document's total text
-  rather than its longest cell.
-
-  These bounds are a property of the document as written rather than of the
-  frame, and they belong to the JSON parser Coral calls rather than to Coral: a
-  program that parses the same document and never builds a frame stops within
-  one element of the same figures on each lane.
+- **Large files.** The JSON parser in Chelis 0.19.2 reads the 2,000-row
+  document covered by Coral's test suite. A 3,890-character CSV field also
+  passes through `read_csv_frame`. These examples do not establish a maximum
+  supported row count or field length. Very wide frames can take long enough
+  to exceed a test's time limit; 20,000 rows across 10 columns takes over a
+  minute to write.
 - **Column types.** GroupBy cannot return bool group keys. Bool non-key
   columns cannot pass through joins; inner and left joins also reject
   bool keys. `pivot` and `melt` take float value columns and string

@@ -827,19 +827,18 @@ round-trip witness. `chelis deep`/`surf` are the CLI views; `spec/02`
 
 ## Version scope
 
-The published Coral **0.7.47** package pins Chelis **0.19.1** and requires
-the published Nautilus **0.7.50** package. This candidate changes the compiler
-pin to **0.19.2**; its compatible Nautilus package has not been published, so
-the artifact identities below describe the last published Coral package.
+Coral **0.7.48** pins the published Chelis **0.19.2** compiler and requires
+the published Nautilus **0.7.51** package. The artifact identities below bind
+those release inputs.
 
 | Artifact | Identity |
 |---|---|
-| Chelis `v0.19.1` | tag commit `5105ce192191891e91a11b0cf4633c849edf89e0` |
-| `chelis-v0.19.1-linux-x86_64-glibc2.31.tar.gz` (CI) | SHA-256 `2fd69849a9493bc8726c103294a764eff133f12d226b8c6d9d10a3541e00e432` |
-| `chelis-v0.19.1-darwin-arm64.tar.gz` | SHA-256 `a478063ebdb3b02bc5cf7bfa858c82b1bfc1628931829bb2d74dacddd1033eaa` |
-| Nautilus `v0.7.50` | tag commit `c1da979ba2121361ebfecf99a4f8ced89fcf723a` |
-| `nautilus-0.7.50.chb` | SHA-256 `f5e89eebb9a41d83d3c35ef49659326a7cc00455906162571215844b491eb820` |
-| `nautilus-0.7.50.tar.zst` | SHA-256 `51c6ce9de6eb846832db20b3878606ea9fcadd5a392479aafad12dd2192e9511` |
+| Chelis `v0.19.2` | tag commit `17bca05f168ca742a1595e759770697c34483c51` |
+| `chelis-v0.19.2-linux-x86_64-glibc2.31.tar.gz` (CI) | SHA-256 `4b60d4f488372710a6b681cd6126511de1e0f06f2edb3e69a3a187c5ae61c2e4` |
+| `chelis-v0.19.2-darwin-arm64.tar.gz` | SHA-256 `d33d5c665d1a37ebf36e39ad49e07a949747c1e71704a8eb4beb4e76f8cba047` |
+| Nautilus `v0.7.51` | tag commit `7664c036bf08e157e6889641a0b068a77efb4d60` |
+| `nautilus-0.7.51.chb` | SHA-256 `9246607fe9b46a63731356c05dc30d8e6c8765d93166fceb475396ded6f12e1a` |
+| `nautilus-0.7.51.tar.zst` | SHA-256 `89c65c700d4d81d14b4fee4c4313ba8ee6695c2e0d0eeddefc54d734205fcff4` |
 
 The archive hashes match the publisher's `.sha256` sidecars on each release.
 
@@ -847,7 +846,7 @@ The archive hashes match the publisher's `.sha256` sidecars on each release.
 runs; they do not claim gradient or GPU support (see
 [`spec/scope.md`](../spec/scope.md#deferrals)). `@upstream` capabilities need
 a fresh probe before use. The
-[canonical inventory](https://github.com/Chelis-Lang/chelis/blob/v0.19.1/docs/CHELIS_SURFACE.md)
+[canonical inventory](https://github.com/Chelis-Lang/chelis/blob/v0.19.2/docs/CHELIS_SURFACE.md)
 owns the compiler-wide surface.
 
 ## Capability inventory
@@ -880,7 +879,7 @@ owns the compiler-wide surface.
 |---|---|---|
 | `Std.Io` (`write_text`, `read_text`) + `Std.Io.Csv` (`read_csv`) | CSV read path and all file writes (CSV/JSON emit via `write_text`). `read_text` is used by `tests/io.ch` to assert written bytes. The I/O tests cover round trips; `parity/` checks pandas-derived goldens without executing Coral for I/O. | `@pin` |
 | `Std.Test` (`assert_true`, `assert_false`, `assert_eq`, `assert_close`) | The whole `tests/` suite. `assert_eq` is generic over the compared type; `assert_close` is restricted to the active float types, which Coral's `f32` tolerances satisfy. Coral uses neither `assert_close_tensor` nor `assert_eq_tensor`. | `@pin` |
-| `Std.Io.Json` (`Json` ADT, `load_json`, `json_array`, `json_object`, `to_json`) | JSON reading and writing for `Coral.Io`. An integer token outside `i64` range ingests as `JsonBigInt(string)` carrying its exact decimal spelling. `JsonFloat(f64, string)` carries the original decimal or exponent token beside the numeric value; Coral uses that text when reading cells. `Coral.Io.render_json_value` matches all eight `Json` variants explicitly rather than through a wildcard; `tests/io.ch` pins the exact-token passthrough and resulting column inference. Coral's writer serializes every object key and every cell value with `to_json`, so quoting, escaping and float spelling are the stdlib's; `Coral.Io.json_column_cells` returns `List[Json]` rather than text, which makes a substitution between the JSON and CSV cell helpers a type error. Only the object and array framing is Coral's, because `to_json` on a whole `JsonObject` emits keys in Unicode scalar-key order while `read_json_frame` preserves document order, so a whole-document tree build would make write-then-read permute a frame's columns. `tests/io.ch` pins the escaped bytes, the backslash round trip, the f32 float spellings, and the column order. The parser's depth is proportional to the document's size, which caps `read_json_frame` at 971 rows or a 2489-character string cell on the `chelis test` worker and at 236 rows or 608 characters on `chelis eval`'s main thread (chelis#2307, fixed upstream after v0.19.1 and so absent from this pin); `tests_blocked/io/read_json_frame_row_depth_blocked.ch` probes it, and `docs/UPSTREAM_BUGS.md` records the bare-parser comparison, the constant one-element Coral headroom, and the separate per-character bounds on the CSV verbs, the lowest of which is below this one. | `@pin` |
+| `Std.Io.Json` (`Json` ADT, `load_json`, `json_array`, `json_object`, `to_json`) | JSON reading and writing for `Coral.Io`. An integer token outside `i64` range ingests as `JsonBigInt(string)` carrying its exact decimal spelling. `JsonFloat(f64, string)` carries the original decimal or exponent token beside the numeric value; Coral uses that text when reading cells. `Coral.Io.render_json_value` matches all eight `Json` variants explicitly rather than through a wildcard; `tests/io.ch` pins the exact-token passthrough and resulting column inference. Coral's writer serializes every object key and every cell value with `to_json`, so quoting, escaping and float spelling are the stdlib's; `Coral.Io.json_column_cells` returns `List[Json]` rather than text, which makes a substitution between the JSON and CSV cell helpers a type error. Only the object and array framing is Coral's, because `to_json` on a whole `JsonObject` emits keys in Unicode scalar-key order while `read_json_frame` preserves document order, so a whole-document tree build would make write-then-read permute a frame's columns. `tests/io.ch` pins the escaped bytes, the backslash round trip, the f32 float spellings, the column order, and a 2,000-row read. The Chelis 0.19.2 parser fix for chelis#2307 passes that row witness; Coral makes no general maximum-row or maximum-string-length claim from it. | `@pin` |
 | `Std.Io.Parquet` | The calls check and build, then fail at runtime with an explicit unsupported message (chelis#850). Coral ships matching `fail(...)` stubs for its Frame API (`UPSTREAM_BUGS` §Tracking). | `@pin` |
 | `Nautilus.Stats` (`mean_vec`, `min_vec`, `max_vec`, `quantile_vec`, `std_vec`) | `describe` delegates its summary statistics to Nautilus; the GroupBy aggregations are Coral's own. Reef requires the dependency to declare the same compiler pin as Coral, so Nautilus is bumped first. | `@pin` |
 
@@ -890,5 +889,5 @@ owns the compiler-wide surface.
 |---|---|---|
 | Evaluator (`chelis test`) | The positive suite (`tests/*.ch`) and negative suite (`tests_neg/`), which includes the static gather-axis rejection. | `@pin` |
 | Package build (`chelis reef build`) | Release artifact (`dist/coral-<ver>.chb` + `.tar.zst`). | `@pin` |
-| Native C build (`chelis build` + native link) | `chelis eval` and `chelis test` run the whole API. `chelis build` rejects programs that call `describe` (chelis#3169), `drop_column` (chelis#879), `agg`, `inner_join`, `left_join`, `outer_join`, `read_csv_frame`, or `read_json_frame`. Everything else builds natively against published Nautilus 0.7.50 and returns the same values as under eval: the rest of `Coral.Frame` (construction, accessors, `filter`, `head`, `tail`, `slice`, `sort_by`, `with_column`, `mutate`, `rename`, the missing-value helpers, `concat`), `group_by` with `agg_sum`, `agg_mean`, `agg_min`, `agg_max`, `agg_count` and `value_counts`, all of `Coral.Window`, `Coral.Reshape` and `Coral.AsOf`, and the CSV and JSON writers, re-confirmed by building, linking and running both after the column-major rewrite and comparing the written bytes to the evaluator's at 2,500 rows. Stripped Frame/GroupBy/Join builds reject at chelis#2097. The user-facing statement is the book's limitations page. | `@pin` |
+| Native C build (`chelis build` + native link) | `chelis eval` and `chelis test` run the whole API. `chelis build` rejects programs that call `describe` (chelis#3169), `drop_column` (chelis#879), `agg`, `inner_join`, `left_join`, `outer_join`, `read_csv_frame`, or `read_json_frame`. With the published Nautilus 0.7.51 package, separate `describe` and `drop_column` entries check and evaluate but retain their expected native failures at chelis#1226 and chelis#879. The nine package-native parity entries in `scripts/repro_package_frame_build.py --target all` pass. The successful surface includes the rest of `Coral.Frame` (construction, accessors, `filter`, `head`, `tail`, `slice`, `sort_by`, `with_column`, `mutate`, `rename`, the missing-value helpers, `concat`), `group_by` with `agg_sum`, `agg_mean`, `agg_min`, `agg_max`, `agg_count` and `value_counts`, all of `Coral.Window`, `Coral.Reshape` and `Coral.AsOf`, and the CSV and JSON writers, re-confirmed by building, linking and running both after the column-major rewrite and comparing the written bytes to the evaluator's at 2,500 rows. Stripped Frame/GroupBy/Join builds reject at chelis#2097. The user-facing statement is the book's limitations page. | `@pin` |
 | `grad` / AD | Not part of Coral's surface. Scalar `grad` builds natively at this pin (chelis#405 is archived), but Coral makes no claim that `grad` differentiates through its host-list algorithms (`spec/scope.md` deferral D5). | `@pin` |

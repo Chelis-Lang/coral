@@ -28,12 +28,8 @@ These constraints apply to Coral 0.7.48 with Chelis 0.19.2:
   `-inf` as `null`. A JSON value such as `1e39` reads as an `f32` infinity,
   so it writes back as `null`. The [I/O chapter](../io.md) gives
   supported inputs.
-- **Large files.** The JSON parser in Chelis 0.19.2 reads the 2,000-row
-  document covered by Coral's test suite. A 3,890-character CSV field also
-  passes through `read_csv_frame`. These examples do not establish a maximum
-  supported row count or field length. Very wide frames can take long enough
-  to exceed a test's time limit; 20,000 rows across 10 columns takes over a
-  minute to write.
+- **Large files.** Reading or writing large, wide frames can take substantial
+  time.
 - **Column types.** GroupBy cannot return bool group keys. Bool non-key
   columns cannot pass through joins; inner and left joins also reject
   bool keys. `pivot` and `melt` take float value columns and string

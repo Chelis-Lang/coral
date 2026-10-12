@@ -827,8 +827,8 @@ round-trip witness. `chelis deep`/`surf` are the CLI views; `spec/02`
 
 ## Version scope
 
-Coral **0.7.48** pins the published Chelis **0.19.2** compiler and requires
-the published Nautilus **0.7.51** package. The artifact identities below bind
+Coral **0.7.49** pins the published Chelis **0.19.2** compiler and requires
+the published Nautilus **0.7.53** package. The artifact identities below bind
 those release inputs.
 
 | Artifact | Identity |
@@ -836,9 +836,9 @@ those release inputs.
 | Chelis `v0.19.2` | tag commit `17bca05f168ca742a1595e759770697c34483c51` |
 | `chelis-v0.19.2-linux-x86_64-glibc2.31.tar.gz` (CI) | SHA-256 `4b60d4f488372710a6b681cd6126511de1e0f06f2edb3e69a3a187c5ae61c2e4` |
 | `chelis-v0.19.2-darwin-arm64.tar.gz` | SHA-256 `d33d5c665d1a37ebf36e39ad49e07a949747c1e71704a8eb4beb4e76f8cba047` |
-| Nautilus `v0.7.51` | tag commit `7664c036bf08e157e6889641a0b068a77efb4d60` |
-| `nautilus-0.7.51.chb` | SHA-256 `9246607fe9b46a63731356c05dc30d8e6c8765d93166fceb475396ded6f12e1a` |
-| `nautilus-0.7.51.tar.zst` | SHA-256 `89c65c700d4d81d14b4fee4c4313ba8ee6695c2e0d0eeddefc54d734205fcff4` |
+| Nautilus `v0.7.53` | tag commit `fc6f4412078b81678529ed0d8180e36ce0ca5940` |
+| `nautilus-0.7.53.chb` | SHA-256 `63f92ce65c06ae7031ce023af04cd784b8cb951eef97ea748e668aa55751c24b` |
+| `nautilus-0.7.53.tar.zst` | SHA-256 `0ae695dd8bfc3dc531bf21b536388cbdf021008d747455aed4879f27fd23eb91` |
 
 The archive hashes match the publisher's `.sha256` sidecars on each release.
 
@@ -889,5 +889,5 @@ owns the compiler-wide surface.
 |---|---|---|
 | Evaluator (`chelis test`) | The positive suite (`tests/*.ch`) and negative suite (`tests_neg/`), which includes the static gather-axis rejection. | `@pin` |
 | Package build (`chelis reef build`) | Release artifact (`dist/coral-<ver>.chb` + `.tar.zst`). | `@pin` |
-| Native C build (`chelis build` + native link) | `chelis eval` and `chelis test` run the whole API. `chelis build` rejects programs that call `describe` (chelis#3169), `drop_column` (chelis#879), `agg`, `inner_join`, `left_join`, `outer_join`, `read_csv_frame`, or `read_json_frame`. With the published Nautilus 0.7.51 package, separate `describe` and `drop_column` entries check and evaluate but retain their expected native failures at chelis#1226 and chelis#879. The nine package-native parity entries in `scripts/repro_package_frame_build.py --target all` pass. The successful surface includes the rest of `Coral.Frame` (construction, accessors, `filter`, `head`, `tail`, `slice`, `sort_by`, `with_column`, `mutate`, `rename`, the missing-value helpers, `concat`), `group_by` with `agg_sum`, `agg_mean`, `agg_min`, `agg_max`, `agg_count` and `value_counts`, all of `Coral.Window`, `Coral.Reshape` and `Coral.AsOf`, and the CSV and JSON writers, re-confirmed by building, linking and running both after the column-major rewrite and comparing the written bytes to the evaluator's at 2,500 rows. Stripped Frame/GroupBy/Join builds reject at chelis#2097. The user-facing statement is the book's limitations page. | `@pin` |
+| Native C build (`chelis build` + native link) | `chelis eval` and `chelis test` run the whole API. `chelis build` rejects programs that call `describe` (chelis#3169), `drop_column` (chelis#879), `agg`, `inner_join`, `left_join`, `outer_join`, `read_csv_frame`, or `read_json_frame`. With the published Nautilus 0.7.53 package, separate `describe` and `drop_column` entries check and evaluate but retain their expected native failures at chelis#1226 and chelis#879. The nine package-native parity entries in `scripts/repro_package_frame_build.py --target all` pass. The successful surface includes the rest of `Coral.Frame` (construction, accessors, `filter`, `head`, `tail`, `slice`, `sort_by`, `with_column`, `mutate`, `rename`, the missing-value helpers, `concat`), `group_by` with `agg_sum`, `agg_mean`, `agg_min`, `agg_max`, `agg_count` and `value_counts`, all of `Coral.Window`, `Coral.Reshape` and `Coral.AsOf`, and the CSV and JSON writers, re-confirmed by building, linking and running both after the column-major rewrite and comparing the written bytes to the evaluator's at 2,500 rows. Stripped Frame/GroupBy/Join builds reject at chelis#2097. The user-facing statement is the book's limitations page. | `@pin` |
 | `grad` / AD | Not part of Coral's surface. Scalar `grad` builds natively at this pin (chelis#405 is archived), but Coral makes no claim that `grad` differentiates through its host-list algorithms (`spec/scope.md` deferral D5). | `@pin` |

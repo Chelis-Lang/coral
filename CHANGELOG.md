@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.49] - 2026-10-11
+
+### Changed
+
+- Pin Coral 0.7.49 to the published Chelis 0.19.2 and Nautilus 0.7.53 dependency graph. Refresh the lock from the published Nautilus artifact and validate Reef package build and verification against that graph.
+- Recheck the CSV/JSON readers, native Frame targets, evaluator wide-frame witness, Parquet stub, and documented native-build boundaries against the pinned graph. The 2,000-row JSON and 3,890-character CSV witnesses pass; the `describe`, `drop_column`, bare-module, and Parquet limits remain as documented.
+
+### Documentation
+
+- Update the installation guidance and Coral compiler surface inventory for Chelis 0.19.2 and Nautilus 0.7.53.
+
 ## [0.7.48] - 2026-10-11
 
 ### Changed

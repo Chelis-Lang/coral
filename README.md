@@ -11,7 +11,7 @@ runnable examples; its source is the mdBook in [`docs/book/`](docs/book/).
 
 ## Install
 
-Coral 0.7.48 uses Chelis 0.19.2 and Nautilus 0.7.51. Initialize a Reef
+Coral 0.7.49 uses Chelis 0.19.2 and Nautilus 0.7.53. Initialize a Reef
 project and add Coral to its `reef.toml`:
 
 ```sh
@@ -29,7 +29,7 @@ compiler = "=0.19.2"
 module_prefix = "Demo"
 
 [dependencies]
-coral = { version = "0.7.48" }
+coral = { version = "0.7.49" }
 ```
 
 Install the compiler, then let Reef retrieve the dependencies by name. This
@@ -44,8 +44,8 @@ For anonymous access to the public release assets, install the known tags
 directly before building:
 
 ```sh
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.51
-chelis reef install --from-github Chelis-Lang/coral@v0.7.48
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.53
+chelis reef install --from-github Chelis-Lang/coral@v0.7.49
 chelis reef build
 ```
 

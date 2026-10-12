@@ -1,7 +1,7 @@
 # Installation
 
 Coral is a Reef package, separate from the standard library bundled with
-Chelis. Coral 0.7.48 uses Chelis 0.19.2 and Nautilus 0.7.51.
+Chelis. Coral 0.7.49 uses Chelis 0.19.2 and Nautilus 0.7.53.
 
 ## Use Coral in a project
 
@@ -22,7 +22,7 @@ compiler = "=0.19.2"
 module_prefix = "Demo"
 
 [dependencies]
-coral = { version = "0.7.48" }
+coral = { version = "0.7.49" }
 ```
 
 Install the pinned compiler before using the project's Reef shim:
@@ -43,8 +43,8 @@ To install these public releases without GitHub authentication, install the
 known tags directly, then build:
 
 ```sh
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.51
-chelis reef install --from-github Chelis-Lang/coral@v0.7.48
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.53
+chelis reef install --from-github Chelis-Lang/coral@v0.7.49
 chelis reef build
 ```
 

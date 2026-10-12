@@ -21,7 +21,7 @@ release. The native package probes use the published Nautilus dependency.
 
 No evaluator-level upstream blocker probes remain in `tests_blocked/`. The
 2,000-row `read_json_frame` witness is normal coverage in `tests/io.ch`; it
-passes against the published Chelis 0.19.2 and Nautilus 0.7.51 packages.
+passes against the published Chelis 0.19.2 and Nautilus 0.7.53 packages.
 
 There are no checker-level upstream blockers. The gather-axis test checks an
 intentional rejection under [05-AXIS-2] in
@@ -85,7 +85,7 @@ when the outcome matches this file and 1 when it changes:
   *Re-probe trigger:* each compiler pin bump. Test each verb separately.
 
   *Chelis 0.19.2 re-probe:* separate native entries built with the published
-  Nautilus 0.7.51 package reproduce both boundaries.
+  Nautilus 0.7.53 package reproduce both boundaries.
   `describe` still rejects at `build_describe_pairs` with the chelis#1226
   non-concrete type-application diagnostic; `drop_column` still rejects the
   anonymous function value with `unimplemented chelis#879`. Both entries check
@@ -95,19 +95,18 @@ when the outcome matches this file and 1 when it changes:
   ([chelis#828](https://github.com/Chelis-Lang/chelis/issues/828); Coral-side
   tracker [coral#16](https://github.com/Chelis-Lang/coral/issues/16)).**
 
-  *Reproducer:* a `chelis test` case that builds a 100-column frame with
-  `from_pairs` and applies one `with_column`. The recursive HAMT helpers can
-  exceed the default 30-second per-test evaluator budget; this entry does
-  not claim a timing measurement at the pinned compiler. Native execution
-  has a separate validation boundary.
+  *Re-probe:* one isolated `chelis test` case built a 100-column frame with
+  `from_pairs` and applied one `with_column`. It passed in 17.294 seconds on
+  the published Chelis 0.19.2 / Nautilus 0.7.53 dependency graph. This is one
+  workload, not a general timing bound for wide frames. Native execution has
+  a separate validation boundary.
 
   *Affected surface:* evaluator workloads with wide frames.
 
-  *Workaround:* none; Coral's tests use narrow frames.
+  *Workaround:* none. Keep the workload bounded when evaluating wide frames.
 
-  *Re-probe trigger:* when upstream reports evaluator speedups on
-  chelis#828, or when a Coral user needs 100 or more columns in the
-  evaluator.
+  *Re-probe trigger:* the next compiler pin bump or a change to Coral's
+  frame storage and evaluator workload.
 
 - **Parquet file I/O is unavailable
   ([chelis#850](https://github.com/Chelis-Lang/chelis/issues/850)).**
@@ -220,11 +219,11 @@ when the outcome matches this file and 1 when it changes:
 
   Probing further costs time rather than depth, because the same parser
   accumulates strings quadratically
-  ([chelis#943](https://github.com/Chelis-Lang/chelis/issues/943), open), so a
+  ([chelis#943](https://github.com/Chelis-Lang/chelis/issues/943)), so a
   half-megabyte document needs minutes and a raised `--timeout`.
 
   These figures describe the old Chelis 0.19.1 parser. The published Chelis
-  0.19.2 and Nautilus 0.7.51 packages read 2,000 JSON rows in Coral's promoted
+  0.19.2 and Nautilus 0.7.53 packages read 2,000 JSON rows in Coral's promoted
   test; this does not establish a general row or string-length maximum. The separate
   Coral CSV writer character limits remain, and CSV is not a general escape:
 
@@ -243,7 +242,7 @@ when the outcome matches this file and 1 when it changes:
   commit `957ec396f649c8a3e9658808f4bc071d43e8e534`. The positive regression is
   `Coral.Tests.Io.test_read_csv_field_past_former_scan_limit` in `tests/io.ch`:
   it preserves the complete 3,890-character field on the published Chelis
-  0.19.2 / Nautilus 0.7.51 dependency graph. This is a passing witness, not a
+  0.19.2 / Nautilus 0.7.53 dependency graph. This is a passing witness, not a
   new maximum claim. The two `write_csv_frame` rows are Coral's own and are
   owned by D11.
 
@@ -265,7 +264,7 @@ when the outcome matches this file and 1 when it changes:
   commit `24b1f8e0b6d815eff12f868999813023915da05d`; the fix is included in
   v0.19.2. The former blocked probe reported FIX-DETECTED, and its exact
   2,000-row witness is now normal coverage in `tests/io.ch`. The package test
-  passes on the published 0.19.2 / 0.7.51 dependency graph.
+  passes on the published 0.19.2 / 0.7.53 dependency graph.
 
   Coral's row-walker recursion was fixed separately by Coral PR #61: the CSV
   round-trip and JSON writer tests in `tests/io.ch` each exercise 3,000 rows,

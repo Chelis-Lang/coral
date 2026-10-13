@@ -1,6 +1,6 @@
 # Limitations
 
-These constraints apply to Coral 0.7.49 with Chelis 0.19.2:
+These constraints apply to Coral 0.7.50 with Chelis 0.19.4:
 
 - **Native builds.** `chelis eval` and `chelis test` run the whole API.
   `chelis build` rejects a program that calls any of these functions:

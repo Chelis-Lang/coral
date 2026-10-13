@@ -21,7 +21,7 @@ release. The native package probes use the published Nautilus dependency.
 
 No evaluator-level upstream blocker probes remain in `tests_blocked/`. The
 2,000-row `read_json_frame` witness is normal coverage in `tests/io.ch`; it
-passes against the published Chelis 0.19.2 and Nautilus 0.7.53 packages.
+passes against the published Chelis 0.19.4 and Nautilus 0.7.55 packages.
 
 There are no checker-level upstream blockers. The gather-axis test checks an
 intentional rejection under [05-AXIS-2] in
@@ -66,7 +66,7 @@ when the outcome matches this file and 1 when it changes:
   full Frame module chain in `scripts/repro_native_nan.py`; if they reach a
   different rejection, classify that boundary before changing the probe.
 
-  *Chelis 0.19.2 re-probe:* the `drop_nan` probe and all three stripped module
+  *Chelis 0.19.4 re-probe:* the `drop_nan` probe and all three stripped module
   targets still stop at the expected ownership-signature diagnostic.
 
 - **`describe` and `drop_column` reject in native package builds
@@ -84,8 +84,8 @@ when the outcome matches this file and 1 when it changes:
 
   *Re-probe trigger:* each compiler pin bump. Test each verb separately.
 
-  *Chelis 0.19.2 re-probe:* separate native entries built with the published
-  Nautilus 0.7.53 package reproduce both boundaries.
+  *Chelis 0.19.4 re-probe:* separate native entries built with the published
+  Nautilus 0.7.55 package reproduce both boundaries.
   `describe` still rejects at `build_describe_pairs` with the chelis#1226
   non-concrete type-application diagnostic; `drop_column` still rejects the
   anonymous function value with `unimplemented chelis#879`. Both entries check
@@ -95,11 +95,11 @@ when the outcome matches this file and 1 when it changes:
   ([chelis#828](https://github.com/Chelis-Lang/chelis/issues/828); Coral-side
   tracker [coral#16](https://github.com/Chelis-Lang/coral/issues/16)).**
 
-  *Re-probe:* one isolated `chelis test` case built a 100-column frame with
-  `from_pairs` and applied one `with_column`. It passed in 17.294 seconds on
-  the published Chelis 0.19.2 / Nautilus 0.7.53 dependency graph. This is one
-  workload, not a general timing bound for wide frames. Native execution has
-  a separate validation boundary.
+  *Re-probe:* one isolated 100-column `from_pairs` plus `with_column`
+  evaluator workload returned 101 columns in 14.962 seconds on local macOS
+  arm64 with published Chelis 0.19.4 / Nautilus 0.7.55. This is one workload,
+  not a general timing bound for wide frames. Native execution has a separate
+  validation boundary.
 
   *Affected surface:* evaluator workloads with wide frames.
 
@@ -129,7 +129,7 @@ when the outcome matches this file and 1 when it changes:
   release. Re-run check, build, and the executable; a successful build
   alone does not establish working Parquet I/O.
 
-  *Chelis 0.19.2 re-probe:* the `read_parquet` entry checks at score 1.0 and
+  *Chelis 0.19.4 re-probe:* the `read_parquet` entry checks at score 1.0 and
   builds. Its executable exits 1 with
   `Std.Io.Parquet.read_parquet is not implemented: missing.parquet`.
 

@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Prepare the Chelis 0.19.3 compiler and workflow pins and refresh managed
+  authoring guidance. Dependency-lock regeneration and package validation
+  require a published Nautilus artifact pinned to the same compiler.
+
 ## [0.7.49] - 2026-10-11
 
 ### Changed

@@ -8,7 +8,7 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- Prepare the Chelis 0.19.3 compiler and workflow pins and refresh managed
+- Prepare the Chelis 0.19.4 compiler and workflow pins and refresh managed
   authoring guidance. Dependency-lock regeneration and package validation
   require a published Nautilus artifact pinned to the same compiler.
 

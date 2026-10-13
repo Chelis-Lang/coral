@@ -4,13 +4,13 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.7.50] - 2026-10-13
 
 ### Changed
 
-- Prepare the Chelis 0.19.4 compiler and workflow pins and refresh managed
-  authoring guidance. Dependency-lock regeneration and package validation
-  require a published Nautilus artifact pinned to the same compiler.
+- Pin Coral to published Chelis 0.19.4 and Nautilus 0.7.55; refresh workflow
+  pins and managed authoring guidance. Recheck native boundaries, strict
+  parity, book examples, and package builds against the released dependency.
 
 ## [0.7.49] - 2026-10-11
 

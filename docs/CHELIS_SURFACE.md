@@ -828,8 +828,9 @@ round-trip witness. `chelis deep`/`surf` are the CLI views; `spec/02`
 ## Version scope
 
 [`reef.toml`](../reef.toml) declares the compiler pin and Nautilus dependency.
-Reef requires both packages to declare the same compiler pin. Dependency
-artifact identities and hashes are recorded in [`reef.lock`](../reef.lock).
+Reef requires both packages to declare the same compiler pin. `chelis reef
+build` verifies the published dependency payloads and records their hashes in
+a local `reef.lock`; Coral does not commit that generated file.
 
 `@pin` rows describe what Coral uses at this pin, within the checks Coral
 runs; they do not claim gradient or GPU support (see

@@ -8,17 +8,12 @@ positive guard and does not establish a chelis#1260 class-wide fix.
 This lane imports `Coral.Frame`; the stripped module smokes have a separate
 probe in `repro_multimodule_bare_build.py`.
 
-Six Frame verbs formerly blocked by chelis#3153 have native/eval witnesses at
-the 0.18.13 pin: `drop_nan`, `filter`, `head`, `slice`, `sort_by`, and
-`with_column`. Each witness checks a selected output value or ordering, as well
-as the resulting shape where relevant.
-Six further verbs sharing the former boundary need their own witnesses before
-claiming native coverage; see `docs/UPSTREAM_BUGS.md` and coral#26.
-
-Two other verbs reject at DIFFERENT boundaries and are out of this entry:
-`drop_column` at chelis#879 (general C-host function-value ABI, which its own
-diagnostic cites as `unimplemented chelis#879`), and `describe` at chelis#1226.
-Neither is chelis#3153; do not fold them into these targets.
+Nine baseline Frame entries guard the existing construction, access, and
+mutation paths. Two configurations each for describe, agg, inner_join,
+left_join, outer_join, read_csv_frame, and read_json_frame assert selected
+numeric values, column order, and row counts against evaluation. These are
+bounded witnesses, not a promise that every type and shape lowers natively.
+The drop_column entry must still reject at the exact chelis#879 boundary.
 
 Exit codes:
 - 0: every selected target matched its expected outcome
@@ -27,6 +22,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shutil
 import subprocess
@@ -170,6 +166,233 @@ TARGETS = {
     },
 }
 
+# Bounded de-narrowing witnesses: two configurations per newly exercised verb.
+TARGETS.update({
+    'describe_float': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'def main() -> i64 = {\n'
+            '  result = describe(from_pairs([("a", FloatCol(to_tensor([1f32, 2f32, 3f32]))), ("b", FloatCol(to_tensor([4f32, 5f32, 6f32])))]))\n'
+            '  a = to_list(get_float_col(result, "a"))\n'
+            '  b = to_list(get_float_col(result, "b"))\n'
+            '  if and(eq(nrows(result), 8i64), and(eq(columns(result), ["stat", "a", "b"]), and(eq(a, [3f32, 2f32, 1f32, 1f32, 1.5f32, 2f32, 2.5f32, 3f32]), eq(b, [3f32, 5f32, 1f32, 4f32, 4.5f32, 5f32, 5.5f32, 6f32])))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+    },
+    'describe_int': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'def main() -> i64 = {\n'
+            '  result = describe(from_pairs([("value", int_col_of_list([1i64, 3i64, 5i64, 7i64]))]))\n'
+            '  values = to_list(get_float_col(result, "value"))\n'
+            '  if and(eq(nrows(result), 8i64), and(eq(columns(result), ["stat", "value"]), and(eq(index(values, 0i64), 4f32), and(eq(index(values, 1i64), 4f32), and(lt(abs(sub(index(values, 2i64), 2.5819888f32)), 0.00001f32), and(eq(index(values, 3i64), 1f32), and(eq(index(values, 4i64), 2.5f32), and(eq(index(values, 5i64), 4f32), and(eq(index(values, 6i64), 5.5f32), eq(index(values, 7i64), 7f32)))))))))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+    },
+    'agg_sum': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'import Coral.GroupBy (group_by, agg, AggSum, AggMean)\n'
+            'def main() -> i64 = {\n'
+            '  frame = from_pairs([("key", StringCol(["a", "b", "a"])), ("value", FloatCol(to_tensor([2f32, 3f32, 5f32]))), ("price", FloatCol(to_tensor([10f32, 20f32, 50f32])))])\n'
+            '  result = agg(group_by(frame, "key"), [("value", AggSum), ("price", AggMean)])\n'
+            '  if and(eq(nrows(result), 2i64), and(eq(columns(result), ["key", "value_sum", "price_mean"]), and(eq(get_string_col(result, "key"), ["a", "b"]), and(eq(to_list(get_float_col(result, "value_sum")), [7f32, 3f32]), eq(to_list(get_float_col(result, "price_mean")), [30f32, 20f32]))))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+    },
+    'agg_mean': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'import Coral.GroupBy (group_by, agg, AggSum, AggMean)\n'
+            'def main() -> i64 = {\n'
+            '  frame = from_pairs([("key", int_col_of_list([1i64, 1i64, 2i64, 2i64])), ("value", FloatCol(to_tensor([2f32, 4f32, 6f32, 8f32]))), ("price", FloatCol(to_tensor([10f32, 20f32, 30f32, 40f32])))])\n'
+            '  result = agg(group_by(frame, "key"), [("value", AggMean), ("price", AggSum)])\n'
+            '  if and(eq(nrows(result), 2i64), and(eq(columns(result), ["key", "value_mean", "price_sum"]), and(eq(to_list(get_int_col(result, "key")), [1i64, 2i64]), and(eq(to_list(get_float_col(result, "value_mean")), [3f32, 7f32]), eq(to_list(get_float_col(result, "price_sum")), [30f32, 70f32]))))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+    },
+    'inner_join_partial': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'import Coral.Join (inner_join)\n'
+            'def main() -> i64 = {\n'
+            '  left = from_pairs([("key", StringCol(["a", "b"])), ("qty", FloatCol(to_tensor([1f32, 2f32])))])\n'
+            '  right = from_pairs([("key", StringCol(["b", "c"])), ("value", FloatCol(to_tensor([3f32, 4f32])))])\n'
+            '  result = inner_join(left, right, "key")\n'
+            '  qty = to_list(get_float_col(result, "qty"))\n'
+            '  values = to_list(get_float_col(result, "value"))\n'
+            '  if and(eq(columns(result), ["key", "qty", "value"]), and(eq(nrows(result), 1i64), and(eq(get_string_col(result, "key"), ["b"]), and(eq(qty, [2f32]), eq(values, [3f32]))))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+    },
+    'inner_join_complete': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'import Coral.Join (inner_join)\n'
+            'def main() -> i64 = {\n'
+            '  left = from_pairs([("key", StringCol(["x", "y", "z"])), ("qty", FloatCol(to_tensor([4f32, 5f32, 6f32])))])\n'
+            '  right = from_pairs([("key", StringCol(["x", "y", "z"])), ("value", FloatCol(to_tensor([40f32, 50f32, 60f32])))])\n'
+            '  result = inner_join(left, right, "key")\n'
+            '  qty = to_list(get_float_col(result, "qty"))\n'
+            '  values = to_list(get_float_col(result, "value"))\n'
+            '  if and(eq(columns(result), ["key", "qty", "value"]), and(eq(nrows(result), 3i64), and(eq(get_string_col(result, "key"), ["x", "y", "z"]), and(eq(qty, [4f32, 5f32, 6f32]), eq(values, [40f32, 50f32, 60f32]))))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+    },
+    'left_join_partial': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'import Coral.Join (left_join)\n'
+            'def main() -> i64 = {\n'
+            '  left = from_pairs([("key", StringCol(["a", "b"])), ("qty", FloatCol(to_tensor([1f32, 2f32])))])\n'
+            '  right = from_pairs([("key", StringCol(["b", "c"])), ("value", FloatCol(to_tensor([3f32, 4f32])))])\n'
+            '  result = left_join(left, right, "key")\n'
+            '  qty = to_list(get_float_col(result, "qty"))\n'
+            '  values = to_list(get_float_col(result, "value"))\n'
+            '  if and(eq(columns(result), ["key", "qty", "value"]), and(eq(nrows(result), 2i64), and(eq(get_string_col(result, "key"), ["a", "b"]), and(eq(qty, [1f32, 2f32]), and(neq(index(values, 0i64), index(values, 0i64)), eq(index(values, 1i64), 3f32)))))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+    },
+    'left_join_complete': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'import Coral.Join (left_join)\n'
+            'def main() -> i64 = {\n'
+            '  left = from_pairs([("key", StringCol(["x", "y", "z"])), ("qty", FloatCol(to_tensor([4f32, 5f32, 6f32])))])\n'
+            '  right = from_pairs([("key", StringCol(["x", "y", "z"])), ("value", FloatCol(to_tensor([40f32, 50f32, 60f32])))])\n'
+            '  result = left_join(left, right, "key")\n'
+            '  qty = to_list(get_float_col(result, "qty"))\n'
+            '  values = to_list(get_float_col(result, "value"))\n'
+            '  if and(eq(columns(result), ["key", "qty", "value"]), and(eq(nrows(result), 3i64), and(eq(get_string_col(result, "key"), ["x", "y", "z"]), and(eq(qty, [4f32, 5f32, 6f32]), eq(values, [40f32, 50f32, 60f32]))))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+    },
+    'outer_join_partial': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'import Coral.Join (outer_join)\n'
+            'def main() -> i64 = {\n'
+            '  left = from_pairs([("key", StringCol(["a", "b"])), ("qty", FloatCol(to_tensor([1f32, 2f32])))])\n'
+            '  right = from_pairs([("key", StringCol(["b", "c"])), ("value", FloatCol(to_tensor([3f32, 4f32])))])\n'
+            '  result = outer_join(left, right, "key")\n'
+            '  qty = to_list(get_float_col(result, "qty"))\n'
+            '  values = to_list(get_float_col(result, "value"))\n'
+            '  if and(eq(columns(result), ["key", "qty", "value"]), and(eq(nrows(result), 3i64), and(eq(get_string_col(result, "key"), ["a", "b", "c"]), and(eq(index(qty, 0i64), 1f32), and(eq(index(qty, 1i64), 2f32), and(neq(index(qty, 2i64), index(qty, 2i64)), and(neq(index(values, 0i64), index(values, 0i64)), and(eq(index(values, 1i64), 3f32), eq(index(values, 2i64), 4f32))))))))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+    },
+    'outer_join_complete': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'import Coral.Join (outer_join)\n'
+            'def main() -> i64 = {\n'
+            '  left = from_pairs([("key", StringCol(["x", "y", "z"])), ("qty", FloatCol(to_tensor([4f32, 5f32, 6f32])))])\n'
+            '  right = from_pairs([("key", StringCol(["x", "y", "z"])), ("value", FloatCol(to_tensor([40f32, 50f32, 60f32])))])\n'
+            '  result = outer_join(left, right, "key")\n'
+            '  qty = to_list(get_float_col(result, "qty"))\n'
+            '  values = to_list(get_float_col(result, "value"))\n'
+            '  if and(eq(columns(result), ["key", "qty", "value"]), and(eq(nrows(result), 3i64), and(eq(get_string_col(result, "key"), ["x", "y", "z"]), and(eq(qty, [4f32, 5f32, 6f32]), eq(values, [40f32, 50f32, 60f32]))))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+    },
+    'read_csv_frame_2rows': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'import Coral.Io (read_csv_frame)\n'
+            'main = {\n'
+            '  result = read_csv_frame("__CORAL_NATIVE_FIXTURE__")\n'
+            '  if and(eq(nrows(result), 2i64), and(eq(columns(result), ["key", "value"]), and(eq(get_string_col(result, "key"), ["a", "b"]), eq(to_list(get_float_col(result, "value")), [1.25f32, 2.5f32])))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+        'fixture': ('input.csv', 'key,value\na,1.25\nb,2.5\n'),
+    },
+    'read_csv_frame_3rows': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'import Coral.Io (read_csv_frame)\n'
+            'main = {\n'
+            '  result = read_csv_frame("__CORAL_NATIVE_FIXTURE__")\n'
+            '  if and(eq(nrows(result), 3i64), and(eq(columns(result), ["key", "value"]), and(eq(get_string_col(result, "key"), ["x", "y", "z"]), eq(to_list(get_float_col(result, "value")), [3.5f32, 5.5f32, 8.5f32])))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+        'fixture': ('input.csv', 'key,value\nx,3.5\ny,5.5\nz,8.5\n'),
+    },
+    'read_json_frame_2rows': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'import Coral.Io (read_json_frame)\n'
+            'main = {\n'
+            '  result = read_json_frame("__CORAL_NATIVE_FIXTURE__")\n'
+            '  if and(eq(nrows(result), 2i64), and(eq(columns(result), ["key", "value"]), and(eq(get_string_col(result, "key"), ["a", "b"]), eq(to_list(get_float_col(result, "value")), [1.25f32, 2.5f32])))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+        'fixture': ('input.json', '[{"key": "a", "value": 1.25}, {"key": "b", "value": 2.5}]\n'),
+    },
+    'read_json_frame_3rows': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, StringCol, from_pairs, nrows, ncols, columns, get_float_col, get_int_col, get_string_col, describe, int_col_of_list)\n'
+            'import Coral.Io (read_json_frame)\n'
+            'main = {\n'
+            '  result = read_json_frame("__CORAL_NATIVE_FIXTURE__")\n'
+            '  if and(eq(nrows(result), 3i64), and(eq(columns(result), ["key", "value"]), and(eq(get_string_col(result, "key"), ["x", "y", "z"]), eq(to_list(get_float_col(result, "value")), [3.5f32, 5.5f32, 8.5f32])))) then 1i64 else 0i64\n'
+            '}\n'
+        ),
+        'expect_build': True,
+        'expect_value': 1,
+        'fixture': ('input.json', '[{"key": "x", "value": 3.5}, {"key": "y", "value": 5.5}, {"key": "z", "value": 8.5}]\n'),
+    },
+    'drop_column': {
+        "source": (
+            'module Coral.ProbeFrameBuild\n'
+            'import Coral.Frame (FloatCol, from_pairs, drop_column, ncols)\n'
+            'def main() -> i64 = ncols(drop_column(from_pairs([("a", FloatCol(to_tensor([1f32, 2f32]))), ("b", FloatCol(to_tensor([3f32, 4f32])))]), "b"))\n'
+        ),
+        'expect_build': False,
+        'expect_diagnostic': 'unimplemented chelis#879: general C-host function values are not implemented',
+        'blocker': 'chelis#879',
+    },
+})
+
 
 def _eval_value(entry: Path) -> int | None:
     result = subprocess.run(
@@ -189,7 +412,13 @@ def _run_target(name: str, spec: dict) -> int:
         return 1
     workdir = Path(tempfile.mkdtemp(prefix=f"coral-package-frame-{name}-"))
     try:
-        entry.write_text(spec["source"])
+        source = spec["source"]
+        if "fixture" in spec:
+            fixture_name, content = spec["fixture"]
+            fixture = workdir / fixture_name
+            fixture.write_text(content)
+            source = source.replace('"__CORAL_NATIVE_FIXTURE__"', json.dumps(str(fixture)))
+        entry.write_text(source)
         out_dir = workdir / "out"
         build = subprocess.run(
             [CHELIS, "build", str(entry), "--output", str(out_dir)],

@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.51] - 2026-10-19
+
+### Changed
+
+- Pin Coral to published Chelis 0.21.0 and Nautilus 0.7.57; refresh managed
+  guidance and installation examples against their released dependency graph.
+- Re-probe package and stripped native builds, Parquet, IEEE NaN behavior,
+  and the bounded wide-frame evaluator workload. The stripped smokes reach
+  the explicit chelis#879 function-value rejection; `drop_column` retains
+  that boundary.
+- Promote native value-parity coverage for two configurations each of
+  `describe`, `agg`, all three joins, and the CSV/JSON readers, with typed
+  rejection controls. These witnesses retire the corresponding stale Coral
+  native-rejection claims without claiming general upstream-class closure.
+
 ## [0.7.50] - 2026-10-13
 
 ### Changed

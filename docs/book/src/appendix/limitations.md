@@ -1,21 +1,14 @@
 # Limitations
 
-These constraints apply to Coral 0.7.50 with Chelis 0.19.4:
+These constraints apply to Coral 0.7.51 with Chelis 0.21.0:
 
-- **Native builds.** `chelis eval` and `chelis test` run the whole API.
-  `chelis build` rejects a program that calls any of these functions:
-  `describe`, `drop_column`, `agg`, `inner_join`, `left_join`,
-  `outer_join`, `read_csv_frame`, and `read_json_frame`. These build
-  natively and return the same values as under `chelis eval`: the rest of
-  `Coral.Frame` (construction, accessors, `filter`, `head`, `tail`,
-  `slice`, `sort_by`, `with_column`, `mutate`, `rename`, the
-  missing-value helpers, and `concat`), `group_by` with `agg_sum`,
-  `agg_mean`, `agg_min`, `agg_max`, `agg_count`, and `value_counts`, and
-  all of `Coral.Window`, `Coral.Reshape`, and `Coral.AsOf`. The CSV and
-  JSON writers also build. In a native program, replace `agg` with one
-  single-aggregation call per column and combine the results with
-  `with_column`. Run code that needs the other rejected functions with
-  `chelis eval` or `chelis test`.
+- **Native builds.** `drop_column` rejects under `chelis build`; run code
+  that needs it with `chelis eval` or `chelis test`. Native `describe`
+  examples cover float and integer columns. Multi-aggregation examples cover
+  string and integer group keys; join examples cover string keys with partial
+  and complete matches. CSV and JSON reader examples cover two- and three-row
+  frames with string and float columns. These examples do not establish native
+  support for every combination of column types and shapes.
 - **Concatenation.** Pass frames with the same column names, types, and
   row count. `concat` matches columns by name using the first frame's
   columns: an extra column in a later frame is omitted without an error,

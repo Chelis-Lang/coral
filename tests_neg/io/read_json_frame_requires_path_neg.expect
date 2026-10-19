@@ -1,0 +1,3 @@
+expected string, got i64
+
+Assumption: read_json_frame requires a string path; an i64 argument must reject during checking.

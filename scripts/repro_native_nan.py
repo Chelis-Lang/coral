@@ -12,7 +12,7 @@ which the emitted entry always sets to zero.
 
 Scope: this probe extracts Coral's own frame NaN helpers and their dependencies
 instead of flat-pasting `MODULE_PRESETS["frame"]`. The full preset remains a
-separate package-dependent re-probe (chelis#2097; see docs/UPSTREAM_BUGS.md).
+separate package-dependent re-probe (chelis#879; see docs/UPSTREAM_BUGS.md).
 The 0.18.11 pin makes tensor `neq` IEEE-correct for the tested NaN lanes, so
 `is_nan` now uses it directly. This probe executes the production mask,
 drop-core, count and any paths after native compile-link-run.

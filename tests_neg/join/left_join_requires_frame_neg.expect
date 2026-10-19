@@ -1,0 +1,3 @@
+type mismatch:
+
+Assumption: left_join requires its declared frame input; an i64 argument must reject during checking.

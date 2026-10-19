@@ -21,7 +21,7 @@ release. The native package probes use the published Nautilus dependency.
 
 No evaluator-level upstream blocker probes remain in `tests_blocked/`. The
 2,000-row `read_json_frame` witness is normal coverage in `tests/io.ch`; it
-passes against the published Chelis 0.19.4 and Nautilus 0.7.55 packages.
+passes against the published Chelis 0.21.0 and Nautilus 0.7.57 packages.
 
 There are no checker-level upstream blockers. The gather-axis test checks an
 intentional rejection under [05-AXIS-2] in
@@ -33,9 +33,9 @@ when the outcome matches this file and 1 when it changes:
 
 | Probe | Entry |
 |---|---|
-| `scripts/repro_multimodule_bare_build.py --target {frame,groupby,join}` | chelis#2097 in stripped source builds |
-| `scripts/repro_package_frame_build.py --target all` | Native/evaluator agreement for nine Frame entries |
-| `scripts/repro_native_drop_nan_blocked.py` | chelis#2097 in the stripped `drop_nan` lane |
+| `scripts/repro_multimodule_bare_build.py --target {frame,groupby,join}` | chelis#879 in stripped source builds |
+| `scripts/repro_package_frame_build.py --target all` | Native/evaluator agreement for bounded package entries and the `drop_column` rejection |
+| `scripts/repro_native_drop_nan_blocked.py` | chelis#879 in the stripped `drop_nan` lane |
 | `scripts/repro_native_nan.py`, `scripts/repro_native_neq.py` | Native NaN behavior |
 
 ## Actively blocking
@@ -44,62 +44,55 @@ when the outcome matches this file and 1 when it changes:
 
 ## Tracking
 
-- **Stripped Frame, GroupBy, and Join builds stop at an ownership-signature
-  rejection ([chelis#2097](https://github.com/Chelis-Lang/chelis/issues/2097)).**
+- **Stripped Frame, GroupBy, and Join builds reject anonymous function values
+  ([chelis#879](https://github.com/Chelis-Lang/chelis/issues/879)).**
 
   *Reproducer:* `scripts/repro_multimodule_bare_build.py`, all three
-  targets. Each concatenates Coral's Frame, GroupBy, or Join modules with
-  their dependencies into one file and builds a trivial entrypoint with
-  `chelis build`. All three reject at `frame__list_filter_string` with
-  `does not match ownership signature`. The same diagnostic stops the
-  stripped `drop_nan` entry in `scripts/repro_native_drop_nan_blocked.py`.
+  targets, and `scripts/repro_native_drop_nan_blocked.py`. Each strips and
+  concatenates Coral modules with their published Nautilus dependencies.
+  `chelis build` rejects with `anonymous function value` and
+  `unimplemented chelis#879: general C-host function values are not implemented`.
 
-  *Affected surface:* none that ships. Coral is consumed as a Reef package,
-  and its tests run in the evaluator. The limitation affects only these
-  bare-C smoke builds.
+  *Affected surface:* these stripped-source native smokes. Reef package
+  entries are separate; the invoked `drop_nan` package entry builds, runs,
+  and agrees with evaluation.
 
-  *Workaround:* `scripts/repro_native_nan.py` compiles only Coral's own
-  float-NaN helpers rather than the whole Frame module chain, so it can
-  still guard chelis#630 natively.
+  *Workaround:* `scripts/repro_native_nan.py` compiles Coral's own float-NaN
+  helpers to retain native mask, drop-core, count, and any coverage.
 
-  *Re-probe trigger:* each compiler pin bump. If the smokes pass, test the
-  full Frame module chain in `scripts/repro_native_nan.py`; if they reach a
-  different rejection, classify that boundary before changing the probe.
+  *Re-probe trigger:* each compiler pin bump. A successful smoke requires
+  testing the full Frame chain before expanding the helper probe. A different
+  rejection must be classified before changing the expected diagnostic.
 
-  *Chelis 0.19.4 re-probe:* the `drop_nan` probe and all three stripped module
-  targets still stop at the expected ownership-signature diagnostic.
+  The Chelis 0.21.0 probes reach this function-value rejection before the
+  former ownership-signature boundary
+  ([chelis#2097](https://github.com/Chelis-Lang/chelis/issues/2097)). They do
+  not establish that the broader ownership-signature issue is fixed.
 
-- **`describe` and `drop_column` reject in native package builds
-  ([chelis#3169](https://github.com/Chelis-Lang/chelis/issues/3169),
-  [chelis#879](https://github.com/Chelis-Lang/chelis/issues/879);
+- **`drop_column` rejects in native package builds
+  ([chelis#879](https://github.com/Chelis-Lang/chelis/issues/879);
   Coral-side tracker [coral#26](https://github.com/Chelis-Lang/coral/issues/26)).**
 
-  *Reproducer:* Build an entry that calls each verb through `Coral.Frame`.
-  `describe` rejects at `build_describe_pairs` because its checked type
-  application is not concrete (chelis#1226, tracked as chelis#3169).
-  `drop_column` rejects an anonymous function value with chelis#879.
+  *Reproducer:* `scripts/repro_package_frame_build.py --target drop_column`.
+  An entry that removes one of two float columns checks at score 1.0 and
+  evaluates to one column. Its native build rejects the anonymous function
+  value with `unimplemented chelis#879`.
 
-  *Affected surface:* native `chelis build` of those invoked Frame verbs;
-  package checking and evaluation work.
+  *Affected surface:* native `chelis build` of the invoked verb; checking
+  and evaluation work with published Chelis 0.21.0 / Nautilus 0.7.57.
 
-  *Re-probe trigger:* each compiler pin bump. Test each verb separately.
-
-  *Chelis 0.19.4 re-probe:* separate native entries built with the published
-  Nautilus 0.7.55 package reproduce both boundaries.
-  `describe` still rejects at `build_describe_pairs` with the chelis#1226
-  non-concrete type-application diagnostic; `drop_column` still rejects the
-  anonymous function value with `unimplemented chelis#879`. Both entries check
-  at score 1.0 and evaluate successfully at this pin.
+  *Re-probe trigger:* each compiler pin bump. A successful build requires
+  a value-preserving native witness before retiring this limitation.
 
 - **Evaluator cost of the HAMT column store
   ([chelis#828](https://github.com/Chelis-Lang/chelis/issues/828); Coral-side
   tracker [coral#16](https://github.com/Chelis-Lang/coral/issues/16)).**
 
-  *Re-probe:* one isolated 100-column `from_pairs` plus `with_column`
-  evaluator workload returned 101 columns in 14.962 seconds on local macOS
-  arm64 with published Chelis 0.19.4 / Nautilus 0.7.55. This is one workload,
-  not a general timing bound for wide frames. Native execution has a separate
-  validation boundary.
+  *Re-probe:* one isolated evaluator workload with 100 two-row float
+  columns built by `from_pairs`, followed by `with_column`, returned 101
+  columns in 1.788 seconds on local macOS arm64 with published Chelis 0.21.0
+  / Nautilus 0.7.57. This is one workload, not a general timing bound for
+  wide frames. Native execution has a separate validation boundary.
 
   *Affected surface:* evaluator workloads with wide frames.
 
@@ -129,11 +122,26 @@ when the outcome matches this file and 1 when it changes:
   release. Re-run check, build, and the executable; a successful build
   alone does not establish working Parquet I/O.
 
-  *Chelis 0.19.4 re-probe:* the `read_parquet` entry checks at score 1.0 and
+  *Chelis 0.21.0 re-probe:* the `read_parquet` entry checks at score 1.0 and
   builds. Its executable exits 1 with
   `Std.Io.Parquet.read_parquet is not implemented: missing.parquet`.
 
 ## Archived
+
+### Native package entries at Chelis 0.21.0
+
+Two bounded configurations each for `describe`, `agg`, `inner_join`,
+`left_join`, `outer_join`, `read_csv_frame`, and `read_json_frame` build,
+execute, and agree with evaluation in `scripts/repro_package_frame_build.py`.
+The witnesses assert values, column order, and row counts. Typed negative
+controls in `tests_neg/` reject incompatible inputs.
+
+The former `describe` entry no longer reaches its non-concrete
+`build_describe_pairs` type-application rejection. This retires that Coral
+witness, not the broader upstream generic-call classes
+([chelis#3169](https://github.com/Chelis-Lang/chelis/issues/3169),
+[chelis#1226](https://github.com/Chelis-Lang/chelis/issues/1226)). No claim of
+native support for every type or shape follows from these witnesses.
 
 ### Chelis 0.19.2 re-probes
 

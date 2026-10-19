@@ -2,7 +2,7 @@
 """Probe the stripped-source native `drop_nan` boundary.
 
 The probe constructs a Frame and invokes Coral.Frame.drop_nan. Stripping and
-concatenating the modules reaches the chelis#2097 ownership-signature
+concatenating the modules reaches the chelis#879 anonymous-function-value
 rejection. A successful build is FIX-DETECTED and calls for de-narrowing this
 limitation. The Reef package lane is measured separately by
 `repro_package_frame_build.py`; its `drop_nan` case builds, runs, and agrees
@@ -18,8 +18,8 @@ from pathlib import Path
 from repro_multimodule_bare_build import CHELIS, MODULE_PRESETS, build_prefixed_modules
 
 
-# chelis 0.18.13 boundary diagnostic. The local function id is volatile.
-EXPECTED = "does not match ownership signature"
+# Exact capability diagnostic; unrelated failures must remain failures.
+EXPECTED = "unimplemented chelis#879: general C-host function values are not implemented"
 
 
 def main() -> int:
@@ -51,11 +51,11 @@ def main() -> i64 = {
         if build.returncode == 0:
             print("FIX-DETECTED: production drop_nan now builds natively; de-narrow the UPSTREAM_BUGS entry")
             return 1
-        if EXPECTED not in output:
+        if EXPECTED not in output or "anonymous function value" not in output:
             print(output.strip())
             print("native drop_nan blocker probe: failure diagnostic drifted")
             return 1
-        print("expected blocked: stripped production drop_nan still does not lower at the chelis#2097 ownership-signature boundary")
+        print("expected blocked: stripped production drop_nan still does not lower at the chelis#879 anonymous-function-value boundary")
         return 0
     finally:
         shutil.rmtree(workdir, ignore_errors=True)

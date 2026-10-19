@@ -12,9 +12,9 @@ Frame APIs lower; that boundary is probed by `repro_package_frame_build.py`
 and `repro_native_drop_nan_blocked.py`.
 
 Expected outcome at the current pin: `chelis build` rejects every target with
-the chelis#2097 ownership-signature diagnostic. The earlier chelis#730
-unresolved-host-type diagnostic no longer appears at this boundary; this
-probe does not establish that the broader #730 class is fixed. See
+the chelis#879 anonymous-function-value diagnostic. This earlier rejection
+does not establish that the previously observed chelis#2097 ownership-signature
+boundary or the broader chelis#730 class is fixed. See
 docs/UPSTREAM_BUGS.md.
 
 The module also owns helpers shared by the other native probes and by
@@ -22,7 +22,7 @@ The module also owns helpers shared by the other native probes and by
 command, and the `<name> = <value>` observation parser.
 
 Exit codes:
-- 0: the outcome matches docs/UPSTREAM_BUGS.md (blocked by chelis#2097)
+- 0: the outcome matches docs/UPSTREAM_BUGS.md (blocked by chelis#879)
 - 1: the outcome changed (FIX-DETECTED, or a different failure) or the probe
   could not run
 """
@@ -47,9 +47,8 @@ from scripts.chelis_toolchain import resolve_chelis_bin
 
 CHELIS = resolve_chelis_bin()
 
-# Stable substring of the chelis#2097 rejection. The local function id is
-# volatile and deliberately excluded.
-CHELIS_2097_DIAGNOSTIC = "does not match ownership signature"
+# The exact capability diagnostic, not any generic build failure.
+CHELIS_879_DIAGNOSTIC = "unimplemented chelis#879: general C-host function values are not implemented"
 
 
 def _registry_root() -> Path:
@@ -269,15 +268,15 @@ def main() -> int:
             return 1
         out_dir = workdir / "out"
         build = subprocess.run([CHELIS, "build", str(main_ch), "-o", str(out_dir)], capture_output=True, text=True)
-        print((build.stdout + build.stderr).strip())
+        build_output = (build.stdout or "") + (build.stderr or "")
+        print(build_output.strip())
         if build.returncode != 0:
-            if CHELIS_2097_DIAGNOSTIC in (build.stdout or "") + (build.stderr or ""):
-                print(f"expected blocked: {args.target} stops at the chelis#2097 ownership-signature boundary")
+            if CHELIS_879_DIAGNOSTIC in build_output and "anonymous function value" in build_output:
+                print(f"expected blocked: {args.target} stops at the chelis#879 anonymous-function-value boundary")
                 return 0
             print("unexpected: `chelis build` failed before native C compile")
             return 1
 
-        build_output = (build.stdout or "") + (build.stderr or "")
         PHASE0E_PANIC = "`if` is not representable in the Phase 0e RISC DAG"
         if PHASE0E_PANIC in build_output:
             print("regression: Phase 0e RISC DAG panic reappeared in chelis build output")
@@ -298,7 +297,7 @@ def main() -> int:
             return 1
 
         print(f"trivial-entry stripped multi-module smoke OK: build clean, link OK, run OK (main = {entry_value})")
-        print("FIX-DETECTED: chelis#2097 no longer blocks this target; re-probe the full native path")
+        print("FIX-DETECTED: chelis#879 no longer blocks this target; re-probe the full native path")
         return 1
     finally:
         shutil.rmtree(workdir, ignore_errors=True)

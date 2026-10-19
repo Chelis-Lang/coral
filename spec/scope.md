@@ -83,14 +83,14 @@ triggers, in [`docs/UPSTREAM_BUGS.md`](../docs/UPSTREAM_BUGS.md). The ones a
 user is most likely to notice:
 
 - **Parquet** is unavailable (chelis#850).
-- **Generated-C coverage of the Frame API.** The package probes exercise
+- **Generated-C coverage of the package API.** The package probes exercise
   construction, `nrows`, column matching, `drop_nan`, `filter`, `head`,
-  `slice`, `sort_by`, and `with_column`. They do not establish support for
-  the full API. `describe` and `drop_column` have open compiler issues
-  ([chelis#3169](https://github.com/Chelis-Lang/chelis/issues/3169),
-  [chelis#879](https://github.com/Chelis-Lang/chelis/issues/879)); stripped
-  Frame, GroupBy, and Join builds are tracked by
-  [chelis#2097](https://github.com/Chelis-Lang/chelis/issues/2097).
+  `slice`, `sort_by`, and `with_column`, plus two bounded value configurations
+  each for `describe`, `agg`, the three joins, and the CSV/JSON readers.
+  They do not establish native support for the full API across all types
+  and shapes. `drop_column` and the stripped Frame, GroupBy, and Join builds
+  reject anonymous function values
+  ([chelis#879](https://github.com/Chelis-Lang/chelis/issues/879)).
 - **Evaluator cost of the HAMT.** Evaluating frames with 100 or more columns
   may require a longer test timeout ([coral#16](https://github.com/Chelis-Lang/coral/issues/16)).
 

@@ -71,9 +71,9 @@ export (main)
 def main() -> f32 = {
   base = from_pairs([("price", FloatCol(to_tensor([cast(10.0, f32), div(cast(0.0, f32), cast(0.0, f32)), cast(30.0, f32)]))), ("qty", int_col_of_list([cast(1, i64), cast(2, i64), cast(3, i64)]))])
   filled = from_pairs([("price", FloatCol(fill_nan(get_float_col(base, "price"), cast(99.0, f32)))), ("qty", int_col_of_list([cast(1, i64), cast(2, i64), cast(3, i64)]))])
-  stacked = concat([drop_nan(base, "price"), drop_nan(filled, "price")])
+  stacked = concat([filled, filled])
   desc = describe(stacked)
-  add(cast(nrows(desc), f32), index(to_list(get_float_col(desc, "price")), cast(0, i64)))
+  add(cast(nrows(drop_nan(base, "price")), f32), index(to_list(get_float_col(desc, "price")), cast(0, i64)))
 }
 ```
 

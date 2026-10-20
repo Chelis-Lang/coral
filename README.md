@@ -11,11 +11,12 @@ runnable examples; its source is the mdBook in [`docs/book/`](docs/book/).
 
 ## Install
 
-Coral 0.7.51 uses Chelis 0.21.0 and Nautilus 0.7.57. Initialize a Reef
-project and add Coral to its `reef.toml`:
+Install the compiler and initialize a Reef project, then add Coral to its
+`reef.toml`:
 
 ```sh
-chelis reef init demo --module-prefix Demo --output demo
+chelisup install 0.21.0
+chelis +0.21.0 reef init demo --module-prefix Demo --output demo
 cd demo
 ```
 
@@ -32,11 +33,10 @@ module_prefix = "Demo"
 coral = { version = "0.7.51" }
 ```
 
-Install the compiler, then let Reef retrieve the dependencies by name. This
+Let Reef retrieve the dependencies by name. This
 route requires `GITHUB_TOKEN` or an authenticated `gh` token:
 
 ```sh
-chelisup install 0.21.0
 chelis reef build
 ```
 

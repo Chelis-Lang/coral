@@ -17,7 +17,8 @@ Nautilus tag named in `reef.toml` with
 `chelis reef install --from-github Chelis-Lang/nautilus@vX.Y.Z`, substituting
 the version, then run `chelis reef build`.
 
-`--from-github` authenticates with `GITHUB_TOKEN`, falling back to
+`--from-github` can download these public release tags without a GitHub
+token. Dependency discovery by name uses `GITHUB_TOKEN`, falling back to
 `gh auth token`.
 
 Python tooling is managed by [uv](https://docs.astral.sh/uv/). Scripts under

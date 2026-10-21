@@ -1,14 +1,15 @@
 # Installation
 
 Coral is a Reef package, separate from the standard library bundled with
-Chelis. Coral 0.7.51 uses Chelis 0.21.0 and Nautilus 0.7.57.
+Chelis. The project manifest pins its compiler and package dependencies.
 
 ## Use Coral in a project
 
-Create a project and declare Coral in its `reef.toml`:
+Install the compiler, then create a project and declare Coral in its `reef.toml`:
 
 ```sh
-chelis reef init demo --module-prefix Demo --output demo
+chelisup install 0.21.0
+chelis +0.21.0 reef init demo --module-prefix Demo --output demo
 cd demo
 ```
 
@@ -23,12 +24,6 @@ module_prefix = "Demo"
 
 [dependencies]
 coral = { version = "0.7.51" }
-```
-
-Install the pinned compiler before using the project's Reef shim:
-
-```sh
-chelisup install 0.21.0
 ```
 
 To have Reef fetch missing dependencies by name, build the project. This route

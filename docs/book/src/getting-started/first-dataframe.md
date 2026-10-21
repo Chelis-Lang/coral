@@ -19,7 +19,11 @@ def main() -> i64 = {
 In your Reef project, replace `Coral` in `module Coral.Doc01` with the
 project's `module_prefix` and save the program as `src/doc01.ch`. Keep
 `import Coral.Frame` unchanged. Run `chelis reef build`, then
-`chelis eval --file src/doc01.ch` to see the result.
+`chelis eval --file src/doc01.ch` to see the result:
+
+```text
+main = 2
+```
 
 `FloatCol` stores a `tensor[n, f32]`; `StringCol` stores a `List[string]`.
 Use `int_col_of_list` for ordinary `i64` columns so Coral creates the

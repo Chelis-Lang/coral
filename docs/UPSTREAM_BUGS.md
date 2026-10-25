@@ -21,7 +21,7 @@ release. The native package probes use the published Nautilus dependency.
 
 No evaluator-level upstream blocker probes remain in `tests_blocked/`. The
 2,000-row `read_json_frame` witness is normal coverage in `tests/io.ch`; it
-passes against the published Chelis 0.21.0 and Nautilus 0.7.57 packages.
+passes against the published Chelis 0.22.1 and Nautilus 0.7.58 packages.
 
 There are no checker-level upstream blockers. The gather-axis test checks an
 intentional rejection under [05-AXIS-2] in
@@ -64,8 +64,8 @@ when the outcome matches this file and 1 when it changes:
   testing the full Frame chain before expanding the helper probe. A different
   rejection must be classified before changing the expected diagnostic.
 
-  The Chelis 0.21.0 probes reach this function-value rejection before the
-  former ownership-signature boundary
+  The Chelis 0.21.0 and 0.22.1 probes reach this function-value rejection
+  before the former ownership-signature boundary
   ([chelis#2097](https://github.com/Chelis-Lang/chelis/issues/2097)). They do
   not establish that the broader ownership-signature issue is fixed.
 
@@ -79,7 +79,7 @@ when the outcome matches this file and 1 when it changes:
   value with `unimplemented chelis#879`.
 
   *Affected surface:* native `chelis build` of the invoked verb; checking
-  and evaluation work with published Chelis 0.21.0 / Nautilus 0.7.57.
+  and evaluation work with published Chelis 0.22.1 / Nautilus 0.7.58.
 
   *Re-probe trigger:* each compiler pin bump. A successful build requires
   a value-preserving native witness before retiring this limitation.
@@ -93,6 +93,12 @@ when the outcome matches this file and 1 when it changes:
   columns in 1.788 seconds on local macOS arm64 with published Chelis 0.21.0
   / Nautilus 0.7.57. This is one workload, not a general timing bound for
   wide frames. Native execution has a separate validation boundary.
+
+  *Chelis 0.22.1 re-probe:* the same bounded construction and update,
+  with two `f32` values per column and published Nautilus 0.7.58, checks at
+  score 1.0 and evaluates to 101 columns in 3.144 seconds on local macOS
+  arm64. The timing includes the `chelis eval --file` invocation and is
+  one measurement, not a general bound.
 
   *Affected surface:* evaluator workloads with wide frames.
 
@@ -109,6 +115,7 @@ when the outcome matches this file and 1 when it changes:
   `len(read_parquet("missing.parquet"))` checks at score 1.0 and builds an
   executable. Running it exits 1 with
   `Std.Io.Parquet.read_parquet is not implemented: missing.parquet`.
+
   The `sig`-without-`def` example in chelis#850 rejects at checking, so it
   does not reproduce the missing-symbol behavior.
 
@@ -126,6 +133,9 @@ when the outcome matches this file and 1 when it changes:
   builds. Its executable exits 1 with
   `Std.Io.Parquet.read_parquet is not implemented: missing.parquet`.
 
+  *Chelis 0.22.1 re-probe:* the same entry checks at score 1.0 with an
+  empty error list, builds, and exits 1 with the same unimplemented message.
+
 ## Archived
 
 ### Native package entries at Chelis 0.21.0
@@ -135,6 +145,10 @@ Two bounded configurations each for `describe`, `agg`, `inner_join`,
 execute, and agree with evaluation in `scripts/repro_package_frame_build.py`.
 The witnesses assert values, column order, and row counts. Typed negative
 controls in `tests_neg/` reject incompatible inputs.
+
+The Chelis 0.22.1 / Nautilus 0.7.58 re-probe repeats these outcomes. All
+23 positive package entries build, execute, and agree with evaluation;
+the separate `drop_column` entry retains its chelis#879 rejection.
 
 The former `describe` entry no longer reaches its non-concrete
 `build_describe_pairs` type-application rejection. This retires that Coral

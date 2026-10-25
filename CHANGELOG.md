@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.52] - 2026-10-25
+
+### Changed
+
+- Build with published Chelis 0.22.1 and the matching Nautilus 0.7.58 release.
+- Upgrade the Reef manifest through the registered schema migrations and keep
+  dependency versions explicit.
+- Read exact dependency selectors in release guards and native probes.
+- Re-probe the package and stripped native lanes, IEEE NaN behavior, Parquet,
+  and the bounded wide-frame evaluator workload. The chelis#879 rejections
+  and explicit Parquet runtime failure remain; all 23 positive native package
+  entries agree with evaluation on their fixed inputs.
+- Fix a skill example that concatenates unequal row counts, show first-program output, and clarify compiler setup and public release installation.
+
 ## [0.7.51] - 2026-10-19
 
 ### Changed

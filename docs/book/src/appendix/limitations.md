@@ -1,6 +1,6 @@
 # Limitations
 
-These constraints apply to Coral 0.7.51 with Chelis 0.21.0:
+Coral has the following constraints:
 
 - **Native builds.** `drop_column` rejects under `chelis build`; run code
   that needs it with `chelis eval` or `chelis test`. Native `describe`

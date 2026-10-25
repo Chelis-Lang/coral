@@ -20,13 +20,30 @@ class ReleaseWorkflowTests(unittest.TestCase):
             "CHELIS_TAG": "v" + manifest["package"]["compiler"].removeprefix("="),
             "CHELIS_VERSION": manifest["package"]["compiler"].removeprefix("="),
             "CORAL_VERSION": manifest["package"]["version"],
-            "NAUTILUS_TAG": "v" + manifest["dependencies"]["nautilus"]["version"],
+            "NAUTILUS_TAG": "v" + manifest["dependencies"]["nautilus"]["version"].removeprefix("="),
         }
         for key, value in expected.items():
             with self.subTest(key=key):
                 match = re.search(rf"^  {key}: (\S+)$", ci, re.MULTILINE)
                 self.assertIsNotNone(match)
                 self.assertEqual(match.group(1), value)
+
+    def test_dependency_tag_extraction_accepts_registered_manifest_forms(self) -> None:
+        for name, variable in (("ci.yml", "REEF_NAUTILUS"), ("release.yml", "NAUTILUS_VERSION")):
+            source = (ROOT / ".github/workflows" / name).read_text()
+            line = next(line for line in source.splitlines() if f"{variable}=$(" in line)
+            pattern = re.search(r"grep -oP '([^']+)'", line).group(1)
+            # These expressions use only Python-compatible syntax plus PCRE's
+            # reset-match marker. Capture its suffix to inspect the emitted tag.
+            prefix, suffix = pattern.split(r"\K")
+            for selector in ("0.7.58", "=0.7.58", "==0.7.58", ">=0.7.58", "=0.7"):
+                with self.subTest(workflow=name, selector=selector):
+                    match = re.search(prefix + "(" + suffix + ")", f'nautilus = {{ version = "{selector}" }}')
+                    if selector in {"0.7.58", "=0.7.58"}:
+                        self.assertIsNotNone(match)
+                        self.assertEqual(match.group(1), "0.7.58")
+                    else:
+                        self.assertIsNone(match)
 
     def test_toolchain_download_is_checksum_verified_and_compatibility_scoped(
         self,

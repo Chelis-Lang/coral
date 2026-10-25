@@ -14,10 +14,10 @@ concurrency:
 env:
   # AUTO-SYNC: must match reef.toml. The pin-consistency-guard job
   # below fails immediately if these drift from reef.toml.
-  CHELIS_TAG: v0.21.0
-  CHELIS_VERSION: 0.21.0
-  NAUTILUS_TAG: v0.7.57
-  CORAL_VERSION: 0.7.51
+  CHELIS_TAG: v0.22.1
+  CHELIS_VERSION: 0.22.1
+  NAUTILUS_TAG: v0.7.58
+  CORAL_VERSION: 0.7.52
 
 jobs:
   pin-consistency-guard:
@@ -52,7 +52,7 @@ jobs:
           set -euo pipefail
           REEF_CHELIS=$(grep -oP '^compiler\s*=\s*"=\K[0-9]+\.[0-9]+\.[0-9]+' reef.toml)
           REEF_VERSION=$(grep -oP '^version\s*=\s*"\K[0-9]+\.[0-9]+\.[0-9]+' reef.toml | head -1)
-          REEF_NAUTILUS=$(grep -A0 '^nautilus' reef.toml | grep -oP 'version\s*=\s*"\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          REEF_NAUTILUS=$(grep -A0 '^nautilus' reef.toml | grep -oP 'version\s*=\s*"=?\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           DRIFT=0
           if [ "v${REEF_CHELIS}" != "${{ env.CHELIS_TAG }}" ]; then
             echo "::error::CI pin drift: CHELIS_TAG=${{ env.CHELIS_TAG }} but reef.toml has =${REEF_CHELIS}"

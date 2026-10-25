@@ -73,8 +73,11 @@ def _nautilus_tarball() -> Path:
     with open(reef_toml, "rb") as f:
         deps = tomllib.load(f).get("dependencies", {})
     nautilus_version = deps.get("nautilus", {}).get("version", "")
-    if not nautilus_version:
-        raise RuntimeError("nautilus dependency not found in reef.toml")
+    if not isinstance(nautilus_version, str):
+        raise RuntimeError("nautilus dependency must declare an exact version")
+    nautilus_version = nautilus_version.removeprefix("=")
+    if re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.+-]+)?", nautilus_version) is None:
+        raise RuntimeError("nautilus dependency must declare an exact version")
     tarball = _registry_root() / "packages" / "nautilus" / nautilus_version / f"nautilus-{nautilus_version}.tar.zst"
     if not tarball.exists():
         raise RuntimeError(f"nautilus {nautilus_version} not found in local reef registry: {tarball}")

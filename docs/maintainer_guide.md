@@ -7,7 +7,7 @@ Coral builds with one exact Chelis compiler version, recorded as the
 toolchain manager, and then from a fresh clone run:
 
 ```sh
-chelisup install 0.21.0
+chelisup install 0.22.1
 ```
 
 `chelisup install` provides the compiler pinned by `reef.toml`.

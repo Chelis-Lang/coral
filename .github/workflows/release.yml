@@ -13,8 +13,8 @@ env:
   PACKAGE_NAME: coral
   # Audit-only mirrors required by the shell contract. The detection step
   # overwrites them from reef.toml before installation.
-  CHELIS_TAG: v0.21.0
-  CHELIS_VERSION: 0.21.0
+  CHELIS_TAG: v0.22.1
+  CHELIS_VERSION: 0.22.1
 
 jobs:
   build-reef-assets:
@@ -27,7 +27,7 @@ jobs:
         run: |
           set -euo pipefail
           CHELIS_VERSION=$(grep -oP '^compiler\s*=\s*"=\K[0-9]+\.[0-9]+\.[0-9]+' reef.toml)
-          NAUTILUS_VERSION=$(grep -A0 '^nautilus' reef.toml | grep -oP 'version\s*=\s*"\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+          NAUTILUS_VERSION=$(grep -A0 '^nautilus' reef.toml | grep -oP 'version\s*=\s*"=?\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           PACKAGE_VERSION=$(grep -oP '^version\s*=\s*"\K[0-9]+\.[0-9]+\.[0-9]+' reef.toml | head -1)
           if [ -z "$CHELIS_VERSION" ] || [ -z "$NAUTILUS_VERSION" ] || [ -z "$PACKAGE_VERSION" ]; then
             echo "Failed to parse one or more versions from reef.toml" >&2

@@ -16,7 +16,7 @@ to this file so Claude-style and Codex-style entry points do not drift.
 <!-- ## Pointers -->
 <!-- shell-local:exclude:end -->
 
-<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.21.0 (sha256:4008940f0419e8ef) -->
+<!-- BEGIN CHELIS MANAGED BLOCK: agents-inheritance chelis@0.22.1 (sha256:4008940f0419e8ef) -->
 # Chelis Agent Contract
 
 Keep this file concise and relevant to every agent working in this repository.

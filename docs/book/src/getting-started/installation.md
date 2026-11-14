@@ -8,8 +8,8 @@ Chelis. The project manifest pins its compiler and package dependencies.
 Install the compiler, then create a project and declare Coral in its `reef.toml`:
 
 ```sh
-chelisup install 0.22.1
-chelis +0.22.1 reef init demo --module-prefix Demo --output demo
+chelisup install 0.23.1
+chelis +0.23.1 reef init demo --module-prefix Demo --output demo
 cd demo
 ```
 
@@ -19,27 +19,27 @@ Set the compiler pin and Coral dependency:
 [package]
 name = "demo"
 version = "0.1.0"
-compiler = "=0.22.1"
+compiler = "=0.23.1"
 module_prefix = "Demo"
 
 [dependencies]
-coral = { version = "0.7.52" }
+coral = { version = "0.7.53" }
 ```
 
-To have Reef fetch missing dependencies by name, build the project. This route
-needs `GITHUB_TOKEN` or an authenticated `gh` token for GitHub remote
-discovery:
+After Coral 0.7.53 and Nautilus 0.7.59 are available as public GitHub releases,
+build the project to let Reef fetch missing dependencies by name. This route
+needs `GITHUB_TOKEN` or an authenticated `gh` token for GitHub remote discovery:
 
 ```sh
 chelis reef build
 ```
 
-To install these public releases without GitHub authentication, install the
-known tags directly, then build:
+To install these versions without GitHub authentication, install the known
+tags directly after publication, then build:
 
 ```sh
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.58
-chelis reef install --from-github Chelis-Lang/coral@v0.7.52
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.59
+chelis reef install --from-github Chelis-Lang/coral@v0.7.53
 chelis reef build
 ```
 

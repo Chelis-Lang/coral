@@ -15,8 +15,8 @@ Install the compiler and initialize a Reef project, then add Coral to its
 `reef.toml`:
 
 ```sh
-chelisup install 0.22.1
-chelis +0.22.1 reef init demo --module-prefix Demo --output demo
+chelisup install 0.23.1
+chelis +0.23.1 reef init demo --module-prefix Demo --output demo
 cd demo
 ```
 
@@ -26,11 +26,11 @@ Set the project's compiler pin and dependency:
 [package]
 name = "demo"
 version = "0.1.0"
-compiler = "=0.22.1"
+compiler = "=0.23.1"
 module_prefix = "Demo"
 
 [dependencies]
-coral = { version = "0.7.52" }
+coral = { version = "0.7.53" }
 ```
 
 Let Reef retrieve the dependencies by name. This
@@ -44,8 +44,8 @@ For anonymous access to the public release assets, install the known tags
 directly before building:
 
 ```sh
-chelis reef install --from-github Chelis-Lang/nautilus@v0.7.58
-chelis reef install --from-github Chelis-Lang/coral@v0.7.52
+chelis reef install --from-github Chelis-Lang/nautilus@v0.7.59
+chelis reef install --from-github Chelis-Lang/coral@v0.7.53
 chelis reef build
 ```
 
